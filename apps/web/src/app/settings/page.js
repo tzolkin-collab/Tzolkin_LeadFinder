@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { TzolkinLockup } from '../../components/brand/TzolkinLogo.js';
+import { TzolkinLockup, TzolkinLoader } from '../../components/brand/TzolkinLogo.js';
 import {
   SettingsIcon,
   UserIcon,
@@ -299,8 +299,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner" style={{ width: 32, height: 32 }} />
+      <div className="page">
+        <TzolkinLoader message="Carregando configurações da agência..." />
       </div>
     );
   }
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                             cursor: 'pointer',
                             background: isActive ? 'rgba(250, 250, 247, 0.08)' : 'transparent',
                             color: isActive ? 'var(--tzolkin-offwhite)' : 'var(--text-secondary)',
-                            fontWeight: isActive ? 600 : 450,
+                            fontWeight: 450,
                             fontSize: 13.5,
                             fontFamily: 'inherit',
                             transition: 'all var(--transition-fast)',
