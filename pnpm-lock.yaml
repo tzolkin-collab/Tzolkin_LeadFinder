@@ -116,6 +116,9 @@ importers:
       '@prisma/client':
         specifier: ^6.4.1
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.6.1
       pg:
         specifier: ^8.13.3
         version: 8.22.0
