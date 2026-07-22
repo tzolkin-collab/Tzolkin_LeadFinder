@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '@tzolkin/database';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
@@ -23,7 +24,7 @@ router.get('/', async (req, res, next) => {
     }
 
     if (status) {
-      whereClause['report'] = { status };
+      whereClause['report'] = { is: { status: status as 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'REJECTED' } };
     }
 
     const [total, businesses] = await Promise.all([
@@ -56,18 +57,103 @@ router.get('/stats', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
 
-    const [total, withoutWebsite, reviewed] = await Promise.all([
+    const [total, withoutWebsite, reviewed, contacted] = await Promise.all([
       prisma.business.count({ where: { tenantId } }),
       prisma.business.count({ where: { tenantId, hasWebsite: false } }),
       prisma.business.count({ where: { tenantId, report: { isNot: null } } }),
+      prisma.business.count({ where: { tenantId, report: { status: 'CONTACTED' } } }),
     ]);
 
     res.json({
       total,
       withoutWebsite,
       reviewed,
-      pendingReview: total - reviewed,
+      contacted,
+      pending: total - reviewed,
+      withoutReport: total - reviewed,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/businesses/:id (or /api/v1/businesses/:id)
+router.get('/:id', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const id = req.params.id;
+
+    const business = await prisma.business.findFirst({
+      where: { id, tenantId },
+      include: { report: true },
+    });
+
+    if (!business) {
+      res.status(404).json({ error: 'Negócio não encontrado' });
+      return;
+    }
+
+    res.json(business);
+  } catch (error) {
+    next(error);
+  }
+});
+
+const StatusSchema = z.object({
+  status: z.enum(['PENDING', 'REVIEWED', 'CONTACTED', 'REJECTED']),
+});
+
+// PATCH /api/businesses/:id/status (or /api/v1/businesses/:id/status)
+router.patch('/:id/status', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const id = req.params.id;
+    const { status } = StatusSchema.parse(req.body);
+
+    const business = await prisma.business.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!business) {
+      res.status(404).json({ error: 'Negócio não encontrado' });
+      return;
+    }
+
+    const report = await prisma.businessReport.upsert({
+      where: { businessId: id },
+      update: { status },
+      create: {
+        businessId: id,
+        status,
+      },
+    });
+
+    res.json({ message: 'Status atualizado com sucesso', report });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/businesses/:id (or /api/v1/businesses/:id)
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const id = req.params.id;
+
+    const business = await prisma.business.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!business) {
+      res.status(404).json({ error: 'Negócio não encontrado' });
+      return;
+    }
+
+    await prisma.business.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Negócio removido com sucesso' });
   } catch (error) {
     next(error);
   }

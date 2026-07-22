@@ -17,11 +17,11 @@ function getPipeline(): ReviewPipeline {
   });
 }
 
-// POST /api/v1/review/:id - Run unified ReviewPipeline on a specific business lead
-router.post('/review/:id', async (req, res, next) => {
+// POST /api/v1/review/:id & /api/search/review/:id - Run unified ReviewPipeline on a specific business lead
+router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
-    const businessId = req.params.id;
+    const businessId = (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id) as string;
 
     const business = await prisma.business.findFirst({
       where: { id: businessId, tenantId },
