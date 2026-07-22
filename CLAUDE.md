@@ -18,6 +18,49 @@ A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promess
 
 ---
 
+## 🏗️ Arquitetura de Produto: Last Mile & Agente (Documento 4 da Wiki)
+
+O núcleo de valor do Lead Finder transiciona da simples *descoberta de leads* para a **assistência completa no Last Mile**: identificar o decisor real, obter contato direto, gerar a minuta personalizada da primeira conversa e controlar a execução da abordagem.
+
+### 🤖 1. Notebook-Agente (UI de Comando estilo NotebookLM)
+- **Conceito**: Cada lead qualificado é um "notebook" interativo cujas fontes de contexto são os enriquecimentos do negócio. O usuário conversa com um agente IA especialista em vez de clicar em botões isolados.
+- **Evolução da Arquitetura**: Os serviços backend existentes (`google-places`, `instagram`, `meta-ads`, `ai-review` e futuros `cnpj`, `linkedin`) são expostos como **Tools/Function Calling** da API Anthropic/Claude.
+  - Ex: *"Esse negócio veicula anúncios?"* → Tool `meta-ads`
+  - Ex: *"Quem é o sócio/decisor?"* → Tools `cnpj` + `linkedin`
+  - Ex: *"Escreva o 1º contato para WhatsApp"* → Tool `ai-review`
+- **Separação de Camadas (Volume vs Deep-Dive)**:
+  - **Topo do Funil (Volume)**: Busca em lote (1 clique, até 50 leads) + scoring automático de qualificação.
+  - **Fundo do Funil (Last Mile)**: Notebook-Agente focado no lead selecionado, acionável dentro do card no CRM.
+
+### 📋 2. Micro-CRM Outbound Integrado
+Evolução do enum simples atual (`PENDING → REVIEWED → CONTACTED → REJECTED`) para um pipeline de aquisição completo:
+$$\text{Novo} \rightarrow \text{Qualificado} \rightarrow \text{Decisor Identificado} \rightarrow \text{Contato Obtido} \rightarrow \text{Abordado} \rightarrow \text{Em Conversa} \rightarrow \text{Proposta} \rightarrow \text{Fechado / Perdido}$$
+
+### 👤 3. Descoberta de Decisor (Cascata por Porte)
+- **Negócio PME / Owner-Operated** (padarias, clínicas locais, oficinas, salões):
+  - `CNPJ → Quadro de Sócios`: O sócio **é** o decisor direto (dado público por lei no Brasil — superpoder local inalcançável pela Apollo). Cruzado com Instagram pessoal e cadastro de anunciante na Meta.
+- **Empresa Maior / Estruturada** (franquias, hospitais, redes):
+  - `LinkedIn`: Utilizado estritamente para localizar a pessoa física do decisor por **cargo/função**, não como fonte primária de garimpo.
+
+### 📞 4. Aquisição de Contato (Resolução em Duas Frentes)
+- **(a) Contato do Negócio (Público & Legítimo)**:
+  - Cascata automatizada: Google Places → Bio do Instagram (`wa.me`, e-mail, Linktree) → CTA do Meta Ads → Site → Registro CNPJ. Alta cobertura e conformidade legal total.
+- **(b) Contato Pessoal do Decisor**:
+  - Para PMEs, o WhatsApp comercial costuma ser o próprio celular do dono.
+  - Para empresas estruturadas, o LinkedIn identifica o profissional, com finalização manual/assistida se necessário.
+
+### 🛡️ 5. Guardrails Operacionais & Compliance (Evolution API & LGPD)
+- **Guardrails Operacionais (Ajustáveis nas Configurações)**:
+  - Volume diário de abordagens, intervalo entre mensagens, janela de horário de envio, tempo de cooldown e cadência de follow-ups — protegendo contra o banimento de instâncias da Evolution API.
+- **Guardrails de Compliance (Piso Fixo Inegociável)**:
+  - Inclusão obrigatória de mecanismos de opt-out, respeito imediato a solicitações de remoção ("não quero") e embasamento legal rígido na LGPD (legítimo interesse/dados públicos).
+
+### 🔗 Shape Unificado do Produto (End-to-End)
+$$\text{Busca em Lote} \rightarrow \text{Cards no Micro-CRM} \rightarrow \text{Notebook-Agente por Lead} \rightarrow \text{Identificação de Decisor/Contato} \rightarrow \text{Geração do Pitch} \rightarrow \text{Disparo Assistido 1-a-1 via WhatsApp}$$
+*O SaaS assiste cada etapa, mas o envio final é acionado 1-a-1 pelo prestador, eliminando disparos em massa automatizados e mantendo a operação segura contra sanções ou bloqueios.*
+
+---
+
 ## 🎯 ICP & ILP: Decisor Alcançável (Documento 3 da Wiki)
 
 > **Statement de Posicionamento**:
@@ -153,9 +196,12 @@ O grande diferencial do lead entregue é a interseção entre **Dor + Dinheiro C
 ## 🔬 Hipóteses & Validações (Learnings)
 - 🟡 **Hipóteses em Validação**:
   - Faturamento / ticket médio do ICP e *willingness-to-pay* (R$ 47–197/mês).
-  - Taxa de cobertura real de CNPJ → Sócio e taxa de contato público alcançável.
+  - Qualidade e taxa de cobertura real do dado de `CNPJ → Sócio`.
+  - Taxa de contato público alcançável no sweet spot.
+  - Limites operacionais seguros anti-ban da Evolution API.
   - Nichos com maior taxa de conversão real (`suitabilityScore` × status `CONTACTED`).
 - 🧪 **Plano de Validação**: 5 a 10 entrevistas em profundidade com ICPs + medições diretas de uso e conversão no Lead Finder.
+- 📐 **Próximo Passo Técnico**: Elaborar o blueprint de Tool-Use (Function Calling API Anthropic/Claude) para o Notebook-Agente.
 
 ---
 
