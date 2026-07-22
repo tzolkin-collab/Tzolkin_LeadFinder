@@ -326,7 +326,7 @@ export default function SettingsPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="badge badge-reviewed" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Plano {general.subscriptionPlan.toUpperCase()}
+              Plano {general.subscriptionPlan?.toUpperCase() || 'STARTER'}
             </span>
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function SettingsPage() {
                 {
                   title: 'Plano & Infraestrutura',
                   items: [
-                    { id: 'upgrade', label: 'Upgrade & Planos', icon: <StarIcon size={18} />, badge: general.subscriptionPlan?.toUpperCase() },
+                    { id: 'upgrade', label: 'Upgrade & Planos', icon: <StarIcon size={18} /> },
                     { id: 'costs', label: 'Transparência de Custos', icon: <CostsIcon size={18} /> },
                   ],
                 },
@@ -791,8 +791,8 @@ export default function SettingsPage() {
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, alignItems: 'stretch' }}>
-                  {plansData.plans.map(plan => {
-                    const isCurrent = plansData.currentPlan === plan.id;
+                  {(plansData?.plans || []).map(plan => {
+                    const isCurrent = plansData?.currentPlan === plan.id;
                     return (
                       <div
                         key={plan.id}
@@ -840,7 +840,7 @@ export default function SettingsPage() {
                               O que está incluído:
                             </div>
                             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, padding: 0 }}>
-                              {plan.features.map((feat, i) => (
+                              {(plan.features || []).map((feat, i) => (
                                 <li key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <span style={{ color: 'var(--tzolkin-offwhite)', fontWeight: 700 }}>✓</span>
                                   {feat}
