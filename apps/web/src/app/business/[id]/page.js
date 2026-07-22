@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
+import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -216,7 +217,7 @@ export default function BusinessDetailPage({ params }) {
                     {/* Left Column */}
                     <div>
                         {/* Google Data */}
-                        <Section title="Dados do Google" icon="📍">
+                        <Section title="Dados do Google Places" icon={<GooglePlacesIcon size={20} />}>
                             <InfoRow label="Telefone" value={business.phone} />
                             <InfoRow label="Categoria" value={business.category} />
                             <InfoRow label="Avaliação" value={business.rating ? `${business.rating} ★ (${business.reviewCount || 0} avaliações)` : null} />
@@ -258,7 +259,7 @@ export default function BusinessDetailPage({ params }) {
 
                         {/* Instagram */}
                         {report?.instagramUrl && (
-                            <Section title="Instagram" icon="📸">
+                            <Section title="Instagram Profiling" icon={<InstagramIcon size={20} />}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                                     {report.profilePicUrl && (
                                         <img
@@ -297,7 +298,7 @@ export default function BusinessDetailPage({ params }) {
                                         }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <span style={{ fontSize: 18 }}>📢</span>
+                                                    <MetaAdsIcon size={20} />
                                                     <span style={{ fontSize: 14, fontWeight: 600 }}>Meta Ads Status</span>
                                                 </div>
                                                 <span style={{ 
@@ -414,7 +415,7 @@ export default function BusinessDetailPage({ params }) {
                                 </Section>
 
                                 {/* Summary */}
-                                <Section title="Resumo IA" icon="🤖">
+                                <Section title="Dossiê OpenAI GPT-4o-mini" icon={<OpenAiIcon size={20} />}>
                                     <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
                                         {report.aiSummary}
                                     </p>
