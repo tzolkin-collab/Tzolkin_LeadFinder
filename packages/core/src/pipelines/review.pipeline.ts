@@ -9,6 +9,17 @@ export interface ReviewPipelineConfig {
   openAiApiKey?: string | undefined;
   modelName?: string | undefined;
   targetIcp?: string | undefined;
+  icpContext?: {
+    niche?: string | undefined;
+    region?: string | undefined;
+    decisionMaker?: string | undefined;
+    painPoints?: string | undefined;
+  } | undefined;
+  valuePropContext?: {
+    headline?: string | undefined;
+    services?: string | undefined;
+    differentials?: string | undefined;
+  } | undefined;
 }
 
 export interface ReviewPipelineInput {
@@ -35,6 +46,8 @@ export class ReviewPipeline {
   private readonly metaAdsTool: MetaAdsTool;
   private readonly aiReviewTool: AiReviewTool;
   private readonly targetIcp: string;
+  private readonly icpContext?: ReviewPipelineConfig['icpContext'];
+  private readonly valuePropContext?: ReviewPipelineConfig['valuePropContext'];
   private readonly logger = new CoreLogger('ReviewPipeline');
 
   constructor(config?: ReviewPipelineConfig) {
@@ -48,6 +61,8 @@ export class ReviewPipeline {
     this.metaAdsTool = new MetaAdsTool(metaToken, serperKey);
     this.aiReviewTool = new AiReviewTool(openAiKey, modelName);
     this.targetIcp = targetIcp ?? '';
+    this.icpContext = config?.icpContext;
+    this.valuePropContext = config?.valuePropContext;
   }
 
   async run(input: ReviewPipelineInput): Promise<ReviewPipelineResult> {
@@ -122,6 +137,8 @@ export class ReviewPipeline {
         : {}),
       hasActiveAds: metaAds.hasAds,
       ...(this.targetIcp ? { targetIcp: this.targetIcp } : {}),
+      ...(this.icpContext ? { icpContext: this.icpContext } : {}),
+      ...(this.valuePropContext ? { valuePropContext: this.valuePropContext } : {}),
     });
 
     const aiReview: AiReviewOutput =

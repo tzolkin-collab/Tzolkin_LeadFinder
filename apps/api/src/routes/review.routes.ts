@@ -12,7 +12,16 @@ router.use(authMiddleware);
 async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { targetIcp: true, selectedAiModel: true },
+    select: {
+      icpNiche: true,
+      icpRegion: true,
+      icpDecisionMaker: true,
+      icpPainPoints: true,
+      valuePropHeadline: true,
+      valuePropServices: true,
+      valuePropDifferentials: true,
+      selectedAiModel: true,
+    },
   });
 
   return new ReviewPipeline({
@@ -20,7 +29,17 @@ async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
     metaAdsAccessToken: env.META_ADS_TOKEN,
     openAiApiKey: env.OPENAI_API_KEY,
     modelName: tenant?.selectedAiModel ?? undefined,
-    targetIcp: tenant?.targetIcp ?? undefined,
+    icpContext: tenant ? {
+      niche: tenant.icpNiche ?? undefined,
+      region: tenant.icpRegion ?? undefined,
+      decisionMaker: tenant.icpDecisionMaker ?? undefined,
+      painPoints: tenant.icpPainPoints ?? undefined,
+    } : undefined,
+    valuePropContext: tenant ? {
+      headline: tenant.valuePropHeadline ?? undefined,
+      services: tenant.valuePropServices ?? undefined,
+      differentials: tenant.valuePropDifferentials ?? undefined,
+    } : undefined,
   });
 }
 

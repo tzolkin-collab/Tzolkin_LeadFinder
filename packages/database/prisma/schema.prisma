@@ -93,17 +93,28 @@ enum TenantStatus {
 }
 
 model Tenant {
-  id               String       @id @default(cuid())
-  slug             String       @unique
-  name             String
-  plan             TenantPlan   @default(STARTER)
-  status           TenantStatus @default(ACTIVE)
-  targetIcp        String?      // Nicho / Proposta de valor da agência (ex: "Clínicas Médicas e Odontológicas em SP")
-  selectedAiModel  String       @default("gpt-4o-mini") // "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet"
-  subscriptionPlan String       @default("starter") // "starter", "pro", "enterprise"
-  stripeCustomerId String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id                     String       @id @default(cuid())
+  slug                   String       @unique
+  name                   String
+  plan                   TenantPlan   @default(STARTER)
+  status                 TenantStatus @default(ACTIVE)
+  
+  // 🎯 ICP (Perfil de Cliente Ideal - QUEM É O CLIENTE)
+  icpNiche               String?      // Segmento/Nicho Alvo (ex: "Clínicas Médicas e Odontológicas")
+  icpRegion              String?      // Região ou Porte (ex: "Capitais e Regiões Metropolitanas do SE/SUL")
+  icpDecisionMaker       String?      // Cargos dos Decisores (ex: "Diretor Clínico, Sócio Proprietário")
+  icpPainPoints          String?      // Dores e Desafios (ex: "Dependência de indicações, falta de presença digital")
+
+  // 🚀 PROPOSTA DE VALOR (O QUE E COMO RESOLVE)
+  valuePropHeadline      String?      // Promessa Principal (ex: "Transformamos clínicas em referência digital gerando 3x mais agendamentos")
+  valuePropServices      String?      // Serviços & Soluções (ex: "Criação de Sites de Alta Conversão, Google Ads, SEO Local, Meta Ads")
+  valuePropDifferentials String?      // Diferenciais Únicos (ex: "Entrega em 7 dias, garantia de performance, suporte dedicado")
+
+  selectedAiModel        String       @default("gpt-4o-mini") // "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet"
+  subscriptionPlan       String       @default("starter") // "starter", "pro"
+  stripeCustomerId       String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   users       User[]
   businesses  Business[]

@@ -104,7 +104,7 @@ router.patch('/profile', async (req, res, next) => {
   }
 });
 
-// ─── 2. GENERAL (TENANT NAME, ICP & AI MODEL) ──────────────────────────────
+// ─── 2. GENERAL (TENANT NAME, STRUCTURAL ICP, VALUE PROP & AI MODEL) ───────
 router.get('/general', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
@@ -114,7 +114,13 @@ router.get('/general', async (req, res, next) => {
         id: true,
         name: true,
         slug: true,
-        targetIcp: true,
+        icpNiche: true,
+        icpRegion: true,
+        icpDecisionMaker: true,
+        icpPainPoints: true,
+        valuePropHeadline: true,
+        valuePropServices: true,
+        valuePropDifferentials: true,
         selectedAiModel: true,
         subscriptionPlan: true,
       },
@@ -128,7 +134,13 @@ router.get('/general', async (req, res, next) => {
 
 const GeneralUpdateSchema = z.object({
   name: z.string().min(2).optional(),
-  targetIcp: z.string().optional(),
+  icpNiche: z.string().optional(),
+  icpRegion: z.string().optional(),
+  icpDecisionMaker: z.string().optional(),
+  icpPainPoints: z.string().optional(),
+  valuePropHeadline: z.string().optional(),
+  valuePropServices: z.string().optional(),
+  valuePropDifferentials: z.string().optional(),
   selectedAiModel: z.enum(['gpt-4o-mini', 'gpt-4o', 'claude-3-5-sonnet']).optional(),
 });
 
@@ -141,12 +153,18 @@ router.patch('/general', async (req, res, next) => {
       where: { id: tenantId },
       data: {
         ...(input.name ? { name: input.name } : {}),
-        ...(input.targetIcp !== undefined ? { targetIcp: input.targetIcp } : {}),
+        ...(input.icpNiche !== undefined ? { icpNiche: input.icpNiche } : {}),
+        ...(input.icpRegion !== undefined ? { icpRegion: input.icpRegion } : {}),
+        ...(input.icpDecisionMaker !== undefined ? { icpDecisionMaker: input.icpDecisionMaker } : {}),
+        ...(input.icpPainPoints !== undefined ? { icpPainPoints: input.icpPainPoints } : {}),
+        ...(input.valuePropHeadline !== undefined ? { valuePropHeadline: input.valuePropHeadline } : {}),
+        ...(input.valuePropServices !== undefined ? { valuePropServices: input.valuePropServices } : {}),
+        ...(input.valuePropDifferentials !== undefined ? { valuePropDifferentials: input.valuePropDifferentials } : {}),
         ...(input.selectedAiModel ? { selectedAiModel: input.selectedAiModel } : {}),
       },
     });
 
-    res.json({ message: 'Configurações gerais salvas com sucesso', tenant: updated });
+    res.json({ message: 'Configurações de ICP, Proposta de Valor e Modelo de IA salvas com sucesso', tenant: updated });
   } catch (error) {
     next(error);
   }

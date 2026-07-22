@@ -23,7 +23,24 @@ export const AiReviewInputSchema = z.object({
     .optional()
     .describe('Dados enriquecidos do Instagram'),
   hasActiveAds: z.boolean().optional().describe('Indica se possui anúncios ativos no Meta Ads'),
-  targetIcp: z.string().optional().describe('Descrição do perfil de cliente ideal (ICP) do tenant'),
+  targetIcp: z.string().optional().describe('Descrição genérica legada do ICP'),
+  icpContext: z
+    .object({
+      niche: z.string().optional(),
+      region: z.string().optional(),
+      decisionMaker: z.string().optional(),
+      painPoints: z.string().optional(),
+    })
+    .optional()
+    .describe('ICP estruturado (Perfil do Cliente Ideal - QUEM)'),
+  valuePropContext: z
+    .object({
+      headline: z.string().optional(),
+      services: z.string().optional(),
+      differentials: z.string().optional(),
+    })
+    .optional()
+    .describe('Proposta de valor da agência (O QUE oferece e diferenciais)'),
 });
 
 export type AiReviewInput = z.input<typeof AiReviewInputSchema>;
@@ -188,8 +205,21 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
     prompt += `## Anúncios Meta Ads\n`;
     prompt += `- Anúncios Ativos: ${input.hasActiveAds ? 'SIM (ORÇAMENTO DE MARKETING COMPROVADO)' : 'Não informado / Não detectado'}\n\n`;
 
-    if (input.targetIcp) {
-      prompt += `## Perfil de Cliente Ideal (ICP) do Consultor\n${input.targetIcp}\n\n`;
+    if (input.icpContext && (input.icpContext.niche || input.icpContext.painPoints || input.icpContext.decisionMaker || input.icpContext.region)) {
+      prompt += `## PERFIL DE CLIENTE IDEAL (ICP DA AGÊNCIA - QUEM É O ALVO)\n`;
+      if (input.icpContext.niche) prompt += `- Segmento/Nicho Alvo: ${input.icpContext.niche}\n`;
+      if (input.icpContext.region) prompt += `- Região/Porte: ${input.icpContext.region}\n`;
+      if (input.icpContext.decisionMaker) prompt += `- Cargo do Decisor Alvo: ${input.icpContext.decisionMaker}\n`;
+      if (input.icpContext.painPoints) prompt += `- Dores e Objeções Principais: ${input.icpContext.painPoints}\n`;
+      prompt += `\n`;
+    }
+
+    if (input.valuePropContext && (input.valuePropContext.headline || input.valuePropContext.services || input.valuePropContext.differentials)) {
+      prompt += `## PROPOSTA DE VALOR DA AGÊNCIA (O QUE A AGÊNCIA OFERECE E RESOLVE)\n`;
+      if (input.valuePropContext.headline) prompt += `- Promessa Principal de Valor: ${input.valuePropContext.headline}\n`;
+      if (input.valuePropContext.services) prompt += `- Serviços / Soluções da Agência: ${input.valuePropContext.services}\n`;
+      if (input.valuePropContext.differentials) prompt += `- Diferenciais Competitivos: ${input.valuePropContext.differentials}\n`;
+      prompt += `\n`;
     }
 
     prompt += `## Retorne estritamente um JSON com a seguinte estrutura:

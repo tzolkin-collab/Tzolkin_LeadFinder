@@ -88,8 +88,19 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState({ name: '', email: '', currentPassword: '', newPassword: '' });
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // General (ICP & AI Model) Form State
-  const [general, setGeneral] = useState({ name: '', targetIcp: '', selectedAiModel: 'gpt-4o-mini', subscriptionPlan: 'starter' });
+  // General (ICP, Proposta de Valor & AI Model) Form State
+  const [general, setGeneral] = useState({
+    name: '',
+    icpNiche: '',
+    icpRegion: '',
+    icpDecisionMaker: '',
+    icpPainPoints: '',
+    valuePropHeadline: '',
+    valuePropServices: '',
+    valuePropDifferentials: '',
+    selectedAiModel: 'gpt-4o-mini',
+    subscriptionPlan: 'starter',
+  });
   const [savingGeneral, setSavingGeneral] = useState(false);
 
   // Plans & Upgrade State
@@ -132,7 +143,13 @@ export default function SettingsPage() {
       profile: { name: profileData.name || '', email: profileData.email || '' },
       general: {
         name: generalData.name || '',
-        targetIcp: generalData.targetIcp || '',
+        icpNiche: generalData.icpNiche || '',
+        icpRegion: generalData.icpRegion || '',
+        icpDecisionMaker: generalData.icpDecisionMaker || '',
+        icpPainPoints: generalData.icpPainPoints || '',
+        valuePropHeadline: generalData.valuePropHeadline || '',
+        valuePropServices: generalData.valuePropServices || '',
+        valuePropDifferentials: generalData.valuePropDifferentials || '',
         selectedAiModel: generalData.selectedAiModel || 'gpt-4o-mini',
         subscriptionPlan: generalData.subscriptionPlan || 'starter',
       },
@@ -206,13 +223,19 @@ export default function SettingsPage() {
         headers: authHeaders(),
         body: JSON.stringify({
           name: general.name,
-          targetIcp: general.targetIcp,
+          icpNiche: general.icpNiche,
+          icpRegion: general.icpRegion,
+          icpDecisionMaker: general.icpDecisionMaker,
+          icpPainPoints: general.icpPainPoints,
+          valuePropHeadline: general.valuePropHeadline,
+          valuePropServices: general.valuePropServices,
+          valuePropDifferentials: general.valuePropDifferentials,
           selectedAiModel: general.selectedAiModel,
         }),
       });
       const data = await res.json();
       if (!res.ok) { showToast(`✗ ${data.error}`); return; }
-      showToast('✓ Configurações gerais e modelo de IA salvos com sucesso');
+      showToast('✓ ICP, Proposta de Valor e Modelo de IA salvos com sucesso');
     } catch (err) {
       showToast('✗ Erro ao salvar configurações');
     } finally {
@@ -540,19 +563,19 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* 2. GERAL (ICP & MODELO DE IA COM TRANSPARÊNCIA DE CUSTOS) */}
+            {/* 2. GERAL (ICP, PROPOSTA DE VALOR & MODELO DE IA) */}
             {section === 'general' && (
               <div>
                 <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Geral & Inteligência Comercial</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24 }}>
-                  Configure o Nicho/ICP Padrão da Agência e o Modelo de IA utilizado para gerar o Dossiê de Prospecção
+                  Defina o Perfil de Cliente Ideal (ICP) e a Proposta de Valor da sua agência para personalizar as análises e abordagens geradas pela IA
                 </p>
 
                 <form onSubmit={handleSaveGeneral} style={{ display: 'grid', gap: 24 }}>
-                  {/* Nome do Tenant */}
+                  {/* Nome da Agência */}
                   <div className="card">
                     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Identidade da Empresa / Agência</h3>
-                    <div style={{ marginBottom: 16 }}>
+                    <div>
                       <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
                         Nome da Agência / Tenant
                       </label>
@@ -566,22 +589,114 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Nicho - ICP */}
+                  {/* Card 1: ICP (Perfil de Cliente Ideal - QUEM) */}
                   <div className="card">
-                    <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <TargetIcon size={18} /> Proposta de Valor & ICP Padrão
+                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <TargetIcon size={20} color="var(--tzolkin-offwhite)" /> ICP — Perfil de Cliente Ideal (Quem é o seu Alvo?)
                     </h3>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                      Descreva sua agência e os serviços oferecidos. A IA utilizará este contexto para gerar **Sugestões de Abordagem Comercial altamente personalizadas** para cada lead sem site.
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
+                      Mapeie as características do cliente perfeito para o qual sua equipe vende.
                     </p>
-                    <textarea
-                      className="input"
-                      rows={4}
-                      value={general.targetIcp}
-                      onChange={e => setGeneral({ ...general, targetIcp: e.target.value })}
-                      placeholder="Ex: Somos uma agência especializada em marketing médico e criação de sites de alta conversão para Clínicas Médicas e Odontológicas. Oferecemos pacotes com Google Ads, SEO local e agendamento online automático."
-                      style={{ resize: 'vertical', lineHeight: 1.5 }}
-                    />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                          Nicho / Segmento Alvo
+                        </label>
+                        <input
+                          className="input"
+                          value={general.icpNiche}
+                          onChange={e => setGeneral({ ...general, icpNiche: e.target.value })}
+                          placeholder="Ex: Clínicas Médicas, Dentistas, Escritórios de Advocacia"
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                          Região / Porte Alvo
+                        </label>
+                        <input
+                          className="input"
+                          value={general.icpRegion}
+                          onChange={e => setGeneral({ ...general, icpRegion: e.target.value })}
+                          placeholder="Ex: Capitais e regiões metropolitanas com 3 a 15 funcionários"
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Cargo dos Decisores Principais
+                      </label>
+                      <input
+                        className="input"
+                        value={general.icpDecisionMaker}
+                        onChange={e => setGeneral({ ...general, icpDecisionMaker: e.target.value })}
+                        placeholder="Ex: Diretor Clínico, Sócio Proprietário, Gerente de Operações"
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Dores & Desafios Frequentes do Cliente
+                      </label>
+                      <textarea
+                        className="input"
+                        rows={3}
+                        value={general.icpPainPoints}
+                        onChange={e => setGeneral({ ...general, icpPainPoints: e.target.value })}
+                        placeholder="Ex: Dependência de indicações boca a boca, falta de canal direto de agendamento, anúncios sem conversão, ausência de presença digital moderna no mobile"
+                        style={{ resize: 'vertical', lineHeight: 1.5 }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 2: PROPOSTA DE VALOR (O QUE OFERECE E COMO RESOLVE) */}
+                  <div className="card">
+                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <ActionsIcon size={20} color="var(--tzolkin-offwhite)" /> Proposta de Valor da Agência (O Que e Como Resolve)
+                    </h3>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
+                      Defina a oferta, a promessa de transformação e os diferenciais que a IA utilizará no pitch de abordagem comercial.
+                    </p>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Promessa Principal de Valor (Headline de Vendas)
+                      </label>
+                      <input
+                        className="input"
+                        value={general.valuePropHeadline}
+                        onChange={e => setGeneral({ ...general, valuePropHeadline: e.target.value })}
+                        placeholder="Ex: Transformamos clínicas locais em autoridades digitais trazendo 3x mais agendamentos de consultas particulares"
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Serviços & Soluções Entregues
+                      </label>
+                      <textarea
+                        className="input"
+                        rows={2}
+                        value={general.valuePropServices}
+                        onChange={e => setGeneral({ ...general, valuePropServices: e.target.value })}
+                        placeholder="Ex: Criação de Sites de Alta Conversão, Gestão de Anúncios Google/Meta Ads, SEO Local no Google Maps, Integração de Agendamento via WhatsApp"
+                        style={{ resize: 'vertical', lineHeight: 1.5 }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                        Diferenciais Competitivos & Garantia
+                      </label>
+                      <input
+                        className="input"
+                        value={general.valuePropDifferentials}
+                        onChange={e => setGeneral({ ...general, valuePropDifferentials: e.target.value })}
+                        placeholder="Ex: Entrega em até 7 dias úteis, sem contrato de fidelidade, otimização diária com inteligência comercial"
+                      />
+                    </div>
                   </div>
 
                   {/* Modelo de IA (Transparência de Custos) */}
