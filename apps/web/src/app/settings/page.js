@@ -320,27 +320,150 @@ export default function SettingsPage() {
 
           {/* Sidebar Navigation */}
           <nav className="fade-in">
-            <div className="card" style={{ padding: 8 }}>
-              {SECTIONS.map(s => (
-                <button
-                  key={s.id}
-                  id={`nav-${s.id}`}
-                  onClick={() => setSection(s.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    width: '100%', padding: '12px 16px', border: 'none',
-                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                    background: section === s.id ? 'rgba(250, 250, 247, 0.08)' : 'transparent',
-                    color: section === s.id ? 'var(--tzolkin-offwhite)' : 'var(--text-secondary)',
-                    fontWeight: section === s.id ? 600 : 400,
-                    fontSize: 14, fontFamily: 'inherit',
-                    transition: 'all var(--transition-fast)',
-                  }}
-                >
-                  <span style={{ fontSize: 18, display: 'inline-flex', alignItems: 'center' }}>{s.icon}</span>
-                  {s.label}
-                </button>
+            <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {[
+                {
+                  title: 'Conta & Agência',
+                  items: [
+                    { id: 'profile', label: 'Perfil Pessoal', icon: <UserIcon size={18} /> },
+                    { id: 'general', label: 'Geral & IA', icon: <SettingsIcon size={18} /> },
+                  ],
+                },
+                {
+                  title: 'Plano & Infraestrutura',
+                  items: [
+                    { id: 'upgrade', label: 'Upgrade & Planos', icon: <StarIcon size={18} />, badge: general.subscriptionPlan?.toUpperCase() },
+                    { id: 'costs', label: 'Transparência de Custos', icon: <CostsIcon size={18} /> },
+                  ],
+                },
+                {
+                  title: 'Equipe & Comunicação',
+                  items: [
+                    { id: 'team', label: 'Equipe & Permissões', icon: <UsersIcon size={18} />, badge: users.length > 0 ? `${users.length}` : null },
+                    { id: 'support', label: 'Suporte Direct', icon: <WhatsAppIcon size={18} /> },
+                  ],
+                },
+                {
+                  title: 'Governança',
+                  items: [
+                    { id: 'legal', label: 'Documentos Legais', icon: <LegalIcon size={18} /> },
+                  ],
+                },
+              ].map((group, groupIdx) => (
+                <div key={groupIdx}>
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--text-tertiary)',
+                    padding: '4px 12px 8px 12px',
+                  }}>
+                    {group.title}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {group.items.map(s => {
+                      const isActive = section === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          id={`nav-${s.id}`}
+                          onClick={() => setSection(s.id)}
+                          style={{
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            padding: '10px 12px',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            background: isActive ? 'rgba(250, 250, 247, 0.08)' : 'transparent',
+                            color: isActive ? 'var(--tzolkin-offwhite)' : 'var(--text-secondary)',
+                            fontWeight: isActive ? 600 : 450,
+                            fontSize: 13.5,
+                            fontFamily: 'inherit',
+                            transition: 'all var(--transition-fast)',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive) {
+                              e.currentTarget.style.background = 'rgba(250, 250, 247, 0.04)';
+                              e.currentTarget.style.color = 'var(--tzolkin-offwhite)';
+                              e.currentTarget.style.transform = 'translateX(2px)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive) {
+                              e.currentTarget.style.background = 'transparent';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                              e.currentTarget.style.transform = 'translateX(0)';
+                            }
+                          }}
+                        >
+                          {/* Active Indicator Bar */}
+                          {isActive && (
+                            <span style={{
+                              position: 'absolute',
+                              left: 0,
+                              top: '20%',
+                              bottom: '20%',
+                              width: 3,
+                              borderRadius: '0 2px 2px 0',
+                              background: 'var(--tzolkin-offwhite)',
+                            }} />
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{s.icon}</span>
+                            <span>{s.label}</span>
+                          </div>
+                          {s.badge && (
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 100,
+                              background: isActive ? 'var(--tzolkin-offwhite)' : 'rgba(110, 110, 104, 0.2)',
+                              color: isActive ? '#0A0A0A' : 'var(--text-secondary)',
+                            }}>
+                              {s.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
+
+              {/* Sidebar Tenant Card Footer */}
+              <div style={{
+                marginTop: 12,
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}>
+                <div style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: '#0CCE6B',
+                  boxShadow: '0 0 8px rgba(12, 206, 107, 0.4)',
+                  flexShrink: 0,
+                }} />
+                <div style={{ overflow: 'hidden' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tzolkin-offwhite)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {general.name || 'Sua Agência'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                    Multitenant Ativo
+                  </div>
+                </div>
+              </div>
             </div>
           </nav>
 
