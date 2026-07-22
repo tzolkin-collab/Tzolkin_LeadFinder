@@ -23,6 +23,7 @@ export const AiReviewInputSchema = z.object({
     .optional()
     .describe('Dados enriquecidos do Instagram'),
   hasActiveAds: z.boolean().optional().describe('Indica se possui anúncios ativos no Meta Ads'),
+  targetIcp: z.string().optional().describe('Descrição do perfil de cliente ideal (ICP) do tenant'),
 });
 
 export type AiReviewInput = z.input<typeof AiReviewInputSchema>;
@@ -186,6 +187,10 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
 
     prompt += `## Anúncios Meta Ads\n`;
     prompt += `- Anúncios Ativos: ${input.hasActiveAds ? 'SIM (ORÇAMENTO DE MARKETING COMPROVADO)' : 'Não informado / Não detectado'}\n\n`;
+
+    if (input.targetIcp) {
+      prompt += `## Perfil de Cliente Ideal (ICP) do Consultor\n${input.targetIcp}\n\n`;
+    }
 
     prompt += `## Retorne estritamente um JSON com a seguinte estrutura:
 {

@@ -1,12 +1,33 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@tzolkin/database';
-import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { authMiddleware, type UserPayload } from '../middlewares/auth.middleware.js';
 
 const router: Router = Router();
 
 router.use(authMiddleware);
+
+// Authorization helper for role-restricted endpoints.
+function requireRole(...allowed: UserPayload['role'][]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const role = req.user?.role;
+    if (!role || !allowed.includes(role)) {
+      res.status(403).json({ error: 'Permissão insuficiente' });
+      return;
+    }
+    next();
+  };
+}
+
+function generateSecurePassword(length = 16) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
 
 // ─── 1. PROFILE (USER DETAILS & PASSWORD) ──────────────────────────────────
 router.get('/profile', async (req, res, next) => {
@@ -173,22 +194,6 @@ router.get('/plans', async (req, res, next) => {
         popular: true,
         checkoutUrl: 'https://stripe.com/checkout/link-pro-tzolkin',
       },
-      {
-        id: 'enterprise',
-        name: 'Enterprise',
-        tagline: 'Operações em escala com infraestrutura dedicada',
-        priceMonthlyUsd: 199,
-        priceMonthlyBrl: 990,
-        features: [
-          'Infraestrutura & Banco de dados dedicado',
-          'Membros ilimitados',
-          'Exportação ilimitada em tempo real',
-          'API Key exclusiva com SLA de 99.9%',
-          'Gerente de conta dedicado',
-        ],
-        popular: false,
-        checkoutUrl: 'https://wa.me/5531999999999?text=Quero%20plano%20Enterprise',
-      },
     ];
 
     res.json({ currentPlan, plans });
@@ -209,10 +214,9 @@ router.get('/costs', async (req, res, next) => {
     ]);
 
     const googlePlacesCost = totalLeads * 0.017;
-    const instagramScrapeCost = totalReports * 0.001;
-    const metaAdsCost = totalReports * 0.000;
+    const serperCost = totalReports * 0.001; // Serper API handles both Instagram Profiling & Meta Ads Library search
     const aiReviewCost = totalReports * 0.002;
-    const totalCostUsd = googlePlacesCost + instagramScrapeCost + metaAdsCost + aiReviewCost;
+    const totalCostUsd = googlePlacesCost + serperCost + aiReviewCost;
 
     res.json({
       totalCostUSD: parseFloat(totalCostUsd.toFixed(3)),
@@ -223,22 +227,16 @@ router.get('/costs', async (req, res, next) => {
       },
       costs: {
         googlePlaces: {
-          label: 'Google Places Tool (Varredura)',
+          label: 'Google Places Tool (Varredura de Leads)',
           count: totalLeads,
           costPerUnit: 0.017,
           totalCost: parseFloat(googlePlacesCost.toFixed(3)),
         },
-        serperInstagram: {
-          label: 'Serper.dev (Instagram Profiling)',
+        serperEnrichment: {
+          label: 'Serper API (Instagram Profiling & Meta Ads)',
           count: totalReports,
           costPerUnit: 0.001,
-          totalCost: parseFloat(instagramScrapeCost.toFixed(3)),
-        },
-        metaAds: {
-          label: 'Meta Ads Library (Auditoria de Anúncios)',
-          count: totalReports,
-          costPerUnit: 0.000,
-          totalCost: 0.0,
+          totalCost: parseFloat(serperCost.toFixed(3)),
         },
         openAi: {
           label: 'OpenAI GPT-4o-mini (Dossiê & Score)',
@@ -280,6 +278,7 @@ router.get('/users', async (req, res, next) => {
 const CreateUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  password: z.string().min(8).optional(),
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).or(
     z.enum(['admin', 'editor', 'viewer']).transform(val => {
       if (val === 'admin') return 'ADMIN';
@@ -289,10 +288,16 @@ const CreateUserSchema = z.object({
   ).default('MEMBER'),
 });
 
-router.post('/users', async (req, res, next) => {
+router.post('/users', requireRole('OWNER', 'ADMIN'), async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
+    const currentRole = req.user!.role;
     const input = CreateUserSchema.parse(req.body);
+
+    if (input.role === 'OWNER' && currentRole !== 'OWNER') {
+      res.status(403).json({ error: 'Apenas Owner pode criar outros Owner' });
+      return;
+    }
 
     const existing = await prisma.user.findFirst({
       where: { tenantId, email: input.email },
@@ -303,19 +308,25 @@ router.post('/users', async (req, res, next) => {
       return;
     }
 
-    const defaultPasswordHash = await bcrypt.hash('tzolkin123', 10);
+    const plainPassword = input.password || generateSecurePassword();
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+
     const user = await prisma.user.create({
       data: {
         tenantId,
         name: input.name,
         email: input.email,
         role: input.role,
-        passwordHash: defaultPasswordHash,
+        passwordHash,
       },
       select: { id: true, name: true, email: true, role: true, isActive: true },
     });
 
-    res.json({ message: 'Usuário criado com sucesso', user });
+    res.json({
+      message: 'Usuário criado com sucesso',
+      user,
+      password: input.password ? undefined : plainPassword,
+    });
   } catch (error) {
     next(error);
   }
@@ -334,15 +345,36 @@ const UpdateUserSchema = z.object({
   active: z.boolean().optional(),
 });
 
-router.patch('/users/:id', async (req, res, next) => {
+router.patch('/users/:id', requireRole('OWNER', 'ADMIN'), async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
-    const id = req.params.id;
+    const currentUserId = req.user!.userId;
+    const currentRole = req.user!.role;
+    const id = typeof req.params.id === 'string' ? req.params.id : undefined;
+    if (!id) {
+      res.status(400).json({ error: 'ID inválido' });
+      return;
+    }
     const input = UpdateUserSchema.parse(req.body);
+
+    if (id === currentUserId) {
+      res.status(400).json({ error: 'Não é possível alterar o próprio usuário por aqui' });
+      return;
+    }
 
     const user = await prisma.user.findFirst({ where: { id, tenantId } });
     if (!user) {
       res.status(404).json({ error: 'Usuário não encontrado' });
+      return;
+    }
+
+    if (user.role === 'OWNER' && currentRole !== 'OWNER') {
+      res.status(403).json({ error: 'Apenas Owner pode alterar outro Owner' });
+      return;
+    }
+
+    if (input.role === 'OWNER' && currentRole !== 'OWNER') {
+      res.status(403).json({ error: 'Apenas Owner pode promover a Owner' });
       return;
     }
 
@@ -363,14 +395,30 @@ router.patch('/users/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/users/:id', async (req, res, next) => {
+router.delete('/users/:id', requireRole('OWNER', 'ADMIN'), async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
-    const id = req.params.id;
+    const currentUserId = req.user!.userId;
+    const currentRole = req.user!.role;
+    const id = typeof req.params.id === 'string' ? req.params.id : undefined;
+    if (!id) {
+      res.status(400).json({ error: 'ID inválido' });
+      return;
+    }
+
+    if (id === currentUserId) {
+      res.status(400).json({ error: 'Não é possível remover o próprio usuário' });
+      return;
+    }
 
     const user = await prisma.user.findFirst({ where: { id, tenantId } });
     if (!user) {
       res.status(404).json({ error: 'Usuário não encontrado' });
+      return;
+    }
+
+    if (user.role === 'OWNER' && currentRole !== 'OWNER') {
+      res.status(403).json({ error: 'Apenas Owner pode remover outro Owner' });
       return;
     }
 

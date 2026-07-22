@@ -8,12 +8,19 @@ const router: Router = Router();
 
 router.use(authMiddleware);
 
-// Helper to get initialized ReviewPipeline with environment secrets
-function getPipeline(): ReviewPipeline {
+// Helper to get initialized ReviewPipeline with environment secrets and tenant config
+async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { targetIcp: true, selectedAiModel: true },
+  });
+
   return new ReviewPipeline({
     serperApiKey: env.SERPER_API_KEY,
     metaAdsAccessToken: env.META_ADS_TOKEN,
     openAiApiKey: env.OPENAI_API_KEY,
+    modelName: tenant?.selectedAiModel ?? undefined,
+    targetIcp: tenant?.targetIcp ?? undefined,
   });
 }
 
@@ -33,7 +40,7 @@ router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
       return;
     }
 
-    const pipeline = getPipeline();
+    const pipeline = await getPipelineForTenant(tenantId);
     const coreBusiness: Business = {
       placeId: business.placeId,
       name: business.name,
@@ -125,7 +132,7 @@ router.post('/review-all', async (req, res, next) => {
       return;
     }
 
-    const pipeline = getPipeline();
+    const pipeline = await getPipelineForTenant(tenantId);
     const batchResults = [];
 
     for (const biz of businesses) {

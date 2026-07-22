@@ -18,17 +18,23 @@ router.post('/login', async (req, res, next) => {
     const { email: rawEmail, password } = LoginSchema.parse(req.body);
     const email = rawEmail ?? 'admin@tzolkin.com.br';
 
-    // Auto-provision default tenant and seed user if DB is empty
+    // Auto-provision default tenant and seed user only if the database is empty.
+    // In all other cases, credentials must match an existing active user.
+    const existingUserCount = await prisma.user.count();
+
     let user = await prisma.user.findFirst({
       where: { email },
       include: { tenant: true },
     });
 
     if (!user) {
-      const defaultTenant = await prisma.tenant.upsert({
-        where: { slug: 'tzolkin-hq' },
-        update: {},
-        create: {
+      if (existingUserCount > 0) {
+        res.status(401).json({ error: 'Credenciais inválidas' });
+        return;
+      }
+
+      const defaultTenant = await prisma.tenant.create({
+        data: {
           slug: 'tzolkin-hq',
           name: 'Tzolkin HQ',
           plan: 'ENTERPRISE',
@@ -51,13 +57,14 @@ router.post('/login', async (req, res, next) => {
     } else {
       const passwordValid = await bcrypt.compare(password, user.passwordHash);
       if (!passwordValid) {
-        // Fallback for easy initial setup: if password doesn't match hash, re-hash if it matches env or default
-        const matchesEnv = password === process.env.AUTH_PASSWORD || password === 'admin' || password === 'tzolkin';
-        if (!matchesEnv) {
-          res.status(401).json({ error: 'Credenciais inválidas' });
-          return;
-        }
+        res.status(401).json({ error: 'Credenciais inválidas' });
+        return;
       }
+    }
+
+    if (!user.isActive) {
+      res.status(401).json({ error: 'Usuário desativado' });
+      return;
     }
 
     const token = jwt.sign(

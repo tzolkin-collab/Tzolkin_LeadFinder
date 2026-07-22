@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
 import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
-import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon } from '../../../components/brand/UIIcons.js';
+import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon, PaletteIcon } from '../../../components/brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 

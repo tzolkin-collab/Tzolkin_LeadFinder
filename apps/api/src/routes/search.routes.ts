@@ -5,6 +5,28 @@ import { GooglePlacesTool } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { env } from '../config/env.js';
 
+interface GeocodeResult {
+  latitude: number;
+  longitude: number;
+}
+
+async function geocodeAddress(address: string, apiKey: string): Promise<GeocodeResult | null> {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}&language=pt-BR`;
+  const response = await fetch(url);
+  const data = (await response.json()) as {
+    status: string;
+    results?: Array<{ geometry: { location: { lat: number; lng: number } } }>;
+  };
+
+  if (data.status !== 'OK') return null;
+  const results = data.results;
+  if (!results || results.length === 0) return null;
+  const first = results[0];
+  if (!first) return null;
+  const loc = first.geometry.location;
+  return { latitude: loc.lat, longitude: loc.lng };
+}
+
 const router: Router = Router();
 
 router.use(authMiddleware);
@@ -12,10 +34,13 @@ router.use(authMiddleware);
 const SearchRequestSchema = z.object({
   query: z.string().min(2),
   location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-    })
+    .union([
+      z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+      }),
+      z.string().min(2),
+    ])
     .optional(),
   radiusMeters: z.number().optional().default(5000),
   onlyWithoutWebsite: z.boolean().optional().default(false),
@@ -33,10 +58,20 @@ router.post('/', async (req, res, next) => {
       return;
     }
 
+    let locationCoords: GeocodeResult | undefined;
+    if (input.location) {
+      if (typeof input.location === 'string') {
+        const coords = await geocodeAddress(input.location, apiKey);
+        if (coords) locationCoords = coords;
+      } else {
+        locationCoords = input.location;
+      }
+    }
+
     const tool = new GooglePlacesTool(apiKey);
     const result = await tool.execute({
       query: input.query,
-
+      location: locationCoords,
       radiusMeters: input.radiusMeters,
       onlyWithoutWebsite: input.onlyWithoutWebsite,
     });

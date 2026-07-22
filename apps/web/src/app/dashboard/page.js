@@ -56,34 +56,30 @@ export default function DashboardPage() {
         setTimeout(() => setToast(null), 3500);
     };
 
-    const fetchData = useCallback(async () => {
-        try {
-            const params = new URLSearchParams({ page, limit: 20 });
-            if (filter) params.set('status', filter);
-            if (searchInput) params.set('search', searchInput);
+    const loadData = useCallback(async () => {
+        const params = new URLSearchParams({ page, limit: 20 });
+        if (filter) params.set('status', filter);
+        if (searchInput) params.set('search', searchInput);
 
-            const [bizRes, statsRes] = await Promise.all([
-                fetch(`${API_URL}/api/businesses?${params}`, { headers: authHeaders() }),
-                fetch(`${API_URL}/api/businesses/stats`, { headers: authHeaders() }),
-            ]);
+        const [bizRes, statsRes] = await Promise.all([
+            fetch(`${API_URL}/api/businesses?${params}`, { headers: authHeaders() }),
+            fetch(`${API_URL}/api/businesses/stats`, { headers: authHeaders() }),
+        ]);
 
-            if (bizRes.status === 401 || statsRes.status === 401) {
-                localStorage.removeItem('token');
-                router.push('/');
-                return;
-            }
-
-            const bizData = await bizRes.json();
-            const statsData = await statsRes.json();
-
-            setBusinesses(bizData.businesses || []);
-            setTotalPages(bizData.pagination?.totalPages || 1);
-            setStats(statsData);
-        } catch (err) {
-            console.error('Fetch error:', err);
-        } finally {
-            setLoading(false);
+        if (bizRes.status === 401 || statsRes.status === 401) {
+            localStorage.removeItem('token');
+            router.push('/');
+            return null;
         }
+
+        const bizData = await bizRes.json();
+        const statsData = await statsRes.json();
+
+        return {
+            businesses: bizData.businesses || [],
+            totalPages: bizData.pagination?.totalPages || 1,
+            stats: statsData,
+        };
     }, [page, filter, searchInput, router]);
 
     useEffect(() => {
@@ -91,8 +87,23 @@ export default function DashboardPage() {
             router.push('/');
             return;
         }
-        fetchData();
-    }, [fetchData, router]);
+        let mounted = true;
+        loadData()
+            .then((result) => {
+                if (!mounted || !result) return;
+                setBusinesses(result.businesses);
+                setTotalPages(result.totalPages);
+                setStats(result.stats);
+            })
+            .catch((err) => {
+                if (!mounted) return;
+                console.error('Fetch error:', err);
+            })
+            .finally(() => {
+                if (mounted) setLoading(false);
+            });
+        return () => { mounted = false; };
+    }, [loadData, router]);
 
     async function handleSearch(e) {
         e.preventDefault();
@@ -106,14 +117,20 @@ export default function DashboardPage() {
                 headers: authHeaders(),
                 body: JSON.stringify({
                     query: searchQuery,
-                    location: searchLocation ? { latitude: -23.55, longitude: -46.63 } : undefined,
+                    location: searchLocation ? searchLocation : undefined,
                 }),
             });
 
             const data = await res.json();
             setSearchResult(data);
             showToast(`✓ ${data.savedCount} negócios salvos`);
-            fetchData();
+            loadData().then((result) => {
+                if (result) {
+                    setBusinesses(result.businesses);
+                    setTotalPages(result.totalPages);
+                    setStats(result.stats);
+                }
+            });
         } catch (err) {
             setSearchResult({ error: 'Erro ao buscar' });
         } finally {
@@ -137,7 +154,13 @@ export default function DashboardPage() {
             }
 
             showToast(`✓ ${bizName} analisado (Score: ${data.business?.report?.suitabilityScore || '?'}/10)`);
-            fetchData();
+            loadData().then((result) => {
+                if (result) {
+                    setBusinesses(result.businesses);
+                    setTotalPages(result.totalPages);
+                    setStats(result.stats);
+                }
+            });
         } catch (err) {
             console.error('Review error:', err);
             showToast(`✗ Erro de conexão com o servidor`);

@@ -192,3 +192,15 @@ export function LinkIcon({ size = 18, color = 'currentColor', className = '' }) 
     </svg>
   );
 }
+
+export function PaletteIcon({ size = 18, color = 'currentColor', className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6a4 4 0 0 0-4 4 3 3 0 0 0 3 3h1.5a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 1-2.5-2.5" />
+      <path d="M16 6h.01" />
+      <path d="M19 10h.01" />
+      <path d="M8 10h.01" />
+    </svg>
+  );
+}

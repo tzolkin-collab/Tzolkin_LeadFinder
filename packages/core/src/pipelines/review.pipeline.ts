@@ -7,6 +7,8 @@ export interface ReviewPipelineConfig {
   serperApiKey?: string | undefined;
   metaAdsAccessToken?: string | undefined;
   openAiApiKey?: string | undefined;
+  modelName?: string | undefined;
+  targetIcp?: string | undefined;
 }
 
 export interface ReviewPipelineInput {
@@ -32,16 +34,20 @@ export class ReviewPipeline {
   private readonly instagramTool: InstagramTool;
   private readonly metaAdsTool: MetaAdsTool;
   private readonly aiReviewTool: AiReviewTool;
+  private readonly targetIcp: string;
   private readonly logger = new CoreLogger('ReviewPipeline');
 
   constructor(config?: ReviewPipelineConfig) {
     const serperKey = config?.serperApiKey;
     const metaToken = config?.metaAdsAccessToken;
     const openAiKey = config?.openAiApiKey;
+    const modelName = config?.modelName;
+    const targetIcp = config?.targetIcp;
 
     this.instagramTool = new InstagramTool(serperKey);
     this.metaAdsTool = new MetaAdsTool(metaToken, serperKey);
-    this.aiReviewTool = new AiReviewTool(openAiKey);
+    this.aiReviewTool = new AiReviewTool(openAiKey, modelName);
+    this.targetIcp = targetIcp ?? '';
   }
 
   async run(input: ReviewPipelineInput): Promise<ReviewPipelineResult> {
@@ -115,6 +121,7 @@ export class ReviewPipeline {
           }
         : {}),
       hasActiveAds: metaAds.hasAds,
+      ...(this.targetIcp ? { targetIcp: this.targetIcp } : {}),
     });
 
     const aiReview: AiReviewOutput =

@@ -3,28 +3,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../components/brand/TzolkinLogo.js';
-import { 
-  SettingsIcon, 
+import {
+  SettingsIcon,
   UserIcon,
-  UsersIcon, 
+  UsersIcon,
   StarIcon,
-  CostsIcon, 
-  LegalIcon, 
+  CostsIcon,
+  LegalIcon,
   LockIcon,
   DocumentIcon,
   TrashIcon,
-  SearchIcon, 
-  TargetIcon, 
-  IdeaIcon, 
-  ActionsIcon 
+  SearchIcon,
+  TargetIcon,
+  IdeaIcon,
+  ActionsIcon
 } from '../../components/brand/UIIcons.js';
-import { 
-  GooglePlacesIcon, 
-  InstagramIcon, 
-  MetaAdsIcon, 
-  OpenAiIcon, 
-  WhatsAppIcon, 
-  StripeIcon 
+import {
+  GooglePlacesIcon,
+  InstagramIcon,
+  MetaAdsIcon,
+  OpenAiIcon,
+  WhatsAppIcon,
+  StripeIcon
 } from '../../components/brand/ServiceLogos.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -43,11 +43,11 @@ function authHeaders() {
 
 const SECTIONS = [
   { id: 'profile', label: 'Perfil', icon: <UserIcon size={18} /> },
-  { id: 'general', label: 'Geral & IA', icon: <SettingsIcon size={18} /> },
-  { id: 'upgrade', label: 'Upgrade & Planos', icon: <StarIcon size={18} /> },
+  { id: 'general', label: 'Geral', icon: <SettingsIcon size={18} /> },
+  { id: 'upgrade', label: 'Upgrade', icon: <StarIcon size={18} /> },
   { id: 'costs', label: 'Transparência de Custos', icon: <CostsIcon size={18} /> },
-  { id: 'team', label: 'Equipe & Permissões', icon: <UsersIcon size={18} /> },
-  { id: 'support', label: 'Suporte Direct', icon: <WhatsAppIcon size={18} /> },
+  { id: 'team', label: 'Equipe e Permissões', icon: <UsersIcon size={18} /> },
+  { id: 'support', label: 'Suporte', icon: <WhatsAppIcon size={18} /> },
   { id: 'legal', label: 'Legal', icon: <LegalIcon size={18} /> },
 ];
 
@@ -109,53 +109,37 @@ export default function SettingsPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/settings/profile`, { headers: authHeaders() });
-      if (res.status === 401) { router.push('/'); return; }
-      const data = await res.json();
-      setProfile(p => ({ ...p, name: data.name || '', email: data.email || '' }));
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    }
-  }, [router]);
+  const loadSettings = useCallback(async () => {
+    const [profileRes, generalRes, plansRes, costsRes, usersRes] = await Promise.all([
+      fetch(`${API_URL}/api/settings/profile`, { headers: authHeaders() }),
+      fetch(`${API_URL}/api/settings/general`, { headers: authHeaders() }),
+      fetch(`${API_URL}/api/settings/plans`, { headers: authHeaders() }),
+      fetch(`${API_URL}/api/settings/costs`, { headers: authHeaders() }),
+      fetch(`${API_URL}/api/settings/users`, { headers: authHeaders() }),
+    ]);
 
-  const fetchGeneral = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/settings/general`, { headers: authHeaders() });
-      if (res.status === 401) { router.push('/'); return; }
-      const data = await res.json();
-      setGeneral({
-        name: data.name || '',
-        targetIcp: data.targetIcp || '',
-        selectedAiModel: data.selectedAiModel || 'gpt-4o-mini',
-        subscriptionPlan: data.subscriptionPlan || 'starter',
-      });
-    } catch (err) {
-      console.error('Error fetching general settings:', err);
-    }
-  }, [router]);
+    if (profileRes.status === 401) { router.push('/'); return null; }
 
-  const fetchPlans = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/settings/plans`, { headers: authHeaders() });
-      if (res.status === 401) { router.push('/'); return; }
-      const data = await res.json();
-      setPlansData(data);
-    } catch (err) {
-      console.error('Error fetching plans:', err);
-    }
-  }, [router]);
+    const [profileData, generalData, plansData, costsData, usersData] = await Promise.all([
+      profileRes.json(),
+      generalRes.json(),
+      plansRes.json(),
+      costsRes.json(),
+      usersRes.json(),
+    ]);
 
-  const fetchCosts = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/settings/costs`, { headers: authHeaders() });
-      if (res.status === 401) { router.push('/'); return; }
-      const data = await res.json();
-      setCosts(data);
-    } catch (err) {
-      console.error('Error fetching costs:', err);
-    }
+    return {
+      profile: { name: profileData.name || '', email: profileData.email || '' },
+      general: {
+        name: generalData.name || '',
+        targetIcp: generalData.targetIcp || '',
+        selectedAiModel: generalData.selectedAiModel || 'gpt-4o-mini',
+        subscriptionPlan: generalData.subscriptionPlan || 'starter',
+      },
+      plans: plansData,
+      costs: costsData,
+      users: usersData.users || [],
+    };
   }, [router]);
 
   const fetchUsers = useCallback(async () => {
@@ -171,14 +155,25 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!getToken()) { router.push('/'); return; }
-    Promise.all([
-      fetchProfile(),
-      fetchGeneral(),
-      fetchPlans(),
-      fetchCosts(),
-      fetchUsers(),
-    ]).finally(() => setLoading(false));
-  }, [fetchProfile, fetchGeneral, fetchPlans, fetchCosts, fetchUsers, router]);
+    let mounted = true;
+    loadSettings()
+      .then((result) => {
+        if (!mounted || !result) return;
+        setProfile(p => ({ ...p, ...result.profile }));
+        setGeneral(result.general);
+        setPlansData(result.plans);
+        setCosts(result.costs);
+        setUsers(result.users);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.error('Error loading settings:', err);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => { mounted = false; };
+  }, [loadSettings, router]);
 
   // Handle Profile Save
   async function handleSaveProfile(e) {
@@ -680,7 +675,7 @@ export default function SettingsPage() {
                   Aumente seu volume de prospecção diária e desbloqueie recursos avançados de equipe e inteligência comercial
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, alignItems: 'stretch' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, alignItems: 'stretch' }}>
                   {plansData.plans.map(plan => {
                     const isCurrent = plansData.currentPlan === plan.id;
                     return (
