@@ -18,6 +18,39 @@ A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promess
 
 ---
 
+## 📊 Análise Competitiva: Apollo.io (Documento 2 da Wiki)
+
+### 🏢 Perfil do Concorrente (Apollo.io)
+- **Posicionamento**: "The AI sales platform for smarter, faster revenue growth" / "AI-native all-in-one GTM platform".
+- **Público-Alvo**: Times de vendas B2B (SDRs/RevOps), majoritariamente corporativos e baseados nos EUA.
+- **Métricas & Escala**: ARR de ~US$ 150M (2025), ~600k empresas clientes, Valuation de US$ 1.6B (Série D, Bain Capital).
+- **Preços (per-seat, anual)**: Free $0 | Basic $49 | Professional $79 | Organization $119/usuário (mín. 3 assentos). Limite rígido de exportações e dados de celular impulsiona upsell.
+
+### 💪 Forças da Apollo
+- **Fosso de Dados**: 240M+ contatos proprietários.
+- **Máquina de SEO & Aquisição**: 15.000+ palavras-chave ranqueadas, milhões de acessos orgânicos/mês e plano gratuito como motor de aquisição.
+- **Plataforma All-in-One**: Do enriquecimento de dados às sequências de e-mail e integração com CRM.
+
+### 🎯 A Brecha (Fraquezas a Explorar)
+- **Baixa Precisão de Dados Fora dos EUA**: Taxa de precisão cai para ~60% na América Latina/Brasil (vs ~88% nos EUA), gerando alta taxa de bounce (15–35%). Nota no Trustpilot de 2.9 (vs 4.7 no G2).
+- **Incompatibilidade com PMEs Locais BR**: Foco horizontal e US-first. Não localiza PMEs locais sem site, não consulta dados públicos societários brasileiros e não atua via WhatsApp.
+- **Fricção & Custo**: Curva de aprendizado longa, suporte lento e modelo de cobrança por assento em dólar inviável para pequenas agências/prestadores locais.
+
+### ⚔️ Matriz de Messaging
+| Dimensão | Lead Finder | Apollo.io |
+| --- | --- | --- |
+| **Comprador** | Prestador de serviço/agência vendendo para PMEs locais (BR) | Times de vendas B2B enterprise/mid-market (Global/US) |
+| **Diferenciador** | Localiza quem **não tem presença digital** + gera dossiê/pitch de abordagem via IA | Maior base de dados B2B do mercado + plataforma all-in-one |
+| **Dado Central** | Sinais públicos em tempo real (Google Maps, Instagram, Meta Ads, CNPJ) | Base proprietária estática de 240M+ contatos cadastrados |
+
+### 🧭 Diretrizes Estratégicas vs Apollo
+1. **Não competir de frente em Sourcing via LinkedIn**: Território da Apollo. O LinkedIn será usado pelo Lead Finder **apenas para identificar o decisor** de um lead garimpado localmente.
+2. **Posicionamento por Outcome de Nicho**: Evitar o termo genérico "sales platform"; posicionar como a solução que entrega o **lead certo com a mensagem pronta**.
+3. **Precificação em Reais (R$)**: Modelo mais acessível que os planos em dólar por assento da Apollo.
+4. **Bandeira de Precisão Local**: Destacar que os dados do Lead Finder são vivos (validados via APIs e sinais públicos no momento da busca) em contraste com bases legadas.
+
+---
+
 ## 💻 Estado Técnico Atual (Documento 1 da Wiki)
 
 ### 🚀 Tech Stack
