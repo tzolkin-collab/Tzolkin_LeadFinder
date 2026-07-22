@@ -35,7 +35,8 @@ export const GooglePlacesInputSchema = z.object({
     .describe('Se true, filtra apenas negócios SEM website (leads com dor digital)'),
 });
 
-export type GooglePlacesInput = z.infer<typeof GooglePlacesInputSchema>;
+export type GooglePlacesInput = z.input<typeof GooglePlacesInputSchema>;
+export type GooglePlacesParsedInput = z.output<typeof GooglePlacesInputSchema>;
 
 // ─── Output Schema ────────────────────────────────────────────────────────────
 
@@ -206,7 +207,7 @@ export class GooglePlacesTool implements Tool<GooglePlacesInput, ToolResult<Goog
     }
   }
 
-  private async fetchPlaces(input: GooglePlacesInput): Promise<RawPlace[]> {
+  private async fetchPlaces(input: GooglePlacesParsedInput): Promise<RawPlace[]> {
     const body: Record<string, unknown> = {
       textQuery: input.query,
       languageCode: 'pt-BR',
