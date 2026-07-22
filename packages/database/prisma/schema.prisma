@@ -93,13 +93,17 @@ enum TenantStatus {
 }
 
 model Tenant {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  name        String
-  plan        TenantPlan   @default(STARTER)
-  status      TenantStatus @default(ACTIVE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  slug             String       @unique
+  name             String
+  plan             TenantPlan   @default(STARTER)
+  status           TenantStatus @default(ACTIVE)
+  targetIcp        String?      // Nicho / Proposta de valor da agência (ex: "Clínicas Médicas e Odontológicas em SP")
+  selectedAiModel  String       @default("gpt-4o-mini") // "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet"
+  subscriptionPlan String       @default("starter") // "starter", "pro", "enterprise"
+  stripeCustomerId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   users       User[]
   businesses  Business[]
