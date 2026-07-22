@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { TzolkinLockup } from '../../components/brand/TzolkinLogo.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -176,20 +177,7 @@ export default function DashboardPage() {
                     height: 64,
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            background: 'linear-gradient(135deg, #0070f3, #00a0ff)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                            </svg>
-                        </div>
-                        <span style={{ fontWeight: 600, fontSize: 16 }}>Lead Finder</span>
+                        <TzolkinLockup size={32} theme="dark" />
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                         <button

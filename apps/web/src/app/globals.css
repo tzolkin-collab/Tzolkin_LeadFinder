@@ -5,24 +5,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
+    /* Tzolkin Official Brand Palette */
+    --tzolkin-ink: #0A0A0A;
+    --tzolkin-offwhite: #FAFAF7;
+    --tzolkin-warm-gray: #6E6E68;
+
     /* Background */
-    --bg-primary: #000000;
-    --bg-secondary: #0a0a0a;
-    --bg-card: #111111;
-    --bg-card-hover: #161616;
-    --bg-elevated: #1a1a1a;
-    --bg-input: #0d0d0d;
+    --bg-primary: #0A0A0A;
+    --bg-secondary: #111110;
+    --bg-card: #141413;
+    --bg-card-hover: #1b1b1a;
+    --bg-elevated: #222220;
+    --bg-input: #111110;
 
     /* Borders */
-    --border-primary: #222222;
-    --border-secondary: #333333;
-    --border-accent: #0070f3;
+    --border-primary: rgba(110, 110, 104, 0.25);
+    --border-secondary: rgba(110, 110, 104, 0.4);
+    --border-accent: #FAFAF7;
 
     /* Text */
-    --text-primary: #ededed;
-    --text-secondary: #888888;
-    --text-tertiary: #666666;
-    --text-accent: #0070f3;
+    --text-primary: #FAFAF7;
+    --text-secondary: #6E6E68;
+    --text-tertiary: #52524e;
+    --text-accent: #FAFAF7;
 
     /* Accents */
     --accent: #0070f3;

@@ -1,0 +1,297 @@
+<title>Tzolkin Brand System — Lead Finder</title>
+<style>
+  :root{
+    --ground:#FAFAF7; --ink:#0A0A0A; --muted:#6E6E68;
+    --hairline:rgba(10,10,10,.14); --panel:rgba(10,10,10,.03);
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --maxw:880px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --ground:#0A0A0A; --ink:#FAFAF7; --muted:#9A9A92;
+      --hairline:rgba(250,250,247,.16); --panel:rgba(250,250,247,.04); }
+  }
+  :root[data-theme="light"]{ --ground:#FAFAF7; --ink:#0A0A0A; --muted:#6E6E68;
+    --hairline:rgba(10,10,10,.14); --panel:rgba(10,10,10,.03); }
+  :root[data-theme="dark"]{ --ground:#0A0A0A; --ink:#FAFAF7; --muted:#9A9A92;
+    --hairline:rgba(250,250,247,.16); --panel:rgba(250,250,247,.04); }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:clamp(28px,6vw,72px) clamp(20px,5vw,40px);}
+
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 14px;}
+  h1{font-size:clamp(34px,7vw,56px);line-height:1.02;letter-spacing:-.03em;font-weight:650;
+    margin:0 0 12px;text-wrap:balance;}
+  .lede{font-size:clamp(16px,2.2vw,19px);color:var(--muted);max-width:60ch;margin:0;}
+
+  section{margin-top:clamp(40px,7vw,72px);}
+  .sec-label{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--hairline);margin-bottom:24px;
+    display:flex;justify-content:space-between;gap:12px;}
+  h2{font-size:clamp(21px,3.4vw,27px);letter-spacing:-.02em;font-weight:620;margin:0 0 12px;text-wrap:balance;}
+  p{margin:0 0 14px;max-width:64ch;}
+  p.small{font-size:14px;color:var(--muted);}
+  strong{font-weight:620;}
+
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;}
+  .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;}
+
+  /* fixed sample plates — independent of page theme, because they document the asset */
+  .plate{border:1px solid var(--hairline);border-radius:16px;display:flex;align-items:center;
+    justify-content:center;padding:32px;min-height:150px;}
+  .plate--light{background:#FAFAF7;}
+  .plate--dark{background:#0A0A0A;}
+  .plate svg{display:block;}
+  .cap{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);margin-top:8px;}
+  figure{margin:0;}
+
+  .lockup{display:flex;align-items:center;gap:18px;}
+  .word{font-size:30px;letter-spacing:-.02em;}
+  .word b{font-weight:640;} .word span{font-weight:400;}
+
+  /* palette */
+  .sw{border:1px solid var(--hairline);border-radius:12px;overflow:hidden;}
+  .sw .chip{height:96px;} .sw .meta{padding:12px 14px;}
+  .sw .name{font-weight:600;font-size:14px;}
+  .sw .hex{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.03em;}
+  .sw .use{font-size:12.5px;color:var(--muted);margin-top:4px;}
+
+  /* spec list */
+  dl.spec{display:grid;grid-template-columns:auto 1fr;gap:8px 20px;margin:0;font-size:14px;}
+  dl.spec dt{font-family:var(--mono);color:var(--muted);font-size:12.5px;letter-spacing:.03em;}
+  dl.spec dd{margin:0;}
+
+  /* do / dont */
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;}
+  .rule{border:1px solid var(--hairline);border-radius:14px;padding:16px;background:var(--panel);}
+  .rule .plate{border:none;border-radius:10px;padding:20px;min-height:118px;margin-bottom:12px;}
+  .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;display:inline-flex;align-items:center;gap:6px;}
+  .tag.ok{color:#2E7D5B;} .tag.no{color:#B23A3A;}
+  @media (prefers-color-scheme:dark){ .tag.ok{color:#57C79A;} .tag.no{color:#E58A8A;} }
+  :root[data-theme="dark"] .tag.ok{color:#57C79A;} :root[data-theme="dark"] .tag.no{color:#E58A8A;}
+  :root[data-theme="light"] .tag.ok{color:#2E7D5B;} :root[data-theme="light"] .tag.no{color:#B23A3A;}
+  .rule p{font-size:13px;color:var(--muted);margin:8px 0 0;}
+
+  footer{margin-top:clamp(48px,8vw,80px);padding-top:20px;border-top:1px solid var(--hairline);
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Tzolkin · Brand System</p>
+    <h1>Lead&nbsp;Finder</h1>
+    <p class="lede">Identidade de produto na família Tzolkin. Um mark próprio — o mesmo DNA. Este documento existe para que ninguém use asset ruim: os arquivos certos, a paleta certa, e o que nunca fazer.</p>
+  </header>
+
+  <section>
+    <div class="sec-label"><span>A regra da família</span><span>por que os marks se parecem</span></div>
+    <p>Todo SaaS e produto Tzolkin compartilha <strong>o mesmo tile e a mesma paleta</strong> do mark principal. O que muda é a <strong>geometria dos dois círculos</strong> — cada produto recompõe o motivo <em>anel + disco</em> para contar a própria história. O Lead Finder transforma o motivo num <strong>localizador</strong>: o anel é o campo de varredura; o disco sólido é o lead encontrado, fixado como um ponto no campo.</p>
+    <div class="grid2" style="margin-top:8px">
+      <figure>
+        <div class="plate plate--dark">
+          <svg width="112" height="112" viewBox="0 0 64 64" aria-label="Mark principal Tzolkin">
+            <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+            <circle cx="26" cy="32" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="38" cy="32" r="14" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <figcaption class="cap">Mark principal — Tzolkin</figcaption>
+      </figure>
+      <figure>
+        <div class="plate plate--dark">
+          <svg width="112" height="112" viewBox="0 0 64 64" aria-label="Mark Lead Finder">
+            <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <figcaption class="cap">Lead Finder — o localizador</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>O mark</span><span>lockup · tile · glifo</span></div>
+    <p>O tile já carrega o próprio fundo escuro, então o mark funciona sobre superfícies claras ou escuras. O <strong>glifo</strong> (só os círculos, off-white) é para aplicar sobre superfície escura na UI.</p>
+    <div class="grid2">
+      <figure>
+        <div class="plate plate--light">
+          <div class="lockup">
+            <svg width="60" height="60" viewBox="0 0 64 64" aria-label="Lead Finder">
+              <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+              <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+              <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+            </svg>
+            <div class="word" style="color:#0A0A0A"><b>Lead</b><span> Finder</span></div>
+          </div>
+        </div>
+        <figcaption class="cap">Lockup horizontal — fundo claro</figcaption>
+      </figure>
+      <figure>
+        <div class="plate plate--dark">
+          <div class="lockup">
+            <svg width="60" height="60" viewBox="0 0 64 64" aria-label="Lead Finder">
+              <rect width="64" height="64" rx="14" fill="#0A0A0A" stroke="#FAFAF7" stroke-width="0"/>
+              <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+              <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+            </svg>
+            <div class="word" style="color:#FAFAF7"><b>Lead</b><span> Finder</span></div>
+          </div>
+        </div>
+        <figcaption class="cap">Lockup horizontal — fundo escuro</figcaption>
+      </figure>
+      <figure>
+        <div class="plate plate--light">
+          <svg width="96" height="96" viewBox="0 0 64 64" aria-label="Tile">
+            <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <figcaption class="cap">Tile — ícone de app / favicon</figcaption>
+      </figure>
+      <figure>
+        <div class="plate plate--dark">
+          <svg width="96" height="96" viewBox="0 0 64 64" aria-label="Glifo">
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <figcaption class="cap">Glifo — círculos sobre superfície escura</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>Paleta</span><span>monocromática · sem gradiente</span></div>
+    <p>Duas cores. Só. O off-white é <strong>quente, não branco puro</strong> — essa é a assinatura. Nenhuma cor de acento entra no mark.</p>
+    <div class="grid3">
+      <div class="sw">
+        <div class="chip" style="background:#0A0A0A"></div>
+        <div class="meta"><div class="name">Ink</div><div class="hex">#0A0A0A</div>
+          <div class="use">Fundo do tile · texto sobre claro</div></div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background:#FAFAF7;border-bottom:1px solid var(--hairline)"></div>
+        <div class="meta"><div class="name">Off-white quente</div><div class="hex">#FAFAF7</div>
+          <div class="use">Tinta do mark · texto sobre escuro</div></div>
+      </div>
+      <div class="sw">
+        <div class="chip" style="background:#6E6E68"></div>
+        <div class="meta"><div class="name">Cinza-quente</div><div class="hex">#6E6E68</div>
+          <div class="use">Texto secundário · UI (fora do mark)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>Construção</span><span>grade 64</span></div>
+    <p>O mark é desenhado numa grade de 64. Mantenha essas medidas em qualquer produto da família.</p>
+    <dl class="spec">
+      <dt>tile</dt><dd>64 × 64, raio 14 (≈ 22% do lado)</dd>
+      <dt>fundo</dt><dd>#0A0A0A sólido — nunca gradiente</dd>
+      <dt>anel</dt><dd>círculo aberto, r 14, traço 2.4, #FAFAF7</dd>
+      <dt>disco</dt><dd>círculo sólido, r 7, #FAFAF7</dd>
+      <dt>clear space</dt><dd>≥ 1 raio do tile (≈ 0,22× o lado) em volta</dd>
+      <dt>tamanho mín.</dt><dd>tile 24 px · glifo 20 px</dd>
+    </dl>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>Faça / Não faça</span><span>para não usar asset ruim</span></div>
+    <div class="rules">
+      <div class="rule">
+        <div class="plate plate--dark">
+          <svg width="72" height="72" viewBox="0 0 64 64">
+            <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <span class="tag ok">✓ CERTO</span>
+        <p>Use os SVGs oficiais da pasta <span style="font-family:var(--mono)">/brand</span>.</p>
+      </div>
+      <div class="rule">
+        <div class="plate plate--light">
+          <svg width="72" height="72" viewBox="0 0 64 64" aria-label="Não: lupa azul gradiente">
+            <defs><linearGradient id="bad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0070f3"/><stop offset="1" stop-color="#00a0ff"/></linearGradient></defs>
+            <rect width="64" height="64" rx="14" fill="url(#bad)"/>
+            <circle cx="28" cy="28" r="11" fill="none" stroke="#fff" stroke-width="3"/>
+            <line x1="37" y1="37" x2="46" y2="46" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="tag no">✗ APOSENTADO</span>
+        <p>A lupa azul-gradiente antiga não é da marca. Não use.</p>
+      </div>
+      <div class="rule">
+        <div class="plate plate--light">
+          <svg width="72" height="72" viewBox="0 0 64 64" aria-label="Não: recolorir">
+            <rect width="64" height="64" rx="14" fill="#4d3efc"/>
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <span class="tag no">✗ NÃO</span>
+        <p>Não recolora o tile nem os círculos.</p>
+      </div>
+      <div class="rule">
+        <div class="plate plate--dark">
+          <svg width="72" height="72" viewBox="0 0 64 64" aria-label="Não: sombra e gradiente">
+            <defs><radialGradient id="g2" cx=".4" cy=".35"><stop offset="0" stop-color="#3a3a3a"/><stop offset="1" stop-color="#0A0A0A"/></radialGradient></defs>
+            <rect x="4" y="4" width="56" height="56" rx="13" fill="url(#g2)" style="filter:drop-shadow(0 6px 8px rgba(0,0,0,.6))"/>
+            <circle cx="26" cy="28" r="13" fill="none" stroke="#FAFAF7" stroke-width="2.2"/>
+            <circle cx="40" cy="40" r="6.5" fill="#FAFAF7"/>
+          </svg>
+        </div>
+        <span class="tag no">✗ NÃO</span>
+        <p>Sem gradiente, sombra ou brilho. O mark é plano.</p>
+      </div>
+      <div class="rule">
+        <div class="plate plate--light">
+          <svg width="96" height="60" viewBox="0 0 96 60" aria-label="Não: esticar">
+            <g transform="scale(1.5,0.94)">
+              <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+              <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+              <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
+            </g>
+          </svg>
+        </div>
+        <span class="tag no">✗ NÃO</span>
+        <p>Não estique, distorça ou gire o mark.</p>
+      </div>
+      <div class="rule">
+        <div class="plate plate--dark">
+          <svg width="72" height="72" viewBox="0 0 64 64" aria-label="Não: branco puro">
+            <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+            <circle cx="28" cy="30" r="14" fill="none" stroke="#FFFFFF" stroke-width="2.4"/>
+            <circle cx="42" cy="42" r="7" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <span class="tag no">✗ NÃO</span>
+        <p>Não troque o off-white quente por branco puro (#FFF).</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>Wordmark &amp; tipografia</span><span>nome sob rebrand</span></div>
+    <p>O nome “Lead Finder” é o de trabalho — <strong>pendente de rebrand</strong>. O wordmark é trocável sem tocar no mark. Tipografia geométrica, dois pesos (<strong>640</strong> para a primeira palavra, <strong>400</strong> para a segunda), tracking <span style="font-family:var(--mono)">−0.02em</span>. Em produção, converta o texto em curvas no SVG para não depender de fonte instalada.</p>
+  </section>
+
+  <section>
+    <div class="sec-label"><span>Próximo produto da família</span><span>como criar o mark</span></div>
+    <p>Para o próximo SaaS Tzolkin: <strong>mantenha</strong> o tile (64, raio 14, #0A0A0A), a paleta e o traço 2.4. <strong>Varie apenas</strong> a composição dos dois círculos — concêntricos, sobrepostos, tangentes, um menor — para expressar o produto. Mesmo alfabeto, palavra nova.</p>
+  </section>
+
+  <footer>
+    <span>Tzolkin — Brand System</span>
+    <span>SVGs oficiais em /brand · mark · glyph · lockup</span>
+  </footer>
+
+</div>
