@@ -18,6 +18,45 @@ A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promess
 
 ---
 
+## 🎯 ICP & ILP: Decisor Alcançável (Documento 3 da Wiki)
+
+> **Statement de Posicionamento**:
+> Para **prestadores de serviço digital de pequeno porte no Brasil** (agências enxutas e freelancers produtizados) que vivem de encher o próprio pipeline, o Lead Finder é a ferramenta que **entrega PMEs locais com dor digital óbvia e orçamento comprovado, já com o pitch pronto** — porque cruza Google Maps + Instagram + bibliotecas de anúncios para achar quem demonstravelmente gasta com marketing mas ainda não tem site.
+
+### 👤 Nível 1 — ICP (Quem PAGA)
+- **Firmográficos**: Agências digitais enxutas (1–20 pessoas) ou freelancers produtizados que vendem sites, landing pages, tráfego pago, social media ou automação para PMEs locais.
+  - Faturamento estimado: 🟡 R$ 10k–200k/mês.
+  - Ticket médio de projetos: R$ 1.5k–15k (pontual) ou R$ 500–5k/mês (recorrente).
+  - Mercado: Brasil-first (atendendo tanto capitais quanto cidades do interior). Fazem prospecção outbound ativa.
+- **Persona**: Dono-operador (acumula a função de vendas/SDR) ou único closer/SDR da operação.
+- **Jobs To Be Done (JTBD)**: *"Encher meu funil comercial com leads que têm dor real e orçamento, sem perder horas garimpando no Google Maps e Instagram manualmente."*
+- **Dores Principais**: Prospecção manual extremamente lenta, perda de tempo com leads frios ou falidos, escassez de indicações, alto custo de mídia para captação B2B, frustração com ferramentas de sales intelligence gringas/caras que não cobrem PMEs locais brasileiras.
+- **Tiering de ICP**:
+  - **T1 (Coração)**: Freelancer produtizado focado em prospecção outbound.
+  - **T2**: Micro-agência enxuta (2 a 10 pessoas).
+  - **T3**: Agência em expansão (10 a 20 pessoas com closer dedicado).
+- **Anti-ICP (Não atender)**: Times B2B Enterprise / SaaS (foco da Apollo), agências grandes com estrutura de BDRs, e-commerce / produtos físicos, prestadores que só dependem de indicação / inbound, empresas fora do Brasil.
+
+### 🏬 Nível 2 — ILP (O Lead Entregue)
+O grande diferencial do lead entregue é a interseção entre **Dor + Dinheiro Comprovado + Decisor Alcançável**:
+
+| Sinal de Qualificação | Significado Estratégico | Fonte de Extração |
+| --- | --- | --- |
+| ❌ **Sem site** (ou site inoperante) | Dor digital vendável e imediata | Google Places (`hasWebsite`) |
+| ✅ **Instagram ativo** | Preocupação com a imagem da empresa | Scraping IG / Serper API |
+| ✅ **Muitos reviews + boa nota** | Negócio estabelecido, operante e faturando | Google Places API |
+| ✅ **Anuncia no Meta Ads** | **Orçamento de marketing comprovado** | Meta Ads Library API |
+
+- **Sweet Spot**: Negócio com Instagram bombando + Anunciando no Meta Ads + **Sem Website**.
+- **Nichos Alvo Principais**: Clínicas/estética, restaurantes/food, salões/barbearias, academias, oficinas mecânicas, comércio de bairro e profissionais liberais.
+- **Novo Critério Inegociável — Decisor Alcançável**: Um lead cujo decisor não pode ser identificado ou contatado é um **lead morto**, independente de ter `suitabilityScore` 10/10. O ILP exige a trinca: **Dor + Dinheiro + Decisor Alcançável**.
+
+### 💰 Modelo de Precificação & Canais
+- **Preço Âncora Estimado**: 🟡 **R$ 47 a R$ 197/mês** (precificação em Reais, altamente competitiva vs ferramentas em dólar).
+- **Watering Holes (Canais de Aquisição)**: Comunidades de gestores de tráfego, no-code, desenvolvedores freelas e donos de agência (em vez do LinkedIn corporativo).
+
+---
+
 ## 📊 Análise Competitiva: Apollo.io (Documento 2 da Wiki)
 
 ### 🏢 Perfil do Concorrente (Apollo.io)
@@ -113,9 +152,10 @@ A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promess
 
 ## 🔬 Hipóteses & Validações (Learnings)
 - 🟡 **Hipóteses em Validação**:
-  - Faturamento / ticket médio do ICP e *willingness-to-pay* (disposição a pagar pelo SaaS).
+  - Faturamento / ticket médio do ICP e *willingness-to-pay* (R$ 47–197/mês).
   - Taxa de cobertura real de CNPJ → Sócio e taxa de contato público alcançável.
-- 🧪 **Plano de Validação**: 5 a 10 entrevistas em profundidade com ICPs + métricas reais obtidas no uso interno do Lead Finder.
+  - Nichos com maior taxa de conversão real (`suitabilityScore` × status `CONTACTED`).
+- 🧪 **Plano de Validação**: 5 a 10 entrevistas em profundidade com ICPs + medições diretas de uso e conversão no Lead Finder.
 
 ---
 
