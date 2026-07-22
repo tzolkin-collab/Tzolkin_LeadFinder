@@ -5,9 +5,14 @@ import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../components/brand/TzolkinLogo.js';
 import { 
   SettingsIcon, 
+  UserIcon,
   UsersIcon, 
+  StarIcon,
   CostsIcon, 
   LegalIcon, 
+  LockIcon,
+  DocumentIcon,
+  TrashIcon,
   SearchIcon, 
   TargetIcon, 
   IdeaIcon, 
@@ -37,12 +42,12 @@ function authHeaders() {
 }
 
 const SECTIONS = [
-  { id: 'profile', label: 'Perfil', icon: '👤' },
+  { id: 'profile', label: 'Perfil', icon: <UserIcon size={18} /> },
   { id: 'general', label: 'Geral & IA', icon: <SettingsIcon size={18} /> },
-  { id: 'upgrade', label: 'Upgrade & Planos', icon: '⭐' },
+  { id: 'upgrade', label: 'Upgrade & Planos', icon: <StarIcon size={18} /> },
   { id: 'costs', label: 'Transparência de Custos', icon: <CostsIcon size={18} /> },
   { id: 'team', label: 'Equipe & Permissões', icon: <UsersIcon size={18} /> },
-  { id: 'support', label: 'Suporte Direct', icon: '💬' },
+  { id: 'support', label: 'Suporte Direct', icon: <WhatsAppIcon size={18} /> },
   { id: 'legal', label: 'Legal', icon: <LegalIcon size={18} /> },
 ];
 
@@ -714,7 +719,9 @@ export default function SettingsPage() {
 
                 {users.length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-state-icon">👥</div>
+                    <div style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: 16 }}>
+                      <UsersIcon size={40} color="var(--text-tertiary)" />
+                    </div>
                     <h3>Nenhum membro cadastrado</h3>
                     <p>Adicione usuários para compartilhar o acesso ao painel de prospecção.</p>
                   </div>
@@ -823,8 +830,8 @@ export default function SettingsPage() {
                 <div style={{ display: 'grid', gap: 16 }}>
                   <div className="card card-interactive" onClick={() => router.push('/settings/privacy-policy')}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        🔒
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <LockIcon size={20} color="var(--tzolkin-offwhite)" />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Política de Privacidade</div>
@@ -836,8 +843,8 @@ export default function SettingsPage() {
 
                   <div className="card card-interactive" onClick={() => router.push('/settings/terms-of-use')}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        📋
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <DocumentIcon size={20} color="var(--tzolkin-offwhite)" />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Termos de Uso</div>
@@ -849,8 +856,8 @@ export default function SettingsPage() {
 
                   <div className="card card-interactive" onClick={() => router.push('/settings/data-deletion')}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        🗑️
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--error-soft)', border: '1px solid rgba(238, 0, 0, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TrashIcon size={20} color="var(--error)" />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Exclusão de Dados</div>

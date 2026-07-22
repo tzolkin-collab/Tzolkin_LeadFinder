@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
 import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
-import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon } from '../../../components/brand/UIIcons.js';
+import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon } from '../../../components/brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -446,7 +446,7 @@ export default function BusinessDetailPage({ params }) {
                                             </Section>
                                         )}
                                         {analysis.challenges?.length > 0 && (
-                                            <Section title="Desafios" icon="⚠️">
+                                            <Section title="Desafios" icon={<WarningIcon size={20} />}>
                                                 <ul style={{ listStyle: 'none', fontSize: 13, color: 'var(--text-secondary)' }}>
                                                     {analysis.challenges.map((c, i) => (
                                                         <li key={i} style={{ padding: '6px 0', borderBottom: '1px solid var(--border-primary)' }}>
@@ -461,7 +461,7 @@ export default function BusinessDetailPage({ params }) {
 
                                 {/* Suggested Features */}
                                 {analysis?.suggestedFeatures?.length > 0 && (
-                                    <Section title="Funcionalidades Sugeridas" icon="🛠️">
+                                    <Section title="Funcionalidades Sugeridas" icon={<WrenchIcon size={20} />}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                             {analysis.suggestedFeatures.map((f, i) => (
                                                 <span key={i} style={{
@@ -481,7 +481,7 @@ export default function BusinessDetailPage({ params }) {
 
                                 {/* Visual Identity */}
                                 {analysis?.visualIdentitySuggestions && (
-                                    <Section title="Identidade Visual Sugerida" icon="🎨">
+                                    <Section title="Identidade Visual Sugerida" icon={<PaletteIcon size={20} />}>
                                         <InfoRow label="Estilo" value={analysis.visualIdentitySuggestions.style} />
                                         <InfoRow label="Tom" value={analysis.visualIdentitySuggestions.tone} />
                                         {analysis.visualIdentitySuggestions.colors?.length > 0 && (
