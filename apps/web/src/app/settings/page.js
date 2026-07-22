@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { SettingsIcon, UsersIcon, CostsIcon, LegalIcon } from '../../components/brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -18,10 +19,10 @@ function authHeaders() {
 }
 
 const SECTIONS = [
-    { id: 'general', label: 'Geral', icon: '⚙️' },
-    { id: 'users', label: 'Usuários', icon: '👥' },
-    { id: 'costs', label: 'Custos & Uso', icon: '💰' },
-    { id: 'legal', label: 'Legal', icon: '📜' },
+    { id: 'general', label: 'Geral', icon: <SettingsIcon size={18} /> },
+    { id: 'users', label: 'Usuários', icon: <UsersIcon size={18} /> },
+    { id: 'costs', label: 'Custos & Uso', icon: <CostsIcon size={18} /> },
+    { id: 'legal', label: 'Legal', icon: <LegalIcon size={18} /> },
 ];
 
 const ROLES = [

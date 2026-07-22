@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
 import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
+import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon } from '../../../components/brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -230,7 +231,7 @@ export default function BusinessDetailPage({ params }) {
 
                         {/* Google Photos */}
                         {business.photos?.length > 0 && (
-                            <Section title="Galeria de Fotos" icon="🖼️">
+                            <Section title="Galeria de Fotos" icon={<PhotosIcon size={20} />}>
                                 <div style={{ 
                                     display: 'grid', 
                                     gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
@@ -344,19 +345,19 @@ export default function BusinessDetailPage({ params }) {
                                                                 transition: 'all 0.2s ease'
                                                             }}
                                                         >
-                                                            <span style={{ fontSize: 20 }}>
-                                                                {link.type === 'whatsapp' ? '💬' : 
-                                                                link.type === 'website' ? '🌐' : 
-                                                                link.type === 'portfolio' ? '📂' : 
-                                                                link.type === 'calendar' ? '📅' : '🔗'}
-                                                            </span>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                {link.type === 'whatsapp' ? <WhatsAppIcon size={18} /> : 
+                                                                link.type === 'website' ? <GlobeIcon size={18} /> : 
+                                                                link.type === 'portfolio' ? <FolderIcon size={18} /> : 
+                                                                link.type === 'calendar' ? <CalendarIcon size={18} /> : <LinkIcon size={18} />}
+                                                            </div>
                                                             <div style={{ flex: 1 }}>
                                                                 <div style={{ fontWeight: 500 }}>{link.text}</div>
                                                                 <div style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
                                                                     {link.url.replace(/^https?:\/\//, '')}
                                                                 </div>
                                                             </div>
-                                                            <span style={{ color: 'var(--text-tertiary)' }}>↗</span>
+                                                            <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>↗</span>
                                                         </a>
                                                     ))}
                                                 </div>
@@ -368,7 +369,7 @@ export default function BusinessDetailPage({ params }) {
                         )}
 
                         {/* Status actions */}
-                        <Section title="Ações" icon="⚡">
+                        <Section title="Ações do Lead" icon={<ActionsIcon size={20} />}>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                 {['PENDING', 'REVIEWED', 'CONTACTED', 'REJECTED'].map(s => (
                                     <button
@@ -387,7 +388,7 @@ export default function BusinessDetailPage({ params }) {
                                     disabled={reviewing}
                                     style={{ marginTop: 16, width: '100%' }}
                                 >
-                                    {reviewing ? <><span className="spinner" /> Analisando...</> : '🤖 Analisar com IA'}
+                                    {reviewing ? <><span className="spinner" /> Analisando...</> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><OpenAiIcon size={16} /> Analisar com IA</span>}
                                 </button>
                             )}
                         </Section>
@@ -398,7 +399,7 @@ export default function BusinessDetailPage({ params }) {
                         {report?.aiAnalysis ? (
                             <>
                                 {/* Score */}
-                                <Section title="Score de Adequação" icon="🎯">
+                                <Section title="Score de Adequação" icon={<TargetIcon size={20} />}>
                                     <ScoreBar score={report.suitabilityScore} />
                                     {analysis?.priority && (
                                         <div style={{ marginTop: 12, fontSize: 13 }}>
