@@ -147,7 +147,7 @@ function mapRawPlaceToBusiness(place: RawPlace): Business {
   };
 }
 
-export class GooglePlacesTool implements Tool<GooglePlacesInput, ToolResult<GooglePlacesOutput>> {
+export class GooglePlacesTool implements Tool<GooglePlacesInput, GooglePlacesOutput> {
   readonly name = 'google_places_search' as const;
   readonly description =
     'Busca negócios locais brasileiros via Google Places API. ' +

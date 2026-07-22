@@ -44,7 +44,7 @@ export interface Tool<TInput, TOutput> {
   /** Zod schema for validating tool input */
   readonly inputSchema: z.ZodType<TInput>;
   /** Execute the tool with validated input */
-  execute(input: TInput): Promise<TOutput>;
+  execute(input: TInput): Promise<ToolResult<TOutput>>;
   /** Export as Anthropic Claude tool definition */
   toAnthropicTool(): AnthropicToolDefinition;
   /** Export as OpenAI tool definition */
@@ -52,12 +52,20 @@ export interface Tool<TInput, TOutput> {
 }
 
 /**
- * Generic tool result envelope with status and timing metadata.
+ * Generic tool result discriminated union with status and timing metadata.
  */
-export interface ToolResult<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  executedAt: Date;
-  durationMs: number;
-}
+export type ToolResult<T> =
+  | {
+      success: true;
+      data: T;
+      error?: undefined;
+      executedAt: Date;
+      durationMs: number;
+    }
+  | {
+      success: false;
+      data?: undefined;
+      error: string;
+      executedAt: Date;
+      durationMs: number;
+    };
