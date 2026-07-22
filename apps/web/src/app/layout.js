@@ -1,4 +1,5 @@
 import './globals.css';
+import { TzolkinFloatingWidget } from '../components/brand/TzolkinLogo.js';
 
 export const metadata = {
   title: 'Lead Finder — Prospecção de Clientes',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
+        <TzolkinFloatingWidget />
       </body>
     </html>
   );
