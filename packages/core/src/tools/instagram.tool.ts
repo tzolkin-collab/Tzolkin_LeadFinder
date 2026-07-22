@@ -41,6 +41,8 @@ export type InstagramProfile = z.infer<typeof InstagramProfileSchema>;
 
 // ─── Tool Implementation ──────────────────────────────────────────────────────
 
+import { SerperClient } from '../clients/serper.client.js';
+
 export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
   readonly name = 'instagram_profile_search' as const;
   readonly description =
@@ -49,10 +51,14 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
     'Indispensável para enriquecer dados de presença digital e contato do decisor.';
   readonly inputSchema = InstagramInputSchema;
 
-  private readonly serperApiKey?: string | undefined;
+  private readonly serperClient: SerperClient;
 
-  constructor(serperApiKey?: string) {
-    this.serperApiKey = serperApiKey;
+  constructor(serperApiKeyOrClient?: string | SerperClient) {
+    if (serperApiKeyOrClient instanceof SerperClient) {
+      this.serperClient = serperApiKeyOrClient;
+    } else {
+      this.serperClient = new SerperClient(serperApiKeyOrClient);
+    }
   }
 
   async execute(input: InstagramInput): Promise<ToolResult<InstagramProfile>> {
@@ -71,8 +77,23 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
           ...scraped,
           extraLinks: scraped.website ? await this.scrapeLandingPageLinks(scraped.website) : null,
         };
-      } else if (this.serperApiKey) {
-        profile = await this.findProfileWithSerper(validated.businessName, validated.location);
+      } else if (this.serperClient.isConfigured) {
+        const handle = await this.serperClient.searchInstagramHandle(
+          validated.businessName,
+          validated.location,
+        );
+        if (handle) {
+          const scraped = await this.scrapeProfile(handle);
+          const extraLinks = scraped.website
+            ? await this.scrapeLandingPageLinks(scraped.website)
+            : null;
+          profile = {
+            handle,
+            url: `https://www.instagram.com/${handle}/`,
+            ...scraped,
+            extraLinks,
+          };
+        }
       } else {
         profile = await this.findProfileWithScraping(validated.businessName, validated.location);
       }
@@ -109,58 +130,7 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
     }
   }
 
-  private async findProfileWithSerper(
-    businessName: string,
-    location?: string,
-  ): Promise<InstagramProfile | null> {
-    const query = `${businessName} ${location ?? ''} instagram`.trim();
 
-    const response = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': this.serperApiKey!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ q: query, num: 5 }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Serper API retornou status HTTP ${response.status}`);
-    }
-
-    const data = (await response.json()) as { organic?: Array<{ link?: string }> };
-    const links: string[] = [];
-
-    (data.organic ?? []).forEach(item => {
-      const link = item.link ?? '';
-      if (link.includes('instagram.com/')) {
-        const match = link.match(/instagram\.com\/([a-zA-Z0-9_.]+)/);
-        if (
-          match?.[1] &&
-          !['accounts', 'explore', 'p', 'reel', 'stories', 'about', 'legal', 'developer'].includes(
-            match[1],
-          )
-        ) {
-          links.push(match[1]);
-        }
-      }
-    });
-
-    if (links.length === 0) return null;
-
-    const bestHandle = this.getMostFrequent(links);
-    const scraped = await this.scrapeProfile(bestHandle);
-    const extraLinks = scraped.website
-      ? await this.scrapeLandingPageLinks(scraped.website)
-      : null;
-
-    return {
-      handle: bestHandle,
-      url: `https://www.instagram.com/${bestHandle}/`,
-      ...scraped,
-      extraLinks,
-    };
-  }
 
   private async findProfileWithScraping(
     businessName: string,

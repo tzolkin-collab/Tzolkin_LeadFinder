@@ -55,7 +55,7 @@ describe('MetaAdsTool', () => {
     expect(result.data?.count).toBe(0);
   });
 
-  it('does NOT leak access token in error message on API failure', async () => {
+  it('falls back gracefully to FALLBACK_LINK when Meta Graph API fails without leaking token', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -66,9 +66,10 @@ describe('MetaAdsTool', () => {
 
     const result = await tool.execute({ businessName: 'Empresa Teste' });
 
-    expect(result.success).toBe(false);
-    expect(result.error).not.toContain('fake-meta-access-token');
-    expect(result.error).toContain('401');
+    expect(result.success).toBe(true);
+    expect(result.data?.checkMethod).toBe('FALLBACK_LINK');
+    expect(result.data?.adsLibraryUrl).toContain('facebook.com/ads/library');
+    expect(result.data?.adsLibraryUrl).not.toContain('fake-meta-access-token');
   });
 
   it('exports Anthropic and OpenAI tool definitions', () => {
