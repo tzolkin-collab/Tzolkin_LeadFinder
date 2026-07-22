@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { TzolkinLockup } from '../../components/brand/TzolkinLogo.js';
+import { TzolkinLockup, TzolkinLoader } from '../../components/brand/TzolkinLogo.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -174,8 +174,8 @@ export default function DashboardPage() {
 
     if (loading) {
         return (
-            <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="spinner" style={{ width: 32, height: 32 }} />
+            <div className="page">
+                <TzolkinLoader />
             </div>
         );
     }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
+import { TzolkinLockup, TzolkinLoader } from '../../../components/brand/TzolkinLogo.js';
 import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
 import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon, PaletteIcon } from '../../../components/brand/UIIcons.js';
 
@@ -143,8 +143,8 @@ export default function BusinessDetailPage({ params }) {
 
     if (loading) {
         return (
-            <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="spinner" style={{ width: 32, height: 32 }} />
+            <div className="page">
+                <TzolkinLoader />
             </div>
         );
     }
