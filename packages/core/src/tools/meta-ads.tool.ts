@@ -61,6 +61,8 @@ interface MetaAdsApiResponse {
 
 // ─── Tool Implementation ──────────────────────────────────────────────────────
 
+import { CoreLogger } from '../utils/logger.js';
+
 export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
   readonly name = 'meta_ads_check' as const;
   readonly description =
@@ -72,6 +74,7 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
   private readonly accessToken?: string | undefined;
   private readonly serperClient: SerperClient;
   private readonly baseUrl = 'https://graph.facebook.com/v18.0/ads_archive';
+  private readonly logger = new CoreLogger('MetaAdsTool');
 
   constructor(accessToken?: string, serperApiKeyOrClient?: string | SerperClient) {
     this.accessToken = accessToken;
@@ -114,6 +117,13 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
                 snapshotUrl: ad.ad_snapshot_url,
               }));
 
+              const durationMs = Date.now() - startedAt;
+              this.logger.info(
+                `Meta Ads Graph API check concluído para "${validated.businessName}"`,
+                { hasAds: ads.length > 0, count: ads.length },
+                durationMs,
+              );
+
               return {
                 success: true,
                 data: {
@@ -124,7 +134,7 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
                   checkMethod: 'GRAPH_API',
                 },
                 executedAt,
-                durationMs: Date.now() - startedAt,
+                durationMs,
               };
             }
           }
@@ -136,6 +146,13 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
       // Strategy 2: Serper Google Search for Meta Ads Library links
       if (this.serperClient.isConfigured) {
         const serperResult = await this.serperClient.searchMetaAdsLibrary(validated.businessName);
+        const durationMs = Date.now() - startedAt;
+        this.logger.info(
+          `Meta Ads Serper Search check concluído para "${validated.businessName}"`,
+          { hasAds: serperResult.hasAds },
+          durationMs,
+        );
+
         return {
           success: true,
           data: {
@@ -146,11 +163,18 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
             checkMethod: 'SERPER_SEARCH',
           },
           executedAt,
-          durationMs: Date.now() - startedAt,
+          durationMs,
         };
       }
 
       // Strategy 3: Clean Fallback URL for 1-click manual verification
+      const durationMs = Date.now() - startedAt;
+      this.logger.info(
+        `Meta Ads Fallback Link gerado para "${validated.businessName}"`,
+        { fallbackUrl },
+        durationMs,
+      );
+
       return {
         success: true,
         data: {
@@ -161,17 +185,18 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
           checkMethod: 'FALLBACK_LINK',
         },
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('[MetaAdsTool] Error:', message);
+      this.logger.error('Falha na checagem Meta Ads', error, { durationMs });
 
       return {
         success: false,
         error: message,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     }
   }

@@ -6,3 +6,4 @@ export {
   type ReviewPipelineInput,
   type ReviewPipelineResult,
 } from './pipelines/review.pipeline.js';
+export { CoreLogger, type LogLevel, type LogPayload } from './utils/logger.js';

@@ -147,6 +147,8 @@ function mapRawPlaceToBusiness(place: RawPlace): Business {
   };
 }
 
+import { CoreLogger } from '../utils/logger.js';
+
 export class GooglePlacesTool implements Tool<GooglePlacesInput, GooglePlacesOutput> {
   readonly name = 'google_places_search' as const;
   readonly description =
@@ -159,6 +161,7 @@ export class GooglePlacesTool implements Tool<GooglePlacesInput, GooglePlacesOut
 
   private readonly apiKey: string;
   private readonly baseUrl = 'https://places.googleapis.com/v1/places:searchText';
+  private readonly logger = new CoreLogger('GooglePlacesTool');
 
   constructor(apiKey: string) {
     if (!apiKey) throw new Error('[GooglePlacesTool] GOOGLE_PLACES_API_KEY não configurada.');
@@ -184,25 +187,29 @@ export class GooglePlacesTool implements Tool<GooglePlacesInput, GooglePlacesOut
           : businesses,
       };
 
-      console.log(
-        `[GooglePlacesTool] Query="${validated.query}" → ${businesses.length} total, ${withoutWebsite} sem site`,
+      const durationMs = Date.now() - startedAt;
+      this.logger.info(
+        `Busca concluída: query="${validated.query}"`,
+        { total: businesses.length, withoutWebsite },
+        durationMs,
       );
 
       return {
         success: true,
         data: result,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('[GooglePlacesTool] Error:', message);
+      this.logger.error('Falha na busca Google Places', error, { durationMs });
 
       return {
         success: false,
         error: message,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     }
   }

@@ -21,6 +21,8 @@ export interface ReviewPipelineResult {
   reviewedAt: Date;
 }
 
+import { CoreLogger } from '../utils/logger.js';
+
 /**
  * Single Unified Review Pipeline for enriching a business lead.
  * Encapsulates Instagram discovery, Meta Ads verification, and AI analysis.
@@ -30,6 +32,7 @@ export class ReviewPipeline {
   private readonly instagramTool: InstagramTool;
   private readonly metaAdsTool: MetaAdsTool;
   private readonly aiReviewTool: AiReviewTool;
+  private readonly logger = new CoreLogger('ReviewPipeline');
 
   constructor(config?: ReviewPipelineConfig) {
     const serperKey = config?.serperApiKey;
@@ -42,7 +45,10 @@ export class ReviewPipeline {
   }
 
   async run(input: ReviewPipelineInput): Promise<ReviewPipelineResult> {
+    const startedAt = Date.now();
     const { business } = input;
+
+    this.logger.info(`Iniciando enriquecimento de lead: "${business.name}"`, { placeId: business.placeId });
 
     // Step 1: Find Instagram Profile & Linktree Links
     const instagramResult = await this.instagramTool.execute({
@@ -124,6 +130,13 @@ export class ReviewPipeline {
             priority: 'média',
             suggestedFeatures: [],
           };
+
+    const durationMs = Date.now() - startedAt;
+    this.logger.info(
+      `Enriquecimento de lead concluído para "${business.name}"`,
+      { score: aiReview.suitabilityScore, instagramHandle: instagram.handle, hasAds: metaAds.hasAds },
+      durationMs,
+    );
 
     return {
       business: updatedBusiness,

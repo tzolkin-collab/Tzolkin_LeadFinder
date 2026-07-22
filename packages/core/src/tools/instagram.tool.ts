@@ -42,6 +42,7 @@ export type InstagramProfile = z.infer<typeof InstagramProfileSchema>;
 // ─── Tool Implementation ──────────────────────────────────────────────────────
 
 import { SerperClient } from '../clients/serper.client.js';
+import { CoreLogger } from '../utils/logger.js';
 
 export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
   readonly name = 'instagram_profile_search' as const;
@@ -52,6 +53,7 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
   readonly inputSchema = InstagramInputSchema;
 
   private readonly serperClient: SerperClient;
+  private readonly logger = new CoreLogger('InstagramTool');
 
   constructor(serperApiKeyOrClient?: string | SerperClient) {
     if (serperApiKeyOrClient instanceof SerperClient) {
@@ -111,21 +113,29 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
         };
       }
 
+      const durationMs = Date.now() - startedAt;
+      this.logger.info(
+        `Busca de Instagram concluída para "${validated.businessName}"`,
+        { handle: profile.handle, hasWebsite: !!profile.website },
+        durationMs,
+      );
+
       return {
         success: true,
         data: profile,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('[InstagramTool] Error:', message);
+      this.logger.error('Falha na busca do Instagram', error, { durationMs });
 
       return {
         success: false,
         error: message,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     }
   }

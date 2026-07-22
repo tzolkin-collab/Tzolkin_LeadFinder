@@ -56,6 +56,8 @@ export type AiReviewOutput = z.infer<typeof AiReviewOutputSchema>;
 
 // ─── Tool Implementation ──────────────────────────────────────────────────────
 
+import { CoreLogger } from '../utils/logger.js';
+
 export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
   readonly name = 'ai_lead_review' as const;
   readonly description =
@@ -66,6 +68,7 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
 
   private readonly openAiApiKey?: string | undefined;
   private readonly modelName: string;
+  private readonly logger = new CoreLogger('AiReviewTool');
 
   constructor(openAiApiKey?: string, modelName = 'gpt-4o-mini') {
     this.openAiApiKey = openAiApiKey;
@@ -133,21 +136,29 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
         visualIdentitySuggestions: parsed.visualIdentitySuggestions,
       });
 
+      const durationMs = Date.now() - startedAt;
+      this.logger.info(
+        `AI Review concluído para "${validated.businessName}"`,
+        { suitabilityScore: output.suitabilityScore, priority: output.priority },
+        durationMs,
+      );
+
       return {
         success: true,
         data: output,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
-      console.error('[AiReviewTool] Error:', message);
+      this.logger.error('Falha no AI Review', error, { durationMs });
 
       return {
         success: false,
         error: message,
         executedAt,
-        durationMs: Date.now() - startedAt,
+        durationMs,
       };
     }
   }

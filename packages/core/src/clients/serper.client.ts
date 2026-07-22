@@ -18,9 +18,12 @@ export interface MetaAdsSearchResult {
  * Reusable client for Serper.dev Google Search API.
  * Encapsulates search queries for Instagram profiles and Meta Ads Library links.
  */
+import { CoreLogger } from '../utils/logger.js';
+
 export class SerperClient {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://google.serper.dev/search';
+  private readonly logger = new CoreLogger('SerperClient');
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey ?? '';
@@ -56,9 +59,14 @@ export class SerperClient {
       }
     });
 
-    if (handles.length === 0) return null;
+    if (handles.length === 0) {
+      this.logger.debug(`Nenhum perfil Instagram encontrado para "${businessName}"`);
+      return null;
+    }
 
-    return this.getMostFrequent(handles);
+    const bestHandle = this.getMostFrequent(handles);
+    this.logger.info(`Perfil Instagram localizado: @${bestHandle}`, { businessName, handle: bestHandle });
+    return bestHandle;
   }
 
   /**
@@ -90,6 +98,11 @@ export class SerperClient {
     const hasAds = foundLinks.length > 0;
     const adsLibraryUrl = hasAds && foundLinks[0] ? foundLinks[0] : fallbackUrl;
 
+    this.logger.info(`Meta Ads Library search concluída para "${businessName}"`, {
+      hasAds,
+      foundLinksCount: foundLinks.length,
+    });
+
     return {
       hasAds,
       adsLibraryUrl,
@@ -98,6 +111,7 @@ export class SerperClient {
   }
 
   private async executeSearch(query: string, num = 5): Promise<SerperOrganicResult[]> {
+    const startedAt = Date.now();
     try {
       const response = await fetch(this.baseUrl, {
         method: 'POST',
@@ -109,15 +123,19 @@ export class SerperClient {
       });
 
       if (!response.ok) {
-        console.error(`[SerperClient] HTTP error ${response.status}`);
+        this.logger.error(`Serper API HTTP status ${response.status}`, undefined, {
+          status: response.status,
+          durationMs: Date.now() - startedAt,
+        });
         return [];
       }
 
       const data = (await response.json()) as SerperSearchResponse;
       return data.organic ?? [];
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[SerperClient] Error:', msg);
+      this.logger.error('Falha na requisição Serper API', error, {
+        durationMs: Date.now() - startedAt,
+      });
       return [];
     }
   }
@@ -130,3 +148,4 @@ export class SerperClient {
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]![0]!;
   }
 }
+
