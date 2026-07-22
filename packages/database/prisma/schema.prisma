@@ -1,0 +1,210 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── PLATFORM & GOVERNANCE (TZOLKIN GLOBAL) ──────────────────────────
+
+enum PlatformRole {
+  SUPER_ADMIN
+  ADMIN
+  AUDITOR
+}
+
+model PlatformAdmin {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         PlatformRole  @default(ADMIN)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  auditLogs    AdminAuditLog[]
+
+  @@map("platform_admins")
+}
+
+enum AssetService {
+  GOOGLE_PLACES
+  SERPER
+  OPENAI
+  META_ADS
+  EVOLUTION_API
+  STRIPE
+  CUSTOM_DOMAIN
+}
+
+enum AssetType {
+  API_KEY
+  OAUTH_TOKEN
+  DOMAIN
+  WEBHOOK
+  CREDENTIAL
+}
+
+model SystemAsset {
+  id          String       @id @default(cuid())
+  name        String       // ex: "Google Places API Key Primary", "Domínio SaaS Principal"
+  service     AssetService
+  assetType   AssetType
+  value       String       // Encrypted secret value, API token or domain URL
+  isShared    Boolean      @default(true)
+  tenantId    String?      // Optional: if asset is dedicated to a specific tenant
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status      String       @default("ACTIVE") // "ACTIVE", "ROTATED", "DISABLED"
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("system_assets")
+}
+
+model AdminAuditLog {
+  id          String        @id @default(cuid())
+  adminId     String
+  admin       PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action      String        // "CREATE_TENANT", "ROTATE_ASSET", "UPDATE_PERMISSIONS"
+  resource    String
+  ipAddress   String?
+  details     Json?
+  createdAt   DateTime      @default(now())
+
+  @@map("admin_audit_logs")
+}
+
+// ─── MULTI-TENANT SAAS DATA MODEL ─────────────────────────────────────
+
+enum TenantPlan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELED
+}
+
+model Tenant {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  plan        TenantPlan   @default(STARTER)
+  status      TenantStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  users       User[]
+  businesses  Business[]
+  apiKeys     ApiKey[]
+  assets      SystemAsset[]
+
+  @@map("tenants")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String
+  name         String
+  passwordHash String
+  role         UserRole  @default(MEMBER)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String    // ex: "Integração CRM Maior B2B"
+  keyHash     String    @unique // Hash SHA-256 da chave de API
+  keyPrefix   String    // ex: "tz_live_..."
+  scopes      String[]  // ["leads:read", "leads:write", "search:execute"]
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("api_keys")
+}
+
+model Business {
+  id             String          @id @default(cuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  placeId        String
+  name           String
+  address        String?
+  phone          String?
+  category       String?
+  rating         Float?
+  reviewCount    Int?
+  hasWebsite     Boolean         @default(false)
+  websiteUrl     String?
+  googleMapsUrl  String?
+  latitude       Float?
+  longitude      Float?
+  photos         String[]
+  openingHours   String?
+  searchQuery    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  report         BusinessReport?
+
+  @@unique([tenantId, placeId])
+  @@index([tenantId])
+  @@map("businesses")
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  CONTACTED
+  REJECTED
+}
+
+model BusinessReport {
+  id                   String       @id @default(cuid())
+  businessId           String       @unique
+  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  instagramUrl         String?
+  instagramBio         String?
+  instagramFollowers   String?
+  instagramPosts       Int?
+  profilePicUrl        String?
+
+  brandColors          String[]
+  visualIdentityNotes  String?
+
+  aiAnalysis           Json?
+  suitabilityScore     Int          @default(5)
+  aiSummary            String?
+  approachSuggestion   String?
+
+  status               ReportStatus @default(PENDING)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@map("business_reports")
+}

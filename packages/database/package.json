@@ -1,0 +1,34 @@
+{
+  "name": "@tzolkin/database",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "dev": "tsc --watch",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist prisma/client"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "@prisma/adapter-pg": "^6.4.1",
+    "pg": "^8.13.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.4.1",
+    "typescript": "^5.8.3",
+    "@types/node": "^22.15.21",
+    "@types/pg": "^8.11.11"
+  }
+}
