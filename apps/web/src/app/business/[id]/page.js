@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { TzolkinLockup } from '../../../components/brand/TzolkinLogo.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -170,9 +171,12 @@ export default function BusinessDetailPage({ params }) {
                     justifyContent: 'space-between',
                     height: 64,
                 }}>
-                    <button className="btn btn-ghost" onClick={() => router.push('/dashboard')} id="back-btn">
-                        ← Dashboard
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button className="btn btn-ghost" onClick={() => router.push('/dashboard')} id="back-btn">
+                            ← Dashboard
+                        </button>
+                        <TzolkinLockup size={28} theme="dark" />
+                    </div>
                     <div style={{ display: 'flex', gap: 8 }}>
                         {!report && (
                             <button
