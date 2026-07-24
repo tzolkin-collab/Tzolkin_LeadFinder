@@ -9,6 +9,14 @@ export const MetaAdsInputSchema = z.object({
     .string()
     .min(2)
     .describe('Nome da empresa para verificar anúncios na Meta Ads Library'),
+  handle: z
+    .string()
+    .optional()
+    .describe('Handle do Instagram se disponível'),
+  location: z
+    .string()
+    .optional()
+    .describe('Localização/Cidade para refinar busca'),
   country: z
     .string()
     .length(2)
@@ -38,6 +46,8 @@ export const MetaAdsOutputSchema = z.object({
     .describe('URL da Meta Ads Library para validação direta com 1 clique'),
   ads: z.array(MetaAdItemSchema),
   checkMethod: z.enum(['GRAPH_API', 'SERPER_SEARCH', 'FALLBACK_LINK']),
+  googleAds: z.object({ hasGoogleAds: z.boolean(), adsUrl: z.string() }).optional(),
+  tiktokAds: z.object({ hasTikTokAds: z.boolean(), adsUrl: z.string() }).optional(),
 });
 
 export type MetaAdsOutput = z.infer<typeof MetaAdsOutputSchema>;
@@ -81,7 +91,7 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
     if (serperApiKeyOrClient instanceof SerperClient) {
       this.serperClient = serperApiKeyOrClient;
     } else {
-      this.serperClient = new SerperClient(serperApiKeyOrClient);
+      this.serperClient = new SerperClient(serperApiKeyOrClient ? { apiKey: serperApiKeyOrClient } : {});
     }
   }
 
@@ -105,7 +115,16 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
             fields: 'id,ad_snapshot_url,page_name,page_id',
           });
 
-          const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+          const [response, googleResult, tiktokResult] = await Promise.all([
+            fetch(`${this.baseUrl}?${params.toString()}`),
+            this.serperClient.isConfigured
+              ? this.serperClient.searchGoogleAds(validated.businessName)
+              : Promise.resolve({ hasGoogleAds: false, adsUrl: `https://adstransparency.google.com/?region=BR&q=${encodeURIComponent(validated.businessName)}`, foundLinks: [] }),
+            this.serperClient.isConfigured
+              ? this.serperClient.searchTikTokAds(validated.businessName, validated.handle)
+              : Promise.resolve({ hasTikTokAds: false, adsUrl: `https://library.tiktok.com/ads?region=BR&q=${encodeURIComponent(validated.businessName)}`, foundLinks: [] }),
+          ]);
+
           if (response.ok) {
             const data = (await response.json()) as MetaAdsApiResponse;
             if (!data.error) {
@@ -132,6 +151,14 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
                   adsLibraryUrl: ads[0]?.snapshotUrl ?? fallbackUrl,
                   ads,
                   checkMethod: 'GRAPH_API',
+                  googleAds: {
+                    hasGoogleAds: googleResult.hasGoogleAds,
+                    adsUrl: googleResult.adsUrl,
+                  },
+                  tiktokAds: {
+                    hasTikTokAds: tiktokResult.hasTikTokAds,
+                    adsUrl: tiktokResult.adsUrl,
+                  },
                 },
                 executedAt,
                 durationMs,
@@ -143,13 +170,18 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
         }
       }
 
-      // Strategy 2: Serper Google Search for Meta Ads Library links
+      // Strategy 2: Serper Multi-Channel Search (Meta Ads + Google Ads + TikTok Ads)
       if (this.serperClient.isConfigured) {
-        const serperResult = await this.serperClient.searchMetaAdsLibrary(validated.businessName);
+        const [serperResult, googleResult, tiktokResult] = await Promise.all([
+          this.serperClient.searchMetaAdsLibrary(validated.businessName, validated.handle, validated.location),
+          this.serperClient.searchGoogleAds(validated.businessName),
+          this.serperClient.searchTikTokAds(validated.businessName, validated.handle),
+        ]);
+
         const durationMs = Date.now() - startedAt;
         this.logger.info(
-          `Meta Ads Serper Search check concluído para "${validated.businessName}"`,
-          { hasAds: serperResult.hasAds },
+          `Multi-Channel Ads Search check concluído para "${validated.businessName}"`,
+          { hasMetaAds: serperResult.hasAds, hasGoogleAds: googleResult.hasGoogleAds, hasTikTokAds: tiktokResult.hasTikTokAds },
           durationMs,
         );
 
@@ -159,8 +191,20 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
             hasAds: serperResult.hasAds,
             count: serperResult.foundLinks.length,
             adsLibraryUrl: serperResult.adsLibraryUrl,
-            ads: serperResult.foundLinks.map((link, idx) => ({ id: `serper_${idx}`, snapshotUrl: link })),
+            ads: serperResult.adDetails.map((detail, idx) => ({
+              id: `serper_${idx}`,
+              snapshotUrl: detail.link,
+              pageName: detail.title ?? undefined,
+            })),
             checkMethod: 'SERPER_SEARCH',
+            googleAds: {
+              hasGoogleAds: googleResult.hasGoogleAds,
+              adsUrl: googleResult.adsUrl,
+            },
+            tiktokAds: {
+              hasTikTokAds: tiktokResult.hasTikTokAds,
+              adsUrl: tiktokResult.adsUrl,
+            },
           },
           executedAt,
           durationMs,
@@ -168,6 +212,8 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
       }
 
       // Strategy 3: Clean Fallback URL for 1-click manual verification
+      const googleFallbackUrl = `https://adstransparency.google.com/?region=BR&q=${encodeURIComponent(validated.businessName)}`;
+      const tiktokFallbackUrl = `https://library.tiktok.com/ads?region=BR&q=${encodeURIComponent(validated.businessName)}`;
       const durationMs = Date.now() - startedAt;
       this.logger.info(
         `Meta Ads Fallback Link gerado para "${validated.businessName}"`,
@@ -183,6 +229,14 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
           adsLibraryUrl: fallbackUrl,
           ads: [],
           checkMethod: 'FALLBACK_LINK',
+          googleAds: {
+            hasGoogleAds: false,
+            adsUrl: googleFallbackUrl,
+          },
+          tiktokAds: {
+            hasTikTokAds: false,
+            adsUrl: tiktokFallbackUrl,
+          },
         },
         executedAt,
         durationMs,

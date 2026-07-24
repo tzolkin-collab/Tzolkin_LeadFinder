@@ -25,6 +25,10 @@
   },
   "dependencies": {
     "cheerio": "^1.2.0",
+    "ioredis": "^5.11.1",
+    "puppeteer": "^25.3.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "zod": "^3.25.67"
   },
   "devDependencies": {

@@ -16,8 +16,10 @@ router.get('/', async (req, res, next) => {
     const status = req.query.status as string | undefined;
     const search = req.query.search as string | undefined;
 
-    const skip = (page - 1) * limit;
+    // Strict tenant isolation: never reassign existing leads across tenants.
     const whereClause: Record<string, unknown> = { tenantId };
+
+    const skip = (page - 1) * limit;
 
     if (search) {
       whereClause['name'] = { contains: search, mode: 'insensitive' };
@@ -57,11 +59,14 @@ router.get('/stats', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
 
+    // Strict tenant isolation for stats.
+    const baseWhere = { tenantId };
+
     const [total, withoutWebsite, reviewed, contacted] = await Promise.all([
-      prisma.business.count({ where: { tenantId } }),
-      prisma.business.count({ where: { tenantId, hasWebsite: false } }),
-      prisma.business.count({ where: { tenantId, report: { isNot: null } } }),
-      prisma.business.count({ where: { tenantId, report: { status: 'CONTACTED' } } }),
+      prisma.business.count({ where: baseWhere }),
+      prisma.business.count({ where: { ...baseWhere, hasWebsite: false } }),
+      prisma.business.count({ where: { ...baseWhere, report: { isNot: null } } }),
+      prisma.business.count({ where: { ...baseWhere, report: { status: 'CONTACTED' } } }),
     ]);
 
     res.json({

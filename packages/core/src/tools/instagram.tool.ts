@@ -59,7 +59,7 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
     if (serperApiKeyOrClient instanceof SerperClient) {
       this.serperClient = serperApiKeyOrClient;
     } else {
-      this.serperClient = new SerperClient(serperApiKeyOrClient);
+      this.serperClient = new SerperClient(serperApiKeyOrClient ? { apiKey: serperApiKeyOrClient } : {});
     }
   }
 
@@ -199,7 +199,7 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
       const response = await fetch(`https://www.instagram.com/${handle}/`, {
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'WhatsApp/2.22.18.79 A',
           Accept: 'text/html,application/xhtml+xml',
         },
       });
@@ -230,6 +230,9 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
       const bioParts = description.split(' - ');
       if (bioParts.length > 1) {
         bio = bioParts.slice(1).join(' - ').trim().replace(/^[""]|[""]$/g, '');
+        if (bio.startsWith('See Instagram photos') || bio.startsWith('See Instagram videos')) {
+          bio = null;
+        }
         if (bio) {
           const urlMatch = bio.match(/(https?:\/\/[^\s]+)/i);
           if (urlMatch?.[1]) website = urlMatch[1];

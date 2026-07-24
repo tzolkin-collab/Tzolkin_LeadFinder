@@ -1,5 +1,6 @@
 'use client';
 
+import { Header } from '../../components/Header.js';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup, TzolkinLoader } from '../../components/brand/TzolkinLogo.js';
@@ -16,7 +17,9 @@ import {
   SearchIcon,
   TargetIcon,
   IdeaIcon,
-  ActionsIcon
+  ActionsIcon,
+  CheckIcon,
+  CrossIcon
 } from '../../components/brand/UIIcons.js';
 import {
   GooglePlacesIcon,
@@ -30,8 +33,8 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getToken() {
-  if (typeof window !== 'undefined') return localStorage.getItem('token');
-  return null;
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
 }
 
 function authHeaders() {
@@ -115,48 +118,70 @@ export default function SettingsPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'MEMBER' });
 
-  const showToast = (msg) => {
-    setToast(msg);
+  const showToast = (msg, isError = false) => {
+    setToast({ message: msg.replace(/^[✓✗]\s*/, ''), isError: isError || msg.startsWith('✗') });
     setTimeout(() => setToast(null), 3500);
   };
 
-  const loadSettings = useCallback(async () => {
-    const [profileRes, generalRes, plansRes, costsRes, usersRes] = await Promise.all([
-      fetch(`${API_URL}/api/settings/profile`, { headers: authHeaders() }),
-      fetch(`${API_URL}/api/settings/general`, { headers: authHeaders() }),
-      fetch(`${API_URL}/api/settings/plans`, { headers: authHeaders() }),
-      fetch(`${API_URL}/api/settings/costs`, { headers: authHeaders() }),
-      fetch(`${API_URL}/api/settings/users`, { headers: authHeaders() }),
-    ]);
-
-    if (profileRes.status === 401) { router.push('/'); return null; }
-
-    const [profileData, generalData, plansData, costsData, usersData] = await Promise.all([
-      profileRes.json(),
-      generalRes.json(),
-      plansRes.json(),
-      costsRes.json(),
-      usersRes.json(),
-    ]);
-
+async function safeFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    console.warn(`[SafeFetch Settings] Failed to fetch ${url}:`, err);
     return {
-      profile: { name: profileData.name || '', email: profileData.email || '' },
-      general: {
-        name: generalData.name || '',
-        icpNiche: generalData.icpNiche || '',
-        icpRegion: generalData.icpRegion || '',
-        icpDecisionMaker: generalData.icpDecisionMaker || '',
-        icpPainPoints: generalData.icpPainPoints || '',
-        valuePropHeadline: generalData.valuePropHeadline || '',
-        valuePropServices: generalData.valuePropServices || '',
-        valuePropDifferentials: generalData.valuePropDifferentials || '',
-        selectedAiModel: generalData.selectedAiModel || 'gpt-4o-mini',
-        subscriptionPlan: generalData.subscriptionPlan || 'starter',
-      },
-      plans: plansData,
-      costs: costsData,
-      users: usersData.users || [],
+      ok: false,
+      status: 503,
+      json: async () => ({}),
     };
+  }
+}
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const [profileRes, generalRes, plansRes, costsRes, usersRes] = await Promise.all([
+        safeFetch(`${API_URL}/api/settings/profile`, { headers: authHeaders() }),
+        safeFetch(`${API_URL}/api/settings/general`, { headers: authHeaders() }),
+        safeFetch(`${API_URL}/api/settings/plans`, { headers: authHeaders() }),
+        safeFetch(`${API_URL}/api/settings/costs`, { headers: authHeaders() }),
+        safeFetch(`${API_URL}/api/settings/users`, { headers: authHeaders() }),
+      ]);
+
+      if (profileRes.status === 401) { router.push('/'); return null; }
+
+      const profileData = profileRes.ok ? await profileRes.json() : {};
+      const generalData = generalRes.ok ? await generalRes.json() : {};
+      const plansData = plansRes.ok ? await plansRes.json() : null;
+      const costsData = costsRes.ok ? await costsRes.json() : null;
+      const usersData = usersRes.ok ? await usersRes.json() : { users: [] };
+
+      return {
+        profile: { name: profileData.name || '', email: profileData.email || '' },
+        general: {
+          name: generalData.name || '',
+          icpNiche: generalData.icpNiche || '',
+          icpRegion: generalData.icpRegion || '',
+          icpDecisionMaker: generalData.icpDecisionMaker || '',
+          icpPainPoints: generalData.icpPainPoints || '',
+          valuePropHeadline: generalData.valuePropHeadline || '',
+          valuePropServices: generalData.valuePropServices || '',
+          valuePropDifferentials: generalData.valuePropDifferentials || '',
+          selectedAiModel: generalData.selectedAiModel || 'gpt-4o-mini',
+          subscriptionPlan: generalData.subscriptionPlan || 'starter',
+        },
+        plans: plansData,
+        costs: costsData,
+        users: usersData.users || [],
+      };
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+      return {
+        profile: { name: '', email: '' },
+        general: { name: '', icpNiche: '', icpRegion: '', icpDecisionMaker: '', icpPainPoints: '', valuePropHeadline: '', valuePropServices: '', valuePropDifferentials: '', selectedAiModel: 'gpt-4o-mini', subscriptionPlan: 'starter' },
+        plans: null,
+        costs: null,
+        users: [],
+      };
+    }
   }, [router]);
 
   const fetchUsers = useCallback(async () => {
@@ -310,27 +335,7 @@ export default function SettingsPage() {
       <div className="gradient-bg" />
 
       {/* Header */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(10, 10, 10, 0.85)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--border-primary)',
-      }}>
-        <div className="container" style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button className="btn btn-ghost" onClick={() => router.push('/dashboard')} id="back-btn">
-              ← Dashboard
-            </button>
-            <TzolkinLockup size={28} theme="dark" />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="badge badge-reviewed" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Plano {general.subscriptionPlan?.toUpperCase() || 'STARTER'}
-            </span>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container" style={{ paddingTop: 32, paddingBottom: 64, position: 'relative', zIndex: 1 }}>
@@ -372,7 +377,7 @@ export default function SettingsPage() {
                   <div style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    textTransform: 'uppercase',
+                    textTransform: 'none',
                     letterSpacing: '0.08em',
                     color: 'var(--text-tertiary)',
                     padding: '4px 12px 8px 12px',
@@ -713,25 +718,25 @@ export default function SettingsPage() {
                         {
                           id: 'gpt-4o-mini',
                           name: 'GPT-4o-mini',
-                          provider: 'OpenAI (Oficial)',
-                          cost: '~$0.002 / análise',
-                          desc: 'Ultra-rápido e econômico. Recomendado para grande volume de buscas.',
+                          provider: 'Motor Tzolkin Standard',
+                          cost: '20 Tokens / análise',
+                          desc: 'Ultra-rápido e altamente otimizado. Ideal para grande volume de prospecções diárias.',
                           badge: 'Padrão Recomendado',
                         },
                         {
                           id: 'gpt-4o',
                           name: 'GPT-4o Omnimodal',
-                          provider: 'OpenAI (Alta Precisão)',
-                          cost: '~$0.015 / análise',
-                          desc: 'Raciocínio profundo e análise semântica refinada de mídias.',
+                          provider: 'Motor Tzolkin High-Precision',
+                          cost: '50 Tokens / análise',
+                          desc: 'Raciocínio analítico avançado com alta capacidade semântica.',
                           badge: 'Alta Precisão',
                         },
                         {
                           id: 'claude-3-5-sonnet',
                           name: 'Claude 3.5 Sonnet',
-                          provider: 'Anthropic AI',
-                          cost: '~$0.020 / análise',
-                          desc: 'Excepcional em copywriting de vendas e personalização de pitch.',
+                          provider: 'Motor Tzolkin Deep Copywriting',
+                          cost: '50 Tokens / análise',
+                          desc: 'Excepcional em engenharia de prompt e geração de abordagens personalizadas.',
                           badge: 'Copywriting Avançado',
                         },
                       ].map(model => (
@@ -811,7 +816,7 @@ export default function SettingsPage() {
                             position: 'absolute', top: -12, right: 20,
                             background: 'var(--tzolkin-offwhite)', color: '#0A0A0A',
                             fontSize: 11, fontWeight: 700, padding: '2px 12px',
-                            borderRadius: 100, letterSpacing: '0.05em', textTransform: 'uppercase',
+                            borderRadius: 100, letterSpacing: '0.05em', textTransform: 'none',
                           }}>
                             Mais Popular
                           </div>
@@ -836,7 +841,7 @@ export default function SettingsPage() {
                           </div>
 
                           <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 20, marginBottom: 24 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'none', letterSpacing: '0.05em', marginBottom: 12 }}>
                               O que está incluído:
                             </div>
                             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, padding: 0 }}>
@@ -872,64 +877,125 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* 4. TRANSPARÊNCIA DE CUSTOS (REVISADO) */}
+            {/* 4. TOKENS TZOLKIN & CONTABILIZAÇÃO DE USO */}
             {section === 'costs' && (
               <div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Transparência de Custos & Uso</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24 }}>
-                  Acompanhe em tempo real o volume de requisições e a estimativa transparente de custo por motor de infraestrutura
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+                  <div>
+                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Contabilização & Tokens Tzolkin</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                      Algoritmo unificado de cálculo de Tokens Tzolkin por operação (Single-Use e Multi-Use)
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 100, background: 'var(--bg-input)', border: '1px solid var(--border-primary)' }}>
+                    <span className="eyebrow" style={{ fontSize: 11, color: 'var(--tzolkin-offwhite)' }}>SISTEMA PROPRIETÁRIO DE TOKENS</span>
+                  </div>
+                </div>
 
-                {costs ? (
+                {costs && costs.tokenSystem ? (
                   <>
-                    {/* Banner Custo Total */}
+                    {/* Banner Saldo e Consumo de Tokens Tzolkin */}
                     <div className="card" style={{
-                      marginBottom: 24, padding: 28,
-                      background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(250, 250, 247, 0.08), transparent)',
+                      marginBottom: 28, padding: 32,
+                      background: 'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(250, 250, 247, 0.1), transparent)',
                     }}>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                        Consumo Acumulado Estimado (Mês Atual)
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 20, marginBottom: 20 }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: '0.1em', marginBottom: 8 }}>
+                            CONSUMO DE TOKENS TZOLKIN (MÊS ATUAL)
+                          </div>
+                          <div style={{ fontSize: 42, fontWeight: 800, color: 'var(--tzolkin-offwhite)', lineHeight: 1, fontFamily: 'var(--font-heading)' }}>
+                            {costs.tokenSystem.totalTokensUsed.toLocaleString('pt-BR')} <span style={{ fontSize: 18, fontWeight: 400, color: 'var(--text-secondary)' }}>/ {costs.tokenSystem.monthlyPlanTokens.toLocaleString('pt-BR')} TK</span>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'var(--text-secondary)', marginBottom: 4 }}>
+                            SALDO DISPONÍVEL NO PLANO
+                          </div>
+                          <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--success)', fontFamily: 'var(--font-sans)' }}>
+                            {costs.tokenSystem.tokenBalance.toLocaleString('pt-BR')} TK
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 44, fontWeight: 800, color: 'var(--tzolkin-offwhite)', lineHeight: 1 }}>
-                        ${costs.totalCostUSD.toFixed(3)} <span style={{ fontSize: 16, fontWeight: 400, color: 'var(--text-secondary)' }}>USD</span>
+
+                      {/* Barra de Progresso de Tokens */}
+                      <div style={{ width: '100%', height: 10, background: 'var(--bg-input)', borderRadius: 100, overflow: 'hidden', border: '1px solid var(--border-primary)', marginBottom: 12 }}>
+                        <div style={{ width: `${costs.tokenSystem.percentUsed}%`, height: '100%', background: costs.tokenSystem.percentUsed > 85 ? 'var(--warning)' : 'var(--tzolkin-offwhite)', borderRadius: 100, transition: 'width 0.6s ease' }} />
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 10 }}>
-                        Valores calculados com base nos preços de tabela pública dos provedores oficiais de API.
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                        <span>{costs.tokenSystem.percentUsed}% do limite mensal consumido</span>
+                        <span>Plano {costs.tokenSystem.subscriptionPlan?.toUpperCase()}</span>
                       </div>
                     </div>
 
-                    {/* Breakdown por Motor */}
-                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Detalhamento por Motor de Prospecção</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                      {costs.costs && Object.keys(costs.costs).map((key) => {
-                        const item = costs.costs[key];
+                    {/* Breakdown de Operações Ponderadas (Single & Multi-Use) */}
+                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Detalhamento do Algoritmo de Tokens por Operação</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 32 }}>
+                      {costs.operationsBreakdown && Object.keys(costs.operationsBreakdown).map((key) => {
+                        const item = costs.operationsBreakdown[key];
                         return (
                           <div key={key} className="stat-card" style={{ padding: 24 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                              <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--tzolkin-offwhite)' }}>{item.label}</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                                ${item.costPerUnit}/unid
+                              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--tzolkin-offwhite)' }}>{item.label}</span>
+                              <span className={`badge ${item.type === 'Single-Use' ? 'badge-reviewed' : 'badge-pending'}`} style={{ fontSize: 9 }}>
+                                {item.type}
                               </span>
                             </div>
-                            <div className="stat-value" style={{ fontSize: 32, marginBottom: 4 }}>
-                              {item.count}
+
+                            <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 4, fontFamily: 'var(--font-heading)', color: 'var(--tzolkin-offwhite)' }}>
+                              {item.tokensConsumed.toLocaleString('pt-BR')} <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 400 }}>TK</span>
                             </div>
-                            <div className="stat-label" style={{ marginBottom: 16 }}>
-                              requisições executadas
+
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                              {item.count.toLocaleString('pt-BR')} {item.unitLabel}
                             </div>
-                            <div style={{ paddingTop: 12, borderTop: '1px solid var(--border-primary)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                              <span style={{ color: 'var(--text-tertiary)' }}>Custo Parcial:</span>
-                              <span style={{ fontWeight: 700, color: 'var(--tzolkin-offwhite)' }}>${item.totalCost.toFixed(3)}</span>
+
+                            <div style={{ paddingTop: 12, borderTop: '1px solid var(--border-primary)', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                              <span style={{ color: 'var(--text-tertiary)' }}>Peso da Operação:</span>
+                              <span style={{ fontWeight: 700, fontFamily: 'var(--font-sans)', color: 'var(--tzolkin-offwhite)' }}>{item.weightPerUnit} TK / unid</span>
                             </div>
                           </div>
                         );
                       })}
                     </div>
+
+                    {/* Tabela de Regras do Algoritmo de Tokens Tzolkin */}
+                    <div className="card">
+                      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Regras de Ponderação do Algoritmo Tzolkin
+                      </h3>
+                      <div className="table-container">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>OPERAÇÃO DE PROSPECÇÃO</th>
+                              <th>MODO DE EXECUÇÃO</th>
+                              <th>CUSTO EM TOKENS TZOLKIN</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(costs.weightRules || []).map((rule, idx) => (
+                              <tr key={idx}>
+                                <td style={{ fontWeight: 600, color: 'var(--tzolkin-offwhite)' }}>{rule.operation}</td>
+                                <td>
+                                  <span className={`badge ${rule.type.includes('Single') ? 'badge-reviewed' : 'badge-pending'}`} style={{ fontSize: 10 }}>
+                                    {rule.type}
+                                  </span>
+                                </td>
+                                <td style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, color: 'var(--tzolkin-offwhite)' }}>{rule.cost}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </>
                 ) : (
-                  <div className="empty-state">
+                  <div className="card" style={{ textAlign: 'center', padding: 48 }}>
                     <div className="spinner" style={{ width: 24, height: 24, margin: '0 auto 16px' }} />
-                    <p>Carregando dados de transparência de custos...</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Calculando algoritmo de Tokens Tzolkin...</p>
                   </div>
                 )}
               </div>
@@ -1176,7 +1242,12 @@ export default function SettingsPage() {
       )}
 
       {/* Toast Notification */}
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div className="toast">
+          {toast.isError ? <CrossIcon size={14} color="var(--error)" /> : <CheckIcon size={14} color="var(--success)" />}
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

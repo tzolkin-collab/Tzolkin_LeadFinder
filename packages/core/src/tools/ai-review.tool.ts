@@ -23,6 +23,42 @@ export const AiReviewInputSchema = z.object({
     .optional()
     .describe('Dados enriquecidos do Instagram'),
   hasActiveAds: z.boolean().optional().describe('Indica se possui anúncios ativos no Meta Ads'),
+  metaAdsData: z
+    .object({
+      hasAds: z.boolean(),
+      count: z.number(),
+      adsLibraryUrl: z.string().optional(),
+      ads: z.array(z.object({ id: z.string().optional(), pageName: z.string().optional(), snapshotUrl: z.string().optional() })).optional(),
+    })
+    .optional()
+    .describe('Dados detalhados da Meta Ads Library'),
+  scrapedCodeSnippet: z.string().optional().describe('Trecho do código HTML/estilos extraído do site'),
+  cnpjData: z
+    .object({
+      cnpj: z.string(),
+      razaoSocial: z.string().optional(),
+      nomeFantasia: z.string().nullable().optional(),
+      situacaoCadastral: z.string().optional(),
+      dataInicioAtividade: z.string().optional(),
+      cnaeDescricao: z.string().optional(),
+      capitalSocial: z.number().optional(),
+      qsa: z.array(z.object({ nome: z.string(), qualificacao: z.string() })).optional(),
+    })
+    .optional()
+    .describe('Dados oficiais da Receita Federal via Brasil API'),
+  adsAuditData: z
+    .object({
+      hasAnyAds: z.boolean(),
+      activeChannels: z.array(z.enum(['meta', 'google', 'tiktok'])),
+      missedChannels: z.array(z.enum(['meta', 'google', 'tiktok'])),
+      opportunityScore: z.number().int(),
+      diagnosis: z.string(),
+      opportunities: z.array(z.string()),
+      pitch: z.string(),
+      suggestedNextChannel: z.enum(['meta', 'google', 'tiktok']).optional(),
+    })
+    .optional()
+    .describe('Auditoria em tempo real de Meta Ads, Google Ads e TikTok Ads'),
   targetIcp: z.string().optional().describe('Descrição genérica legada do ICP'),
   icpContext: z
     .object({
@@ -118,8 +154,9 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
             {
               role: 'system',
               content:
-                'Você é um analista especialista em inteligência comercial B2B para PMEs brasileiras. ' +
-                'Avalie o potencial do negócio como cliente para serviços de landing page/sites e responda EXCLUSIVAMENTE em JSON válido.',
+                'Você é um consultor sênior de inteligência comercial e estrategista de vendas B2B especialista em PMEs brasileiras. ' +
+                'Sua missão é gerar um DOSSIÊ COMERCIAL DE ALTO IMPACTO para abordagem de vendas da agência. ' +
+                'Seja extremamente analítico, perspicaz, profundo e prático. Evite clichês e generalidades. Responda EXCLUSIVAMENTE em JSON válido.',
             },
             { role: 'user', content: prompt },
           ],
@@ -203,7 +240,50 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
     }
 
     prompt += `## Anúncios Meta Ads\n`;
-    prompt += `- Anúncios Ativos: ${input.hasActiveAds ? 'SIM (ORÇAMENTO DE MARKETING COMPROVADO)' : 'Não informado / Não detectado'}\n\n`;
+    if (input.metaAdsData && input.metaAdsData.hasAds) {
+      prompt += `- Status: ANÚNCIOS ATIVOS ENCONTRADOS (${input.metaAdsData.count} resultados/anúncios)\n`;
+      prompt += `- URL da Biblioteca: ${input.metaAdsData.adsLibraryUrl ?? 'N/A'}\n`;
+      if (input.metaAdsData.ads && input.metaAdsData.ads.length > 0) {
+        prompt += `- Detalhes dos Anúncios:\n`;
+        input.metaAdsData.ads.forEach((ad, i) => {
+          prompt += `  ${i + 1}. Page/Titulo: ${ad.pageName ?? 'N/A'} | Snapshot: ${ad.snapshotUrl ?? 'N/A'}\n`;
+        });
+      }
+      prompt += `\n`;
+    } else {
+      prompt += `- Status: ${input.hasActiveAds ? 'SIM (Anúncios detectados)' : 'Sem anúncios ativos detectados (Oportunidade para oferecer tráfego pago + landing page)'}\n\n`;
+    }
+
+    if (input.scrapedCodeSnippet) {
+      prompt += `## Esqueleto e Estilos do Site Atual (Scraped HTML/CSS)\n\`\`\`html\n${input.scrapedCodeSnippet.slice(0, 1500)}\n\`\`\`\n\n`;
+    }
+
+    if (input.cnpjData) {
+      prompt += `## Dados Oficiais da Receita Federal (Brasil API)\n`;
+      prompt += `- CNPJ: ${input.cnpjData.cnpj}\n`;
+      prompt += `- Razão Social: ${input.cnpjData.razaoSocial ?? 'N/A'}\n`;
+      prompt += `- Nome Fantasia: ${input.cnpjData.nomeFantasia ?? 'N/A'}\n`;
+      prompt += `- Situação Cadastral: ${input.cnpjData.situacaoCadastral ?? 'N/A'}\n`;
+      prompt += `- Data de Início: ${input.cnpjData.dataInicioAtividade ?? 'N/A'}\n`;
+      prompt += `- CNAE: ${input.cnpjData.cnaeDescricao ?? 'N/A'}\n`;
+      prompt += `- Capital Social: ${input.cnpjData.capitalSocial ? `R$ ${input.cnpjData.capitalSocial.toLocaleString('pt-BR')}` : 'N/A'}\n`;
+      if (input.cnpjData.qsa && input.cnpjData.qsa.length > 0) {
+        prompt += `- Sócios/Decisores: ${input.cnpjData.qsa.map(s => `${s.nome} (${s.qualificacao})`).join(', ')}\n`;
+      }
+      prompt += `\n`;
+    }
+
+    if (input.adsAuditData) {
+      prompt += `## Auditoria em Tempo Real de Anúncios Pagos\n`;
+      prompt += `- Anúncios ativos detectados: ${input.adsAuditData.hasAnyAds ? 'SIM' : 'NÃO'}\n`;
+      prompt += `- Canais ativos: ${input.adsAuditData.activeChannels.join(', ') || 'Nenhum'}\n`;
+      prompt += `- Canais não detectados: ${input.adsAuditData.missedChannels.join(', ') || 'Nenhum'}\n`;
+      prompt += `- Score de oportunidade: ${input.adsAuditData.opportunityScore}/10\n`;
+      prompt += `- Diagnóstico: ${input.adsAuditData.diagnosis}\n`;
+      prompt += `- Oportunidades: ${input.adsAuditData.opportunities.join('; ')}\n`;
+      prompt += `- Próximo canal sugerido: ${input.adsAuditData.suggestedNextChannel ?? 'Avaliar'}\n`;
+      prompt += `\n`;
+    }
 
     if (input.icpContext && (input.icpContext.niche || input.icpContext.painPoints || input.icpContext.decisionMaker || input.icpContext.region)) {
       prompt += `## PERFIL DE CLIENTE IDEAL (ICP DA AGÊNCIA - QUEM É O ALVO)\n`;
@@ -222,20 +302,27 @@ export class AiReviewTool implements Tool<AiReviewInput, AiReviewOutput> {
       prompt += `\n`;
     }
 
-    prompt += `## Retorne estritamente um JSON com a seguinte estrutura:
+    prompt += `## INSTRUÇÕES DE ANÁLISE COMERCIAL E ESTRATÉGICA
+1. **Resumo Comercial (summary):** Faça uma análise crítica e aprofundada da presença digital atual. Aponte exatamente o que está impedindo esse negócio de faturar mais (ex: falta de oferta clara, dependência de WhatsApp sem qualificação, site desatualizado).
+2. **Pontos Fortes (strengths):** Liste 3 a 5 ganchos reais e argumentos elogiosos para iniciar a conversa (ex: alta reputação no Google, volume de seguidores, autoridade).
+3. **Desafios e Objeções (challenges):** Mapeie de 3 a 5 objeções que o decisor vai dar (ex: "já tenho site", "só uso Instagram", "está caro") e como contornar.
+4. **Pitch de Abordagem (approachSuggestion):** Escreva uma sugestão de SCRIPT DE ABORDAGEM PRÁTICO (para WhatsApp/Email) pronto para envio, usando o tom certo e citando dados específicos do estabelecimento.
+5. **Funcionalidades Recomendadas (suggestedFeatures):** Liste 4 a 6 elementos indispensáveis para a nova solução (ex: botão de WhatsApp flutuante, prova social dinâmica, cardápio digital interativo, cálculo de rotas).
+
+## Retorne estritamente um JSON com a seguinte estrutura:
 {
   "suitabilityScore": <número de 1 a 10>,
-  "summary": "<resumo conciso de 2-3 frases>",
-  "strengths": ["<ponto forte 1>", "<ponto forte 2>"],
-  "challenges": ["<objeção prevista 1>"],
-  "approachSuggestion": "<sugestão de pitch de abordagem de 1 parágrafo>",
-  "estimatedBudget": "<faixa estimada em R$>",
+  "summary": "<análise detalhada e perspicaz de 3-5 frases>",
+  "strengths": ["<ponto forte 1>", "<ponto forte 2>", "<ponto forte 3>"],
+  "challenges": ["<objeção 1 com solução>", "<objeção 2 com solução>"],
+  "approachSuggestion": "<script de abordagem detalhado e personalizado pronto para usar no WhatsApp>",
+  "estimatedBudget": "<faixa estimada em R$ ex: R$ 2.500 - R$ 5.000>",
   "priority": "<alta|média|baixa>",
-  "suggestedFeatures": ["<funcionalidade 1>", "<funcionalidade 2>"],
+  "suggestedFeatures": ["<funcionalidade 1>", "<funcionalidade 2>", "<funcionalidade 3>"],
   "visualIdentitySuggestions": {
-    "style": "<estilo visual>",
-    "colors": ["#HEX1", "#HEX2"],
-    "tone": "<tom da comunicação>"
+    "style": "<estilo visual detalhado ex: Rústico Premium / Sofisticado>",
+    "colors": ["#HEX1", "#HEX2", "#HEX3"],
+    "tone": "<tom de voz comercial>"
   }
 }`;
 

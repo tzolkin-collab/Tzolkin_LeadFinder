@@ -1,0 +1,16 @@
+<svg width="360" height="96" viewBox="0 0 360 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lead Finder logo" class="lead-finder-svg">
+  <g class="brand-tile" transform="translate(16,16)">
+    <!-- 1. Borda do Tile -->
+    <rect class="anim-tile" width="64" height="64" rx="14" ry="14" fill="#0A0A0A" stroke="#FAFAF7" stroke-width="2"/>
+    <!-- 2. Anel de Varredura (Radar) -->
+    <circle class="anim-ring" cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
+    <!-- 3. Disco do Lead Localizado -->
+    <circle class="anim-disc" cx="42" cy="42" r="7" fill="#FAFAF7"/>
+  </g>
+
+  <!-- 4. Wordmark Lead Finder -->
+  <text x="98" y="56" font-family="'Space Grotesk', 'Archivo', system-ui, sans-serif" font-size="32" letter-spacing="-0.03em" class="anim-wordmark">
+    <tspan font-weight="700" fill="#FAFAF7" class="text-lead">Lead</tspan>
+    <tspan font-weight="300" fill="#9A9A92" class="text-finder"> Finder</tspan>
+  </text>
+</svg>

@@ -220,10 +220,15 @@ router.get('/plans', async (req, res, next) => {
   }
 });
 
-// ─── 4. REVISED COSTS & USAGE TRANSPARENCY ─────────────────────────────────
+// ─── 4. PROPRIETARY TZOLKIN TOKENS & USAGE LEDGER ─────────────────────────
 router.get('/costs', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { subscriptionPlan: true, selectedAiModel: true },
+    });
 
     const [totalLeads, totalReports, websiteCount] = await Promise.all([
       prisma.business.count({ where: { tenantId } }),
@@ -231,38 +236,74 @@ router.get('/costs', async (req, res, next) => {
       prisma.business.count({ where: { tenantId, hasWebsite: true } }),
     ]);
 
-    const googlePlacesCost = totalLeads * 0.017;
-    const serperCost = totalReports * 0.001; // Serper API handles both Instagram Profiling & Meta Ads Library search
-    const aiReviewCost = totalReports * 0.002;
-    const totalCostUsd = googlePlacesCost + serperCost + aiReviewCost;
+    // Plan Monthly Tokens Quota
+    const planQuotaMap: Record<string, number> = {
+      starter: 5000,
+      pro: 25000,
+      enterprise: 100000,
+    };
+    const subscriptionPlan = tenant?.subscriptionPlan || 'starter';
+    const monthlyPlanTokens = planQuotaMap[subscriptionPlan] || 5000;
+
+    // Tzolkin Tokens Weighted Calculation Algorithm:
+    // 1. Single-Use Search (Google Places discovery): 5 Tokens / Lead
+    // 2. Multi-Use Auditing (Instagram & Meta Ads search): 15 Tokens / Audit
+    // 3. Single-Use AI Dossier & Pitch (GPT-4o-mini): 20 Tokens / Dossier (or 50 Tokens for GPT-4o / Claude)
+    const aiWeight = (tenant?.selectedAiModel === 'gpt-4o' || tenant?.selectedAiModel === 'claude-3-5-sonnet') ? 50 : 20;
+
+    const searchTokens = totalLeads * 5;
+    const auditTokens = totalReports * 15;
+    const aiTokens = totalReports * aiWeight;
+
+    const totalTokensUsed = searchTokens + auditTokens + aiTokens;
+    const tokenBalance = Math.max(0, monthlyPlanTokens - totalTokensUsed);
+    const percentUsed = Math.min(100, Math.round((totalTokensUsed / monthlyPlanTokens) * 100));
 
     res.json({
-      totalCostUSD: parseFloat(totalCostUsd.toFixed(3)),
-      usage: {
+      tokenSystem: {
+        totalTokensUsed,
+        tokenBalance,
+        monthlyPlanTokens,
+        percentUsed,
+        subscriptionPlan,
+      },
+      usageMetrics: {
         totalLeadsSearched: totalLeads,
         totalEnrichmentsRun: totalReports,
         leadsWithoutWebsite: totalLeads - websiteCount,
       },
-      costs: {
-        googlePlaces: {
-          label: 'Google Places Tool (Varredura de Leads)',
+      operationsBreakdown: {
+        leadDiscovery: {
+          label: 'Garimpo & Descoberta de Lead (Single-Use)',
+          type: 'Single-Use',
+          weightPerUnit: 5,
           count: totalLeads,
-          costPerUnit: 0.017,
-          totalCost: parseFloat(googlePlacesCost.toFixed(3)),
+          tokensConsumed: searchTokens,
+          unitLabel: 'leads garimpados',
         },
-        serperEnrichment: {
-          label: 'Serper API (Instagram Profiling & Meta Ads)',
+        multiChannelAuditing: {
+          label: 'Auditoria Multi-Canal (Instagram & Meta Ads)',
+          type: 'Multi-Use',
+          weightPerUnit: 15,
           count: totalReports,
-          costPerUnit: 0.001,
-          totalCost: parseFloat(serperCost.toFixed(3)),
+          tokensConsumed: auditTokens,
+          unitLabel: 'leads auditados',
         },
-        openAi: {
-          label: 'OpenAI GPT-4o-mini (Dossiê & Score)',
+        aiDossierGeneration: {
+          label: 'Dossiê & Diagnóstico de IA Comercial',
+          type: 'Single-Use',
+          weightPerUnit: aiWeight,
           count: totalReports,
-          costPerUnit: 0.002,
-          totalCost: parseFloat(aiReviewCost.toFixed(3)),
+          tokensConsumed: aiTokens,
+          unitLabel: 'dossiês gerados',
         },
       },
+      weightRules: [
+        { operation: 'Garimpo de PME sem Website', type: 'Single-Use', cost: '5 Tokens / Lead' },
+        { operation: 'Auditoria Multi-Canal (Meta Ads + Instagram)', type: 'Multi-Use', cost: '15 Tokens / Lead' },
+        { operation: 'Dossiê Comercial (GPT-4o-mini)', type: 'Single-Use', cost: '20 Tokens / Análise' },
+        { operation: 'Inteligência Avançada (GPT-4o / Claude 3.5)', type: 'Multi-Use Pro', cost: '50 Tokens / Análise' },
+      ],
     });
   } catch (error) {
     next(error);

@@ -1,0 +1,17 @@
+{
+  "source": "https://svgl.app / https://github.com/pheralb/svgl",
+  "note": "Logos oficiais dos serviços integrados ao Lead Finder. Falsos/removidos foram filtrados.",
+  "logos": [
+    { "name": "Google", "file": "google.svg", "wordmark": "google-wordmark.svg" },
+    { "name": "Google Maps", "file": "googleMaps.svg" },
+    { "name": "Google Ads", "file": "google-ads-icon.svg", "source": "https://simpleicons.org" },
+    { "name": "Instagram", "file": "instagram-icon.svg", "wordmark": "instagram-wordmark.svg" },
+    { "name": "Facebook", "file": "facebook-icon.svg", "wordmark": "facebook-wordmark.svg" },
+    { "name": "Meta", "file": "meta.svg" },
+    { "name": "OpenAI", "file": "openai.svg", "dark": "openai_dark.svg", "wordmarkLight": "openai_wordmark_light.svg", "wordmarkDark": "openai_wordmark_dark.svg" },
+    { "name": "LinkedIn", "file": "linkedin.svg" },
+    { "name": "Stripe", "file": "stripe.svg", "wordmark": "stripe_wordmark.svg" },
+    { "name": "TikTok", "file": "tiktok-icon-light.svg", "dark": "tiktok-icon-dark.svg", "wordmarkLight": "tiktok-wordmark-light.svg", "wordmarkDark": "tiktok-wordmark-dark.svg" },
+    { "name": "WhatsApp", "file": "whatsapp-icon.svg", "wordmark": "whatsapp-wordmark.svg", "source": "https://cdn.simpleicons.org/ e https://static.whatsapp.net" }
+  ]
+}

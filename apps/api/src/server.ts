@@ -10,12 +10,13 @@ import reviewRoutes from './routes/review.routes.js';
 import businessesRoutes from './routes/businesses.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import path from 'path';
 
 const logger = new CoreLogger('Server');
 const app = express();
 
 // Security & Parsing Middlewares
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(
   cors({
     origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','),
@@ -23,6 +24,9 @@ app.use(
   }),
 );
 app.use(express.json());
+
+// Static files for scraped assets
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // API Routes (v1)
 app.use('/api/v1', healthRoutes);

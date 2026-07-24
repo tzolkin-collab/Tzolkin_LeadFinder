@@ -42,3 +42,37 @@ export {
   type AiReviewParsedInput,
   type AiReviewOutput,
 } from './ai-review.tool.js';
+
+export { ScraperTool, type ScraperResult } from './scraper.tool.js';
+
+export {
+  DecisionMakerTool,
+  DecisionMakerInputSchema,
+  PersonProfileSchema,
+  DecisionMakerOutputSchema,
+  type DecisionMakerInput,
+  type PersonProfile,
+  type DecisionMakerOutput,
+} from './decision-maker.tool.js';
+
+export {
+  CnpjTool,
+  CnpjInputSchema,
+  type CnpjInput,
+  type CnpjData,
+} from './cnpj.tool.js';
+
+export {
+  AdsAuditTool,
+  AdsAuditInputSchema,
+  type AdsAuditInput,
+  type AdsAuditOutput,
+} from './ads-audit.tool.js';
+
+export {
+  AiQueryPlannerTool,
+  AiQueryPlannerInputSchema,
+  AiQueryPlannerOutputSchema,
+  type AiQueryPlannerInput,
+  type AiQueryPlannerOutput,
+} from './ai-query-planner.tool.js';

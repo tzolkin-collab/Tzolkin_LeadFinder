@@ -2,15 +2,17 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { TzolkinLockup, TzolkinLoader } from '../../../components/brand/TzolkinLogo.js';
-import { GooglePlacesIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon } from '../../../components/brand/ServiceLogos.js';
-import { PhotosIcon, ActionsIcon, TargetIcon, IdeaIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon, PaletteIcon } from '../../../components/brand/UIIcons.js';
+import { Header } from '../../../components/Header.js';
+import { TzolkinLoader } from '../../../components/brand/TzolkinLogo.js';
+import { SocialMediaEmbeds } from '../../../components/SocialMediaEmbeds.js';
+import { GooglePlacesIcon, GoogleAdsIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon, TikTokIcon } from '../../../components/brand/ServiceLogos.js';
+import { PhotosIcon, ActionsIcon, TargetIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon, PaletteIcon, CheckIcon, CrossIcon, PinIcon, ClipboardIcon, SparklesIcon, IdeaIcon } from '../../../components/brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getToken() {
-    if (typeof window !== 'undefined') return localStorage.getItem('token');
-    return null;
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
 }
 
 function authHeaders() {
@@ -20,43 +22,102 @@ function authHeaders() {
     };
 }
 
-function ScoreBar({ score }) {
-    if (score == null) return null;
-    const color = score >= 7 ? 'var(--score-high)' : score >= 4 ? 'var(--score-medium)' : 'var(--score-low)';
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1, height: 6, background: 'var(--bg-input)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${score * 10}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.6s ease' }} />
-            </div>
-            <span style={{ fontWeight: 700, fontSize: 20, color, minWidth: 40 }}>{score}/10</span>
-        </div>
-    );
+function isRealWebsiteUrl(url) {
+    if (!url) return false;
+    try {
+        const cleanUrl = url.trim().toLowerCase();
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) return false;
+        const hostname = new URL(cleanUrl).hostname.replace(/^www\./, '');
+        
+        const socialDomains = [
+            'instagram.com', 'instagr.am',
+            'facebook.com', 'fb.com', 'fb.me',
+            'wa.me', 'whatsapp.com', 'api.whatsapp.com',
+            'tiktok.com',
+            'youtube.com', 'youtu.be',
+            'twitter.com', 'x.com',
+            'linkedin.com',
+            'linktr.ee', 'beacons.ai', 'bio.link', 'taplink.cc'
+        ];
+        
+        return !socialDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+    } catch {
+        return false;
+    }
 }
 
-function InfoRow({ label, value, link }) {
+function getDomainFromUrl(url) {
+    if (!url) return '';
+    try {
+        return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+        return url;
+    }
+}
+
+function getFaviconUrl(url) {
+    const domain = getDomainFromUrl(url);
+    if (!domain) return null;
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+}
+
+function MetricPill({ icon, label, value, color = 'var(--text-primary)', bg = 'rgba(255, 255, 255, 0.03)' }) {
     if (!value) return null;
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border-primary)' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{label}</span>
-            {link ? (
-                <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 14, textDecoration: 'none' }}>
-                    {typeof link === 'string' ? link : 'Abrir ↗'}
-                </a>
-            ) : (
-                <span style={{ fontSize: 14, fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{value}</span>
-            )}
+        <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '4px 12px',
+            borderRadius: 'var(--radius-sm)',
+            background: bg,
+            border: '1px solid var(--border-primary)',
+            fontSize: 12,
+            fontWeight: 500,
+            color,
+        }}>
+            {icon}
+            <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{label}:</span>
+            <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500 }}>{value}</span>
         </div>
     );
 }
 
-function Section({ title, children, icon }) {
+function ScoreGauge({ score }) {
+    if (score == null) return null;
+    const color = score >= 7 ? 'var(--success)' : score >= 4 ? 'var(--warning)' : 'var(--error)';
+    const percentage = score * 10;
+
     return (
-        <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
-                {title}
-            </h3>
-            {children}
+        <div style={{
+            background: 'var(--bg-card)',
+            padding: 20,
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifySpace: 'space-between',
+            gap: 20,
+            marginBottom: 20
+        }}>
+            <div>
+                <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', letterSpacing: '0.08em', marginBottom: 4 }}>
+                    SCORE DE ADERÊNCIA ICP
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'var(--font-sans)', color }}>
+                    {score}<span style={{ fontSize: 18, color: 'var(--text-tertiary)' }}>/10</span>
+                </div>
+            </div>
+            <div style={{ flex: 1, maxWidth: 260 }}>
+                <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden', border: '1px solid var(--border-primary)' }}>
+                    <div style={{ width: `${percentage}%`, height: '100%', background: color, borderRadius: 100, transition: 'width 0.6s ease' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>
+                    <span>BAIXO</span>
+                    <span>MÉDIO</span>
+                    <span>ELEVADO</span>
+                </div>
+            </div>
         </div>
     );
 }
@@ -67,10 +128,14 @@ export default function BusinessDetailPage({ params }) {
     const [business, setBusiness] = useState(null);
     const [loading, setLoading] = useState(true);
     const [reviewing, setReviewing] = useState(false);
+    const [activeTab, setActiveTab] = useState('ai'); // 'ai' | 'evidence' | 'signals'
     const [toast, setToast] = useState(null);
+    const [scrapedCodeContent, setScrapedCodeContent] = useState(null);
+    const [showCodeModal, setShowCodeModal] = useState(false);
+    const [websiteViewMode, setWebsiteViewMode] = useState('screenshot'); // 'screenshot' | 'iframe'
 
-    const showToast = (msg) => {
-        setToast(msg);
+    const showToast = (msg, isError = false) => {
+        setToast({ message: msg, isError });
         setTimeout(() => setToast(null), 3500);
     };
 
@@ -98,7 +163,7 @@ export default function BusinessDetailPage({ params }) {
 
     async function handleReview() {
         setReviewing(true);
-        showToast('Analisando com IA e buscando Instagram...');
+        showToast('Processando auditoria comercial...');
         try {
             const res = await fetch(`${API_URL}/api/search/review/${id}`, {
                 method: 'POST',
@@ -106,9 +171,9 @@ export default function BusinessDetailPage({ params }) {
             });
             const data = await res.json();
             setBusiness(data.business);
-            showToast('✓ Análise concluída!');
+            showToast('Dossiê atualizado com sucesso!');
         } catch (err) {
-            showToast('✗ Erro na análise');
+            showToast('Erro na análise', true);
         } finally {
             setReviewing(false);
         }
@@ -122,9 +187,9 @@ export default function BusinessDetailPage({ params }) {
                 body: JSON.stringify({ status }),
             });
             fetchBusiness();
-            showToast(`Status atualizado para ${status}`);
+            showToast(`Status alterado para ${status}`);
         } catch (err) {
-            showToast('Erro ao atualizar status');
+            showToast('Erro ao atualizar status', true);
         }
     }
 
@@ -137,9 +202,36 @@ export default function BusinessDetailPage({ params }) {
             });
             router.push('/dashboard');
         } catch (err) {
-            showToast('Erro ao remover');
+            showToast('Erro ao remover', true);
         }
     }
+
+    async function loadScrapedCode(url) {
+        if (!url) return null;
+        try {
+            const res = await fetch(`${API_URL}${url}`);
+            const text = await res.text();
+            setScrapedCodeContent(text);
+            return text;
+        } catch {
+            showToast('Erro ao carregar código HTML/CSS', true);
+            return null;
+        }
+    }
+
+    async function handleOpenCodeModal(url) {
+        if (!scrapedCodeContent && url) {
+            await loadScrapedCode(url);
+        }
+        setShowCodeModal(true);
+    }
+
+    useEffect(() => {
+        const scrapedCodeUrl = business?.report?.scrapedCodeUrl;
+        if (websiteViewMode === 'renderedHtml' && scrapedCodeUrl && !scrapedCodeContent) {
+            loadScrapedCode(scrapedCodeUrl);
+        }
+    }, [websiteViewMode, business?.report?.scrapedCodeUrl, scrapedCodeContent]);
 
     if (loading) {
         return (
@@ -153,387 +245,756 @@ export default function BusinessDetailPage({ params }) {
 
     const report = business.report;
     const analysis = report?.aiAnalysis;
+    const metaAds = report?.aiAnalysis?.enrichment ?? { hasAds: false, adsCount: 0 };
+
+    const rawPhone = business.phone ? business.phone.replace(/\D/g, '') : '';
+    const formattedPhone = rawPhone.length >= 10 && !rawPhone.startsWith('55') ? `55${rawPhone}` : rawPhone;
+    const whatsappLink = formattedPhone && report?.approachSuggestion
+        ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(report.approachSuggestion)}`
+        : null;
 
     return (
         <div className="page">
-            <div className="gradient-bg" />
+            <Header />
 
-            {/* Header */}
-            <header style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                background: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(12px)',
-                borderBottom: '1px solid var(--border-primary)',
-            }}>
-                <div className="container" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    height: 64,
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button className="btn btn-ghost" onClick={() => router.push('/dashboard')} id="back-btn">
-                            ← Dashboard
-                        </button>
-                        <TzolkinLockup size={28} theme="dark" />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        {!report && (
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleReview}
-                                disabled={reviewing}
-                                id="review-btn"
-                            >
-                                {reviewing ? <><span className="spinner" /> Analisando...</> : '🤖 Analisar com IA'}
-                            </button>
-                        )}
-                        <button className="btn btn-danger btn-sm" onClick={handleDelete} id="delete-btn">Remover</button>
-                    </div>
+            <main className="container" style={{ paddingTop: 24, paddingBottom: 80 }}>
+                
+                {/* Back Link */}
+                <div style={{ marginBottom: 16 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => router.push('/dashboard')}>
+                        ← Voltar ao Pipeline
+                    </button>
                 </div>
-            </header>
 
-            <main className="container" style={{ paddingTop: 32, paddingBottom: 64, position: 'relative', zIndex: 1 }}>
-                {/* Title area */}
-                <div className="fade-in" style={{ marginBottom: 32 }}>
-                    <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>{business.name}</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>{business.address}</p>
-                    {report && (
-                        <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <span className={`badge ${report.status === 'PENDING' ? 'badge-pending' :
-                                    report.status === 'REVIEWED' ? 'badge-reviewed' :
-                                        report.status === 'CONTACTED' ? 'badge-contacted' : 'badge-rejected'
-                                }`}>
-                                {report.status === 'PENDING' ? 'Pendente' :
-                                    report.status === 'REVIEWED' ? 'Analisado' :
-                                        report.status === 'CONTACTED' ? 'Contatado' : 'Rejeitado'}
-                            </span>
+                {/* Header Dossier Panel */}
+                <div className="card" style={{ marginBottom: 20, padding: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
+                        <div style={{ flex: 1, minWidth: 260 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                                <span className="eyebrow" style={{ fontSize: 10 }}>DOSSIÊ COMERCIAL</span>
+                                {report && (
+                                    <span className={`badge ${report.status === 'PENDING' ? 'badge-pending' :
+                                            report.status === 'REVIEWED' ? 'badge-reviewed' :
+                                                report.status === 'CONTACTED' ? 'badge-contacted' : 'badge-rejected'
+                                        }`}>
+                                        {report.status}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, letterSpacing: '-0.02em' }}>
+                                {business.name}
+                            </h1>
+                            
+                            <p style={{ color: 'var(--text-secondary)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+                                <PinIcon size={14} color="var(--text-tertiary)" />
+                                {business.address}
+                            </p>
+
+                            {/* Metrics Row */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {business.rating && (
+                                    <MetricPill
+                                        icon={<GooglePlacesIcon size={14} />}
+                                        label="Google"
+                                        value={`${business.rating} ★ (${business.reviewCount || 0})`}
+                                    />
+                                )}
+                                {report?.instagramFollowers && (
+                                    <MetricPill
+                                        icon={<InstagramIcon size={14} />}
+                                        label="Instagram"
+                                        value={`${report.instagramFollowers} seg.`}
+                                    />
+                                )}
+                                <MetricPill
+                                    icon={<MetaAdsIcon size={14} />}
+                                    label="Meta Ads"
+                                    value={metaAds.hasAds ? `${metaAds.adsCount || 1} Ativo(s)` : 'Sem Anúncios'}
+                                    color={metaAds.hasAds ? 'var(--success)' : 'var(--text-tertiary)'}
+                                />
+                                <MetricPill
+                                    icon={<GoogleAdsIcon size={14} />}
+                                    label="Google Ads"
+                                    value="Central de Transparência ↗"
+                                    color="var(--text-primary)"
+                                />
+                                <MetricPill
+                                    icon={<TikTokIcon size={14} />}
+                                    label="TikTok Ads"
+                                    value="Biblioteca TikTok ↗"
+                                    color="var(--text-primary)"
+                                />
+                                <MetricPill
+                                    icon={<GlobeIcon size={14} />}
+                                    label="Website"
+                                    value={business.hasWebsite ? 'Ativo' : 'Sem Website'}
+                                    color={business.hasWebsite ? 'var(--text-primary)' : 'var(--warning)'}
+                                />
+                            </div>
                         </div>
-                    )}
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
-                    {/* Left Column */}
-                    <div>
-                        {/* Google Data */}
-                        <Section title="Dados do Google Places" icon={<GooglePlacesIcon size={20} />}>
-                            <InfoRow label="Telefone" value={business.phone} />
-                            <InfoRow label="Categoria" value={business.category} />
-                            <InfoRow label="Avaliação" value={business.rating ? `${business.rating} ★ (${business.reviewCount || 0} avaliações)` : null} />
-                            <InfoRow label="Horário" value={business.openingHours} />
-                            <InfoRow label="Coordenadas" value={business.latitude && business.longitude ? `${business.latitude}, ${business.longitude}` : null} />
-                            <InfoRow label="Como Chegar" value={business.latitude && business.longitude ? `https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}` : null} link="Ver Rota ↗" />
-                            <InfoRow label="Google Maps" value={business.googleMapsUrl} link="Abrir no Maps ↗" />
-                            <InfoRow label="Website" value={business.hasWebsite ? business.websiteUrl : 'Sem website'} link={business.hasWebsite ? 'Visitar ↗' : undefined} />
-                        </Section>
-
-                        {/* Google Photos */}
-                        {business.photos?.length > 0 && (
-                            <Section title="Galeria de Fotos" icon={<PhotosIcon size={20} />}>
-                                <div style={{ 
-                                    display: 'grid', 
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
-                                    gap: 12,
-                                    marginTop: 8 
-                                }}>
-                                    {business.photos.map((url, i) => (
-                                        <a href={url} target="_blank" rel="noopener noreferrer" key={i}>
-                                            <img 
-                                                src={url} 
-                                                alt={`Photo ${i}`} 
-                                                style={{ 
-                                                    width: '100%', 
-                                                    aspectRatio: '1/1', 
-                                                    objectFit: 'cover', 
-                                                    borderRadius: 'var(--radius-md)',
-                                                    border: '1px solid var(--border-primary)',
-                                                    cursor: 'pointer'
-                                                }} 
-                                            />
-                                        </a>
-                                    ))}
-                                </div>
-                            </Section>
-                        )}
-
-                        {/* Instagram */}
-                        {report?.instagramUrl && (
-                            <Section title="Instagram Profiling" icon={<InstagramIcon size={20} />}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                                    {report.profilePicUrl && (
-                                        <img
-                                            src={report.profilePicUrl}
-                                            alt="Profile"
-                                            style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid var(--border-primary)', objectFit: 'cover' }}
-                                        />
-                                    )}
-                                    <div>
-                                        <a href={report.instagramUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
-                                            {report.instagramUrl.replace('https://www.instagram.com/', '@').replace('/', '')}
-                                        </a>
-                                        {report.instagramFollowers && (
-                                            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                                                {report.instagramFollowers} seguidores · {report.instagramPosts || '?'} posts
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                {report.instagramBio && (
-                                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic', padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 'var(--radius-md)' }}>
-                                        &ldquo;{report.instagramBio}&rdquo;
-                                    </p>
-                                )}
-
-                                {/* Deep Enrichment Data */}
-                                {report.aiAnalysis?.enrichment && (
-                                    <div style={{ marginTop: 24 }}>
-                                        <div style={{ 
-                                            marginBottom: 16, 
-                                            padding: '16px', 
-                                            background: 'var(--bg-card)', 
-                                            borderRadius: 'var(--radius-md)', 
-                                            border: '1px solid var(--border-primary)',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <MetaAdsIcon size={20} />
-                                                    <span style={{ fontSize: 14, fontWeight: 600 }}>Meta Ads Status</span>
-                                                </div>
-                                                <span style={{ 
-                                                    fontSize: 11, 
-                                                    fontWeight: 700, 
-                                                    padding: '4px 12px', 
-                                                    borderRadius: 100,
-                                                    textTransform: 'uppercase',
-                                                    letterSpacing: '0.5px',
-                                                    background: report.aiAnalysis.enrichment.hasAds ? 'rgba(34, 197, 94, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                                                    color: report.aiAnalysis.enrichment.hasAds ? '#22c55e' : '#6b7280',
-                                                    border: report.aiAnalysis.enrichment.hasAds ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(107, 114, 128, 0.2)'
-                                                }}>
-                                                    {report.aiAnalysis.enrichment.hasAds ? `${report.aiAnalysis.enrichment.adsCount} Anúncios Ativos` : 'Sem Anúncios'}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {report.aiAnalysis.enrichment.externalLinks?.length > 0 && (
-                                            <div style={{ marginTop: 20 }}>
-                                                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: 4 }}>
-                                                    Links do Linktree / Social
-                                                </span>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-                                                    {report.aiAnalysis.enrichment.externalLinks.map((link, i) => (
-                                                        <a 
-                                                            key={i} 
-                                                            href={link.url} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="linktree-item"
-                                                            style={{ 
-                                                                display: 'flex', 
-                                                                alignItems: 'center', 
-                                                                gap: 12, 
-                                                                padding: '12px 16px', 
-                                                                background: 'var(--bg-card)', 
-                                                                borderRadius: 'var(--radius-md)',
-                                                                textDecoration: 'none',
-                                                                color: 'var(--text-primary)',
-                                                                fontSize: 14,
-                                                                border: '1px solid var(--border-primary)',
-                                                                transition: 'all 0.2s ease'
-                                                            }}
-                                                        >
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                {link.type === 'whatsapp' ? <WhatsAppIcon size={18} /> : 
-                                                                link.type === 'website' ? <GlobeIcon size={18} /> : 
-                                                                link.type === 'portfolio' ? <FolderIcon size={18} /> : 
-                                                                link.type === 'calendar' ? <CalendarIcon size={18} /> : <LinkIcon size={18} />}
-                                                            </div>
-                                                            <div style={{ flex: 1 }}>
-                                                                <div style={{ fontWeight: 500 }}>{link.text}</div>
-                                                                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-                                                                    {link.url.replace(/^https?:\/\//, '')}
-                                                                </div>
-                                                            </div>
-                                                            <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>↗</span>
-                                                        </a>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </Section>
-                        )}
-
-                        {/* Status actions */}
-                        <Section title="Ações do Lead" icon={<ActionsIcon size={20} />}>
+                        {/* Action Panel */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={handleReview}
+                                    disabled={reviewing}
+                                >
+                                    {reviewing ? 'Analisando...' : (report ? 'Refazer Auditoria ↻' : 'Gerar Auditoria')}
+                                </button>
+
+                                {whatsappLink && (
+                                    <a
+                                        href={whatsappLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn btn-secondary btn-sm"
+                                    >
+                                        <WhatsAppIcon size={14} />
+                                        WhatsApp Web ↗
+                                    </a>
+                                )}
+
+                                <button className="btn btn-danger btn-sm" onClick={handleDelete}>
+                                    Excluir
+                                </button>
+                            </div>
+
+                            {/* Status Selector */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--font-sans)' }}>Status:</span>
                                 {['PENDING', 'REVIEWED', 'CONTACTED', 'REJECTED'].map(s => (
                                     <button
                                         key={s}
-                                        className={`btn btn-sm ${report?.status === s ? 'btn-primary' : 'btn-secondary'}`}
+                                        className={`btn btn-sm ${report?.status === s ? 'btn-primary' : 'btn-ghost'}`}
                                         onClick={() => handleStatusChange(s)}
+                                        style={{ fontSize: 10, padding: '2px 8px' }}
                                     >
-                                        {s === 'PENDING' ? 'Pendente' : s === 'REVIEWED' ? 'Analisado' : s === 'CONTACTED' ? 'Contatado' : 'Rejeitado'}
+                                        {s}
                                     </button>
                                 ))}
                             </div>
-                            {report && !report.aiAnalysis && (
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleReview}
-                                    disabled={reviewing}
-                                    style={{ marginTop: 16, width: '100%' }}
-                                >
-                                    {reviewing ? <><span className="spinner" /> Analisando...</> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><OpenAiIcon size={16} /> Analisar com IA</span>}
-                                </button>
-                            )}
-                        </Section>
+                        </div>
                     </div>
+                </div>
 
-                    {/* Right Column — AI Report */}
+                {/* Tab Navigation */}
+                <div style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginBottom: 20,
+                    borderBottom: '1px solid var(--border-primary)',
+                    paddingBottom: 8
+                }}>
+                    <button
+                        className={`btn btn-sm ${activeTab === 'ai' ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => setActiveTab('ai')}
+                    >
+                        Estratégia & Pitch Comercial
+                    </button>
+
+                    <button
+                        className={`btn btn-sm ${activeTab === 'evidence' ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => setActiveTab('evidence')}
+                    >
+                        Evidências Visuais & Scrapes
+                    </button>
+
+                    <button
+                        className={`btn btn-sm ${activeTab === 'signals' ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => setActiveTab('signals')}
+                    >
+                        Sinais Digitais & Ads
+                    </button>
+                </div>
+
+                {/* TAB 1: ESTRATÉGIA & PITCH */}
+                {activeTab === 'ai' && (
                     <div>
                         {report?.aiAnalysis ? (
-                            <>
-                                {/* Score */}
-                                <Section title="Score de Adequação" icon={<TargetIcon size={20} />}>
-                                    <ScoreBar score={report.suitabilityScore} />
-                                    {analysis?.priority && (
-                                        <div style={{ marginTop: 12, fontSize: 13 }}>
-                                            <span style={{ color: 'var(--text-secondary)' }}>Prioridade: </span>
-                                            <span style={{
-                                                fontWeight: 600,
-                                                color: analysis.priority === 'alta' ? 'var(--success)' :
-                                                    analysis.priority === 'média' ? 'var(--warning)' : 'var(--text-tertiary)',
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+                                
+                                <div>
+                                    <ScoreGauge score={report.suitabilityScore} />
+
+                                    {/* Decision Maker Profiling */}
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 8 }}>
+                                            PERFIL DO DECISOR ALVO
+                                        </div>
+                                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                                            {business.category?.toLowerCase().includes('restaurante') || business.category?.toLowerCase().includes('steak') 
+                                                ? 'Sócio-Proprietário / Gerente de Operações' 
+                                                : 'Fundador / Diretor Comercial'}
+                                        </div>
+                                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                                            Decisor com foco em retorno direto sobre investimento (ROI), autoridade de marca frente aos concorrentes locais e otimização de conversão.
+                                        </p>
+                                    </div>
+
+                                    {/* WhatsApp Pitch Bubble */}
+                                    {report.approachSuggestion && (
+                                        <div className="card" style={{ marginBottom: 20, borderLeft: '3px solid var(--tzolkin-lime)' }}>
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--tzolkin-lime)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <WhatsAppIcon size={14} />
+                                                MINUTA DE ABORDAGEM (WHATSAPP)
+                                            </div>
+
+                                            <div style={{
+                                                background: 'var(--bg-input)',
+                                                padding: 16,
+                                                borderRadius: 'var(--radius-sm)',
+                                                border: '1px solid var(--border-primary)',
+                                                fontSize: 13,
+                                                lineHeight: 1.7,
+                                                color: 'var(--text-primary)',
+                                                whiteSpace: 'pre-line',
+                                                marginBottom: 12,
+                                                fontFamily: 'var(--font-sans)',
                                             }}>
-                                                {analysis.priority.charAt(0).toUpperCase() + analysis.priority.slice(1)}
-                                            </span>
+                                                {report.approachSuggestion}
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button
+                                                    className="btn btn-secondary btn-sm"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(report.approachSuggestion);
+                                                        showToast('Script copiado!');
+                                                    }}
+                                                >
+                                                    Copiar Script
+                                                </button>
+
+                                                {whatsappLink && (
+                                                    <a
+                                                        href={whatsappLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="btn btn-primary btn-sm"
+                                                    >
+                                                        Enviar no WhatsApp ↗
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
-                                </Section>
+                                </div>
 
-                                {/* Summary */}
-                                <Section title="Dossiê OpenAI GPT-4o-mini" icon={<OpenAiIcon size={20} />}>
-                                    <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-                                        {report.aiSummary}
-                                    </p>
-                                </Section>
-
-                                {/* Approach */}
-                                {report.approachSuggestion && (
-                                    <Section title="Sugestão de Abordagem" icon="💡">
-                                        <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-                                            {report.approachSuggestion}
-                                        </p>
-                                    </Section>
-                                )}
-
-                                {/* Strengths & Challenges */}
-                                {(analysis?.strengths?.length > 0 || analysis?.challenges?.length > 0) && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                        {analysis.strengths?.length > 0 && (
-                                            <Section title="Pontos Fortes" icon="✅">
-                                                <ul style={{ listStyle: 'none', fontSize: 13, color: 'var(--text-secondary)' }}>
-                                                    {analysis.strengths.map((s, i) => (
-                                                        <li key={i} style={{ padding: '6px 0', borderBottom: '1px solid var(--border-primary)' }}>
-                                                            {s}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Section>
-                                        )}
-                                        {analysis.challenges?.length > 0 && (
-                                            <Section title="Desafios" icon={<WarningIcon size={20} />}>
-                                                <ul style={{ listStyle: 'none', fontSize: 13, color: 'var(--text-secondary)' }}>
-                                                    {analysis.challenges.map((c, i) => (
-                                                        <li key={i} style={{ padding: '6px 0', borderBottom: '1px solid var(--border-primary)' }}>
-                                                            {c}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </Section>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Suggested Features */}
-                                {analysis?.suggestedFeatures?.length > 0 && (
-                                    <Section title="Funcionalidades Sugeridas" icon={<WrenchIcon size={20} />}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                            {analysis.suggestedFeatures.map((f, i) => (
-                                                <span key={i} style={{
-                                                    background: 'var(--accent-soft)',
-                                                    color: 'var(--accent)',
-                                                    padding: '4px 12px',
-                                                    borderRadius: 100,
-                                                    fontSize: 12,
-                                                    fontWeight: 500,
-                                                }}>
-                                                    {f}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </Section>
-                                )}
-
-                                {/* Visual Identity */}
-                                {analysis?.visualIdentitySuggestions && (
-                                    <Section title="Identidade Visual Sugerida" icon={<PaletteIcon size={20} />}>
-                                        <InfoRow label="Estilo" value={analysis.visualIdentitySuggestions.style} />
-                                        <InfoRow label="Tom" value={analysis.visualIdentitySuggestions.tone} />
-                                        {analysis.visualIdentitySuggestions.colors?.length > 0 && (
-                                            <div style={{ marginTop: 12 }}>
-                                                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Cores sugeridas</span>
-                                                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                                                    {analysis.visualIdentitySuggestions.colors.map((c, i) => (
-                                                        <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                                                            <div style={{
-                                                                width: 40,
-                                                                height: 40,
-                                                                borderRadius: 8,
-                                                                background: c,
-                                                                border: '1px solid var(--border-primary)',
-                                                            }} />
-                                                            <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{c}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                <div>
+                                    {/* DECISORES MAPEADOS (LINKEDIN & OUTBOUND) */}
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--tzolkin-offwhite)', fontWeight: 700 }}>
+                                                DECISORES MAPEADOS (LINKEDIN & SERPER)
                                             </div>
-                                        )}
-                                    </Section>
-                                )}
+                                            <span style={{ fontSize: 10, background: 'var(--success-soft)', color: 'var(--success)', padding: '2px 8px', borderRadius: 100, fontWeight: 600 }}>
+                                                AUTOMÁTICO
+                                            </span>
+                                        </div>
 
-                                {/* Extra Info */}
-                                <Section title="Detalhes Adicionais" icon="📊">
-                                    <InfoRow label="Tipo de negócio" value={analysis?.businessType} />
-                                    <InfoRow label="Público-alvo" value={analysis?.targetAudience} />
-                                    <InfoRow label="Orçamento estimado" value={analysis?.estimatedBudget} />
-                                </Section>
-                            </>
+                                        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 14 }}>
+                                            Decisores identificados na empresa com cargo e contato para abordagem direta:
+                                        </p>
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+                                            <div style={{ padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--tzolkin-offwhite)' }}>
+                                                        {business.decisionMakerName || 'Sócio / Proprietário'}
+                                                    </div>
+                                                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                                                        {business.decisionMakerRole || 'CEO & Fundador'}
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={business.decisionMakerLinkedin || `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(business.name)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="btn btn-secondary btn-sm"
+                                                    style={{ fontSize: 11 }}
+                                                >
+                                                    LinkedIn ↗
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        {/* SELETOR DE ESTRATÉGIA OUTBOUND */}
+                                        <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)' }}>
+                                            <label style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                                                ESTRATÉGIA DE ABORDAGEM CUSTOMIZADA
+                                            </label>
+                                            <select
+                                                className="form-control"
+                                                style={{ width: '100%', fontSize: 12, background: 'var(--bg-main)', color: 'var(--tzolkin-offwhite)', border: '1px solid var(--border-primary)', padding: '6px 10px', borderRadius: 'var(--radius-xs)', marginBottom: 10 }}
+                                                onChange={(e) => {
+                                                    showToast(`Estratégia selecionada: ${e.target.value}`);
+                                                }}
+                                            >
+                                                <option value="pitch_roi">Pitch 1: Foco em Aumento de ROI & Vendas (Recomendado)</option>
+                                                <option value="pitch_brand">Pitch 2: Foco em Reestruturação de Marca & Posicionamento</option>
+                                                <option value="pitch_audit">Pitch 3: Enviar Auditoria Gratuita do Site/Insta</option>
+                                                <option value="pitch_quick">Pitch 4: Convite Direto para Reunião de 15 Minutos</option>
+                                            </select>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                style={{ width: '100%', justifyContent: 'center', fontSize: 11 }}
+                                                onClick={() => showToast('Abordagem vinculada ao Kanban de Outbound!')}
+                                            >
+                                                Ativar Sequência de Cadência Outbound 🚀
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Executive Diagnosis */}
+                                    <div className="card" style={{ marginBottom: 20 }}>
+                                        <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 10 }}>
+                                            DIAGNÓSTICO COMERCIAL
+                                        </div>
+                                        <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                                            {report.aiSummary}
+                                        </p>
+                                    </div>
+
+                                    {/* Strengths */}
+                                    {analysis?.strengths?.length > 0 && (
+                                        <div className="card" style={{ marginBottom: 20 }}>
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--success)', marginBottom: 10 }}>
+                                                PONTOS FORTES PARA ABORDAGEM
+                                            </div>
+                                            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {analysis.strengths.map((item, i) => (
+                                                    <li key={i} style={{ padding: '8px 12px', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', fontSize: 12, color: 'var(--text-primary)' }}>
+                                                        • {item}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Challenges */}
+                                    {analysis?.challenges?.length > 0 && (
+                                        <div className="card">
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--warning)', marginBottom: 10 }}>
+                                                OBJEÇÕES PREVISTAS
+                                            </div>
+                                            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {analysis.challenges.map((item, i) => (
+                                                    <li key={i} style={{ padding: '8px 12px', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', fontSize: 12, color: 'var(--text-secondary)' }}>
+                                                        • {item}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         ) : (
-                            <div className="card" style={{ textAlign: 'center', padding: 48 }}>
-                                <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }}>🤖</div>
-                                <h3 style={{ fontSize: 18, marginBottom: 8 }}>Sem análise IA</h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24 }}>
-                                    Clique em &quot;Analisar com IA&quot; para gerar um relatório completo
-                                </p>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleReview}
-                                    disabled={reviewing}
-                                >
-                                    {reviewing ? <><span className="spinner" /> Analisando...</> : '🤖 Analisar com IA'}
+                            <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+                                <div style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 16 }}>
+                                    Nenhuma auditoria comercial foi gerada para este lead ainda.
+                                </div>
+                                <button className="btn btn-primary btn-sm" onClick={handleReview} disabled={reviewing}>
+                                    {reviewing ? 'Analisando...' : 'Gerar Auditoria Comercial'}
                                 </button>
                             </div>
                         )}
                     </div>
-                </div>
+                )}
+
+                {/* TAB 2: EVIDÊNCIAS & SCRAPES & SOCIAL EMBEDS */}
+                {activeTab === 'evidence' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        <SocialMediaEmbeds
+                            instagramUrl={report?.instagramUrl}
+                            instagramBio={report?.instagramBio}
+                            instagramFollowers={report?.instagramFollowers}
+                            instagramPosts={report?.instagramPosts}
+                            tiktokUrl={report?.aiAnalysis?.enrichment?.tiktokUrl}
+                            linkedinUrl={report?.aiAnalysis?.enrichment?.linkedinUrl}
+                        />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
+                            {/* WEBSITE EMBED & SCREENSHOT */}
+                            <div className="card">
+                                {(() => {
+                                    const isRealSite = isRealWebsiteUrl(business.websiteUrl);
+                                    const hasSocialLinkOnly = business.websiteUrl && !isRealSite;
+                                    const favicon = getFaviconUrl(business.websiteUrl);
+                                    const domain = getDomainFromUrl(business.websiteUrl);
+
+                                    return (
+                                        <>
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span>WEBSITE OFICIAL (EVIDÊNCIA VISUAL HD)</span>
+                                                {isRealSite ? (
+                                                    <span className="badge badge-reviewed">🌐 Website Detectado</span>
+                                                ) : hasSocialLinkOnly ? (
+                                                    <span className="badge badge-rejected">⚠️ Apenas Rede Social</span>
+                                                ) : (
+                                                    <span className="badge badge-rejected">⚠️ Sem Website</span>
+                                                )}
+                                            </div>
+
+                                            {isRealSite ? (
+                                                <div>
+                                                    {/* Domain & Favicon Header Bar */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', marginBottom: 12 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                            {favicon && <img src={favicon} alt="Favicon" style={{ width: 18, height: 18, borderRadius: 3 }} onError={(e) => e.target.style.display = 'none'} />}
+                                                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--tzolkin-offwhite)', fontFamily: 'var(--font-sans)' }}>{domain}</span>
+                                                        </div>
+                                                        <a href={business.websiteUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'var(--tzolkin-cyan)', textDecoration: 'none' }}>
+                                                            Abrir Site ↗
+                                                        </a>
+                                                    </div>
+
+                                                    {/* Selector Bar */}
+                                                    <div style={{ display: 'flex', gap: 6, marginBottom: 14, background: 'var(--bg-input)', padding: 4, borderRadius: 'var(--radius-sm)' }}>
+                                                        <button
+                                                            className={`btn btn-sm ${websiteViewMode === 'screenshot' ? 'btn-primary' : 'btn-secondary'}`}
+                                                            onClick={() => setWebsiteViewMode('screenshot')}
+                                                            style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}
+                                                        >
+                                                            📸 Captura HD (Puppeteer)
+                                                        </button>
+                                                        <button
+                                                            className={`btn btn-sm ${websiteViewMode === 'iframe' ? 'btn-primary' : 'btn-secondary'}`}
+                                                            onClick={() => setWebsiteViewMode('iframe')}
+                                                            style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}
+                                                        >
+                                                            🌐 Iframe ao Vivo
+                                                        </button>
+                                                        {report?.scrapedCodeUrl && (
+                                                            <button
+                                                                className={`btn btn-sm ${websiteViewMode === 'renderedHtml' ? 'btn-primary' : 'btn-secondary'}`}
+                                                                onClick={() => setWebsiteViewMode('renderedHtml')}
+                                                                style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}
+                                                            >
+                                                                📄 HTML Renderizado
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {websiteViewMode === 'screenshot' ? (
+                                                        <div>
+                                                            {report?.websiteScreenshotUrl ? (
+                                                                <div style={{ borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-primary)', background: '#fff', marginBottom: 14 }}>
+                                                                    <a href={`${API_URL}${report.websiteScreenshotUrl}`} target="_blank" rel="noopener noreferrer" title="Clique para expandir a captura">
+                                                                        <img
+                                                                            src={`${API_URL}${report.websiteScreenshotUrl}`}
+                                                                            alt="Website Screenshot HD"
+                                                                            style={{ width: '100%', maxHeight: 420, objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                                                                        />
+                                                                    </a>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--text-tertiary)', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', fontSize: 12, marginBottom: 14 }}>
+                                                                    Captura HD em processamento... O robô está gerando o print do site.
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : websiteViewMode === 'renderedHtml' ? (
+                                                        <div>
+                                                            <div style={{ width: '100%', height: 380, borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-primary)', marginBottom: 8, background: '#fff' }}>
+                                                                {scrapedCodeContent ? (
+                                                                    <iframe
+                                                                        srcDoc={scrapedCodeContent}
+                                                                        title="Website Scraped HTML Rendered"
+                                                                        style={{ width: '100%', height: '100%', border: 'none' }}
+                                                                        sandbox="allow-scripts allow-same-origin allow-forms"
+                                                                    />
+                                                                ) : (
+                                                                    <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--text-tertiary)', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', fontSize: 12, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                        Carregando visualização HTML/CSS extraída pelo robô...
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 14, fontStyle: 'italic' }}>
+                                                                💡 Renderizando a cópia do HTML extraído diretamente pelo robô. Bula bloqueios de iFrame/Cloudflare do site de origem.
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <div style={{ width: '100%', height: 380, borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-primary)', marginBottom: 8, background: '#fff' }}>
+                                                                <iframe
+                                                                    src={business.websiteUrl}
+                                                                    title="Website Live View"
+                                                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                                                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                                                />
+                                                            </div>
+                                                            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 14, fontStyle: 'italic' }}>
+                                                                ⚠️ Nota: Alguns servidores web (Cloudflare, X-Frame-Options) bloqueiam embeds externos no navegador. Alterne para &quot;Captura HD&quot; ou &quot;HTML Renderizado&quot; para visualização garantida.
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div style={{ display: 'flex', gap: 10 }}>
+                                                        <a
+                                                            href={business.websiteUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-secondary btn-sm"
+                                                            style={{ flex: 1, justifyContent: 'center' }}
+                                                        >
+                                                            Abrir Website em Nova Aba ↗
+                                                        </a>
+                                                        {report?.scrapedCodeUrl && (
+                                                            <button
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => handleOpenCodeModal(report.scrapedCodeUrl)}
+                                                                style={{ justifyContent: 'center' }}
+                                                            >
+                                                                Código Fonte (HTML)
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : hasSocialLinkOnly ? (
+                                                <div style={{ padding: 20, background: 'rgba(234, 179, 8, 0.05)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)', marginBottom: 6 }}>
+                                                        ⚡ DOR DIGITAL CONFIRMADA: APENAS PERFIL SOCIAL DETECTADO
+                                                    </div>
+                                                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14 }}>
+                                                        O estabelecimento não possui um <strong>website próprio</strong> em domínio oficial. O link cadastrado redireciona para uma rede social ou agregador.
+                                                    </p>
+
+                                                    {/* Rich Social Card */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', marginBottom: 14 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                            {favicon && <img src={favicon} alt="Social Favicon" style={{ width: 22, height: 22, borderRadius: 4 }} onError={(e) => e.target.style.display = 'none'} />}
+                                                            <div>
+                                                                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--tzolkin-offwhite)' }}>{domain}</div>
+                                                                <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{business.websiteUrl}</div>
+                                                            </div>
+                                                        </div>
+                                                        <a
+                                                            href={business.websiteUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-secondary btn-sm"
+                                                            style={{ fontSize: 11 }}
+                                                        >
+                                                            Abrir Perfil ↗
+                                                        </a>
+                                                    </div>
+
+                                                    <div style={{ display: 'inline-flex', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', borderRadius: 100, fontSize: 11, fontWeight: 600 }}>
+                                                        🎯 Oportunidade de Ouro: Oferta de Landing Page de Alta Conversão em Domínio Próprio
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ padding: 24, textAlign: 'center', background: 'rgba(234, 179, 8, 0.05)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)', marginBottom: 6 }}>
+                                                        ⚡ DOR DIGITAL CONFIRMADA: ESTABELECIMENTO SEM WEBSITE
+                                                    </div>
+                                                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14 }}>
+                                                        Este negócio não possui website oficial cadastrado no Google Maps nem no perfil de redes sociais.
+                                                    </p>
+                                                    <div style={{ display: 'inline-flex', padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', borderRadius: 100, fontSize: 11, fontWeight: 600 }}>
+                                                        🎯 Oportunidade de Ouro: Oferta de Landing Page de Alta Conversão
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* INSTAGRAM AUDIT, EMBED & SCREENSHOT */}
+                            <div className="card">
+                                <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>PERFIL INSTAGRAM (EMBED AO VIVO & ANÁLISE)</span>
+                                    {report?.instagramUrl && <span className="badge badge-reviewed">📸 Instagram Ativo</span>}
+                                </div>
+
+                                {report?.instagramUrl ? (
+                                    <div>
+                                        {/* Instagram Live Embed Frame */}
+                                        <div style={{ width: '100%', height: 420, borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-primary)', marginBottom: 14, background: '#000' }}>
+                                            <iframe
+                                                src={`https://www.instagram.com/${report.instagramUrl.trim().replace(/\/$/, '').split('/').pop().replace('@', '')}/embed`}
+                                                title="Instagram Embed"
+                                                style={{ width: '100%', height: '100%', border: 'none' }}
+                                                frameBorder="0"
+                                                scrolling="no"
+                                                allowtransparency="true"
+                                            />
+                                        </div>
+
+                                        {/* Custom Instagram Inspector Card */}
+                                        <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', marginBottom: 14 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                                                <div style={{ width: 44, height: 44, borderRadius: 100, background: 'linear-gradient(135deg, #833AB4, #FD1D1D, #F56040)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <InstagramIcon size={22} color="#fff" />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--tzolkin-offwhite)' }}>
+                                                        @{report.instagramUrl.trim().replace(/\/$/, '').split('/').pop().replace('@', '')}
+                                                    </div>
+                                                    <div style={{ fontSize: 11, color: 'var(--success)' }}>
+                                                        Perfil Rastreado & Enriquecido
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {report.instagramBio && (
+                                                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12, fontStyle: 'italic' }}>
+                                                    &ldquo;{report.instagramBio}&rdquo;
+                                                </p>
+                                            )}
+
+                                            <a
+                                                href={report.instagramUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ width: '100%', justifyContent: 'center' }}
+                                            >
+                                                Abrir Perfil Oficial no Instagram ↗
+                                            </a>
+                                        </div>
+
+                                        {report?.instagramScreenshotUrl && (
+                                            <div>
+                                                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 6 }}>CAPTURA ESTÁTICA DO PERFIL (PUPPETEER):</div>
+                                                <a href={`${API_URL}${report.instagramScreenshotUrl}`} target="_blank" rel="noopener noreferrer">
+                                                    <img
+                                                        src={`${API_URL}${report.instagramScreenshotUrl}`}
+                                                        alt="Instagram Screenshot"
+                                                        style={{ width: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)' }}
+                                                    />
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-tertiary)', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', fontSize: 13 }}>
+                                        Nenhum perfil de Instagram rastreado para este negócio.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* TAB 3: SINAIS DIGITAIS & ADS */}
+                {activeTab === 'signals' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+                        <div className="card">
+                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12 }}>
+                                GOOGLE PLACES SPECS
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-tertiary)' }}>Telefone:</span><span>{business.phone || 'N/A'}</span></div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-tertiary)' }}>Categoria:</span><span>{business.category || 'N/A'}</span></div>
+                                {business.googleMapsUrl && (
+                                    <a href={business.googleMapsUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }}>
+                                        Google Maps ↗
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="card">
+                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <MetaAdsIcon size={16} />
+                                META ADS LIBRARY
+                            </div>
+                            <div style={{ padding: 12, background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)', marginBottom: 12 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: metaAds.hasAds ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                                    {metaAds.hasAds ? `Anúncios Ativos (${metaAds.adsCount || 1})` : 'Sem Anúncios Detectados'}
+                                </div>
+                            </div>
+                            {report?.aiAnalysis?.enrichment?.adsLibraryUrl && (
+                                <a href={report.aiAnalysis.enrichment.adsLibraryUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }}>
+                                    Meta Ads Library ↗
+                                </a>
+                            )}
+                        </div>
+
+                        <div className="card">
+                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <GoogleAdsIcon size={16} />
+                                GOOGLE ADS TRANSPARENCY
+                            </div>
+                            <a
+                                href={`https://adstransparency.google.com/?region=BR&q=${encodeURIComponent(business.name)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary btn-sm"
+                                style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
+                            >
+                                Google Ads Transparency ↗
+                            </a>
+                        </div>
+
+                        <div className="card">
+                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--text-tertiary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <TikTokIcon size={16} />
+                                TIKTOK ADS LIBRARY
+                            </div>
+                            <a
+                                href={`https://library.tiktok.com/ads?region=BR&q=${encodeURIComponent(business.name)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-secondary btn-sm"
+                                style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
+                            >
+                                TikTok Ads Library ↗
+                            </a>
+                        </div>
+                    </div>
+                )}
             </main>
 
-            {toast && <div className="toast">{toast}</div>}
+            {/* Code Modal */}
+            {showCodeModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.8)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 20
+                }}>
+                    <div className="card" style={{ width: '100%', maxWidth: 760, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <span style={{ fontSize: 13, fontFamily: 'var(--font-sans)', fontWeight: 500 }}>Código extraído (HTML/CSS)</span>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowCodeModal(false)}>✕</button>
+                        </div>
+                        <pre style={{
+                            flex: 1,
+                            overflow: 'auto',
+                            background: '#09090b',
+                            padding: 14,
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 11,
+                            fontFamily: 'var(--font-sans)',
+                            color: '#10b981',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all'
+                        }}>
+                            {scrapedCodeContent}
+                        </pre>
+                    </div>
+                </div>
+            )}
+
+            {/* Toast */}
+            {toast && (
+                <div className="toast">
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 }

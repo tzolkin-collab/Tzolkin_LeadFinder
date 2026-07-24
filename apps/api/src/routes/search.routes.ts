@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '@tzolkin/database';
-import { GooglePlacesTool } from '@tzolkin/core';
+import { GooglePlacesTool, AiQueryPlannerTool, CoreLogger } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { env } from '../config/env.js';
+
+const logger = new CoreLogger('SearchRoute');
 
 interface GeocodeResult {
   latitude: number;
@@ -43,7 +45,8 @@ const SearchRequestSchema = z.object({
     ])
     .optional(),
   radiusMeters: z.number().optional().default(5000),
-  onlyWithoutWebsite: z.boolean().optional().default(false),
+  maxResults: z.number().int().min(1).max(50).optional().default(50),
+  onlyWithoutWebsite: z.boolean().optional().default(true),
 });
 
 // POST /api/v1/search - Search for local SMBs via Google Places and save to tenant
@@ -51,6 +54,24 @@ router.post('/', async (req, res, next) => {
   try {
     const input = SearchRequestSchema.parse(req.body);
     const tenantId = req.user!.tenantId;
+
+    // 1. Agente IA de Busca: Desambigua a intenção e limpa a marca com LLM
+    const queryPlanner = new AiQueryPlannerTool(env.OPENAI_API_KEY);
+    const plannerResult = await queryPlanner.execute({
+      rawQuery: input.query,
+      rawLocation: typeof input.location === 'string' ? input.location : undefined,
+    });
+
+    const aiPlan = plannerResult.data;
+    const effectiveQuery = aiPlan?.optimizedPlacesQuery || input.query;
+
+    logger.info(`🤖 Agente IA de Busca Processou a Query`, {
+      tenantId,
+      rawQuery: input.query,
+      effectiveQuery,
+      intent: aiPlan?.searchIntent,
+      extractedBrand: aiPlan?.extractedBrand,
+    });
 
     const apiKey = env.GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
@@ -70,9 +91,10 @@ router.post('/', async (req, res, next) => {
 
     const tool = new GooglePlacesTool(apiKey);
     const result = await tool.execute({
-      query: input.query,
+      query: effectiveQuery,
       location: locationCoords,
       radiusMeters: input.radiusMeters,
+      maxResults: input.maxResults,
       onlyWithoutWebsite: input.onlyWithoutWebsite,
     });
 
@@ -127,6 +149,8 @@ router.post('/', async (req, res, next) => {
       });
       savedBusinesses.push(saved);
     }
+
+    logger.info(`Garimpo concluído`, { tenantId, query: input.query, totalFound: result.data.total, withoutWebsite: result.data.withoutWebsite, savedCount: savedBusinesses.length });
 
     res.json({
       message: `Busca concluída: ${result.data.total} encontrados, ${result.data.withoutWebsite} sem website`,

@@ -1,12 +1,23 @@
 import { Router } from 'express';
-import { prisma } from '@tzolkin/database';
-import { ReviewPipeline, type Business } from '@tzolkin/core';
+import { prisma, Prisma } from '@tzolkin/database';
+import { ReviewPipeline, type Business, AdsAuditTool, MetaAdsTool, SerperClient } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { createRateLimitMiddleware } from '../middlewares/rate-limit.middleware.js';
 import { env } from '../config/env.js';
 
 const router: Router = Router();
 
 router.use(authMiddleware);
+
+const reviewRateLimit = createRateLimitMiddleware(
+  { windowSeconds: 60, maxRequests: 30, keyPrefix: 'review' },
+  env.REDIS_URL,
+);
+
+const reviewAllRateLimit = createRateLimitMiddleware(
+  { windowSeconds: 60 * 60, maxRequests: 5, keyPrefix: 'review-all' },
+  env.REDIS_URL,
+);
 
 // Helper to get initialized ReviewPipeline with environment secrets and tenant config
 async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
@@ -27,7 +38,11 @@ async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
   return new ReviewPipeline({
     serperApiKey: env.SERPER_API_KEY,
     metaAdsAccessToken: env.META_ADS_TOKEN,
+    apifyApiToken: env.APIFY_API_TOKEN,
     openAiApiKey: env.OPENAI_API_KEY,
+    scrapingBeeApiKey: env.SCRAPINGBEE_API_KEY,
+    redisUrl: env.REDIS_URL,
+    cacheTtlSeconds: env.REDIS_CACHE_TTL_SECONDS,
     modelName: tenant?.selectedAiModel ?? undefined,
     icpContext: tenant ? {
       niche: tenant.icpNiche ?? undefined,
@@ -44,7 +59,7 @@ async function getPipelineForTenant(tenantId: string): Promise<ReviewPipeline> {
 }
 
 // POST /api/v1/review/:id & /api/search/review/:id - Run unified ReviewPipeline on a specific business lead
-router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
+router.post(['/review/:id', '/search/review/:id'], reviewRateLimit, async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
     const businessId = (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id) as string;
@@ -79,14 +94,27 @@ router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
 
     const enrichmentResult = await pipeline.run({ business: coreBusiness });
 
-    // Update business website if Instagram found a URL that Google missed
-    if (enrichmentResult.business.hasWebsite !== business.hasWebsite) {
+    // Update business record with website and CNPJ data discovered during enrichment
+    const businessUpdateData: Parameters<typeof prisma.business.update>[0]['data'] = {
+      ...(enrichmentResult.business.hasWebsite !== business.hasWebsite && {
+        hasWebsite: enrichmentResult.business.hasWebsite,
+        websiteUrl: enrichmentResult.business.websiteUrl,
+      }),
+      ...(enrichmentResult.business.cnpj !== undefined && enrichmentResult.business.cnpj !== null && {
+        cnpj: enrichmentResult.business.cnpj,
+      }),
+      ...(enrichmentResult.business.razaoSocial !== undefined && { razaoSocial: enrichmentResult.business.razaoSocial }),
+      ...(enrichmentResult.business.nomeFantasia !== undefined && { nomeFantasia: enrichmentResult.business.nomeFantasia }),
+      ...(enrichmentResult.business.situacaoCadastral !== undefined && { situacaoCadastral: enrichmentResult.business.situacaoCadastral }),
+      ...(enrichmentResult.business.dataInicioAtividade !== undefined && { dataInicioAtividade: enrichmentResult.business.dataInicioAtividade }),
+      ...(enrichmentResult.business.cnaeDescricao !== undefined && { cnaeDescricao: enrichmentResult.business.cnaeDescricao }),
+      ...(enrichmentResult.business.capitalSocial !== undefined && { capitalSocial: enrichmentResult.business.capitalSocial }),
+    };
+
+    if (Object.keys(businessUpdateData).length > 0) {
       await prisma.business.update({
         where: { id: business.id },
-        data: {
-          hasWebsite: enrichmentResult.business.hasWebsite,
-          websiteUrl: enrichmentResult.business.websiteUrl,
-        },
+        data: businessUpdateData,
       });
     }
 
@@ -105,10 +133,21 @@ router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
         ...enrichmentResult.aiReview,
         metaAds: enrichmentResult.metaAds,
         extraLinks: enrichmentResult.instagram.extraLinks,
+        enrichment: {
+          tiktokUrl: enrichmentResult.tiktokUrl,
+          linkedinUrl: enrichmentResult.linkedinUrl,
+        },
       },
+      ...(enrichmentResult.cnpj ? { cnpjAnalysis: enrichmentResult.cnpj.raw as unknown as Prisma.InputJsonValue } : {}),
+      ...(enrichmentResult.adsAudit
+        ? { adsAuditAnalysis: enrichmentResult.adsAudit as any }
+        : {}),
       suitabilityScore: enrichmentResult.aiReview.suitabilityScore,
       aiSummary: enrichmentResult.aiReview.summary,
       approachSuggestion: enrichmentResult.aiReview.approachSuggestion,
+      websiteScreenshotUrl: enrichmentResult.scrapes?.websiteScreenshotUrl,
+      instagramScreenshotUrl: enrichmentResult.scrapes?.instagramScreenshotUrl,
+      scrapedCodeUrl: enrichmentResult.scrapes?.scrapedCodeUrl,
       status: 'REVIEWED' as const,
     };
 
@@ -136,8 +175,80 @@ router.post(['/review/:id', '/search/review/:id'], async (req, res, next) => {
   }
 });
 
+// POST /api/v1/audit-ads/:id - Real-time ads audit (Meta + Google + TikTok) with commercial diagnosis
+router.post('/audit-ads/:id', reviewRateLimit, async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const businessId = (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id) as string;
+
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, tenantId },
+    });
+
+    if (!business) {
+      res.status(404).json({ error: 'Lead não encontrado para este tenant' });
+      return;
+    }
+
+    const serperClient = new SerperClient({ apiKey: env.SERPER_API_KEY });
+    const metaAdsTool = new MetaAdsTool(env.META_ADS_TOKEN, serperClient);
+    const adsAuditTool = new AdsAuditTool(env.OPENAI_API_KEY);
+
+    const metaAdsResult = await metaAdsTool.execute({
+      businessName: business.name,
+      ...(business.websiteUrl ? {} : {}),
+    });
+
+    const metaAds = metaAdsResult.success && metaAdsResult.data ? metaAdsResult.data : null;
+
+    const adsAuditResult = await adsAuditTool.execute({
+      businessName: business.name,
+      hasWebsite: business.hasWebsite,
+      ...(business.websiteUrl ? { websiteUrl: business.websiteUrl } : {}),
+      ...(metaAds
+        ? {
+            metaAds: {
+              hasAds: metaAds.hasAds,
+              count: metaAds.count,
+              adsLibraryUrl: metaAds.adsLibraryUrl,
+            },
+            googleAds: metaAds.googleAds,
+            tiktokAds: metaAds.tiktokAds,
+          }
+        : {}),
+    });
+
+    if (!adsAuditResult.success || !adsAuditResult.data) {
+      res.status(502).json({ error: 'Falha ao gerar auditoria de ads', message: adsAuditResult.error });
+      return;
+    }
+
+    // Persist ads audit on existing report if any
+    const existingReport = await prisma.businessReport.findUnique({
+      where: { businessId: business.id },
+    });
+
+    if (existingReport) {
+      await prisma.businessReport.update({
+        where: { businessId: business.id },
+        data: {
+          adsAuditAnalysis: adsAuditResult.data as any,
+        },
+      });
+    }
+
+    res.json({
+      message: `Auditoria de ads concluída para ${business.name}`,
+      adsAudit: adsAuditResult.data,
+      metaAds,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/v1/review-all - Batch review up to 10 pending leads for tenant
-router.post('/review-all', async (req, res, next) => {
+router.post('/review-all', reviewAllRateLimit, async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
 
@@ -175,13 +286,26 @@ router.post('/review-all', async (req, res, next) => {
 
         const result = await pipeline.run({ business: coreBusiness });
 
-        if (result.business.hasWebsite !== biz.hasWebsite) {
+        const batchUpdateData: Parameters<typeof prisma.business.update>[0]['data'] = {
+          ...(result.business.hasWebsite !== biz.hasWebsite && {
+            hasWebsite: result.business.hasWebsite,
+            websiteUrl: result.business.websiteUrl,
+          }),
+          ...(result.business.cnpj !== undefined && result.business.cnpj !== null && {
+            cnpj: result.business.cnpj,
+          }),
+          ...(result.business.razaoSocial !== undefined && { razaoSocial: result.business.razaoSocial }),
+          ...(result.business.nomeFantasia !== undefined && { nomeFantasia: result.business.nomeFantasia }),
+          ...(result.business.situacaoCadastral !== undefined && { situacaoCadastral: result.business.situacaoCadastral }),
+          ...(result.business.dataInicioAtividade !== undefined && { dataInicioAtividade: result.business.dataInicioAtividade }),
+          ...(result.business.cnaeDescricao !== undefined && { cnaeDescricao: result.business.cnaeDescricao }),
+          ...(result.business.capitalSocial !== undefined && { capitalSocial: result.business.capitalSocial }),
+        };
+
+        if (Object.keys(batchUpdateData).length > 0) {
           await prisma.business.update({
             where: { id: biz.id },
-            data: {
-              hasWebsite: result.business.hasWebsite,
-              websiteUrl: result.business.websiteUrl,
-            },
+            data: batchUpdateData,
           });
         }
 
@@ -199,9 +323,16 @@ router.post('/review-all', async (req, res, next) => {
               metaAds: result.metaAds,
               extraLinks: result.instagram.extraLinks,
             },
+            ...(result.cnpj ? { cnpjAnalysis: result.cnpj.raw as unknown as Prisma.InputJsonValue } : {}),
+            ...(result.adsAudit
+              ? { adsAuditAnalysis: result.adsAudit as any }
+              : {}),
             suitabilityScore: result.aiReview.suitabilityScore,
             aiSummary: result.aiReview.summary,
             approachSuggestion: result.aiReview.approachSuggestion,
+            websiteScreenshotUrl: result.scrapes?.websiteScreenshotUrl,
+            instagramScreenshotUrl: result.scrapes?.instagramScreenshotUrl,
+            scrapedCodeUrl: result.scrapes?.scrapedCodeUrl,
             status: 'REVIEWED',
           },
         });

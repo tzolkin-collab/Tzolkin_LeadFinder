@@ -1,0 +1,68 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .tile-bg {
+      fill: #0A0A0A;
+      stroke: rgba(255, 255, 255, 0.16);
+      stroke-width: 1.2px;
+      animation: pulseBorder 2.4s ease-in-out infinite;
+    }
+    @keyframes pulseBorder {
+      0%, 100% { stroke: rgba(255, 255, 255, 0.16); }
+      50% { stroke: rgba(255, 255, 255, 0.4); }
+    }
+
+    .disc-group {
+      transform-origin: 38px 26px;
+      animation: discSpinDissolve 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes discSpinDissolve {
+      0%, 10% { transform: rotate(0deg) scale(1); opacity: 1; }
+      30%, 70% { transform: rotate(180deg) scale(0); opacity: 0; }
+      90%, 100% { transform: rotate(360deg) scale(1); opacity: 1; }
+    }
+
+    .ring-morph {
+      animation: ringSlide 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes ringSlide {
+      0%, 15% { transform: translateY(0); stroke-width: 3.6px; }
+      35%, 65% { transform: translateY(-8px); stroke-width: 3.8px; }
+      85%, 100% { transform: translateY(0); stroke-width: 3.6px; }
+    }
+
+    .handle-pop {
+      transform-origin: 34px 34px;
+      animation: handleSpring 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes handleSpring {
+      0%, 22% { transform: scale(0); opacity: 0; }
+      38%, 62% { transform: scale(1); opacity: 1; }
+      78%, 100% { transform: scale(0); opacity: 0; }
+    }
+
+    .glare-fade {
+      animation: glareIlluminate 2.4s ease infinite;
+    }
+    @keyframes glareIlluminate {
+      0%, 25% { opacity: 0; }
+      40%, 60% { opacity: 1; }
+      75%, 100% { opacity: 0; }
+    }
+  </style>
+
+  <rect class="tile-bg" width="64" height="64" rx="16" />
+
+  <!-- Grey Disc -->
+  <g class="disc-group">
+    <circle cx="38" cy="26" r="13" fill="#B0B0B0" />
+  </g>
+
+  <!-- Main Ring -->
+  <circle class="ring-morph" cx="26" cy="34" r="13" fill="none" stroke="#FFFFFF" stroke-width="3.6" />
+
+  <!-- Lens Glare -->
+  <path class="glare-fade" d="M 18 21 A 9 9 0 0 1 24 15" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" />
+
+  <!-- Handle -->
+  <line class="handle-pop" x1="34" y1="34" x2="48" y2="48" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+</svg>

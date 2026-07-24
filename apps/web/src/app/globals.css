@@ -1,68 +1,69 @@
 /* ============================================================
-   Lead Finder — Tzolkin Official Brand Design System
+   Lead Finder — Minimalist Enterprise B2B Design System
+   Linear / Vercel Aesthetic: Clean Typography & Hairline Borders
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;650;700&display=swap');
-
 :root {
-    /* Tzolkin Official Brand Palette */
-    --tzolkin-ink: #0A0A0A;
-    --tzolkin-offwhite: #FAFAF7;
-    --tzolkin-warm-gray: #6E6E68;
+    /* Vercel-like Minimal Dark Palette */
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-card: #111111;
+    --bg-card-hover: #171717;
+    --bg-elevated: #1a1a1a;
+    --bg-input: #0a0a0a;
 
-    /* Backgrounds */
-    --bg-primary: #0A0A0A;
-    --bg-secondary: #111110;
-    --bg-card: #141412;
-    --bg-card-hover: #191917;
-    --bg-elevated: #1e1e1b;
-    --bg-input: #121210;
+    /* Hairline Crisp Borders */
+    --border-primary: rgba(255, 255, 255, 0.06);
+    --border-secondary: rgba(255, 255, 255, 0.12);
+    --border-accent: rgba(255, 255, 255, 0.2);
 
-    /* Borders */
-    --border-primary: rgba(110, 110, 104, 0.22);
-    --border-secondary: rgba(110, 110, 104, 0.4);
-    --border-accent: #FAFAF7;
+    /* Softer Typography Scale */
+    --text-primary: #ededed;
+    --text-secondary: #888888;
+    --text-tertiary: #555555;
 
-    /* Text */
-    --text-primary: #FAFAF7;
-    --text-secondary: #6E6E68;
-    --text-tertiary: #52524e;
-    --text-accent: #FAFAF7;
+    /* Muted Status Colors */
+    --success: #22c55e;
+    --success-soft: rgba(34, 197, 94, 0.08);
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.08);
+    --error: #ef4444;
+    --error-soft: rgba(239, 68, 68, 0.08);
 
-    /* Primary Accent (Tzolkin Off-white) */
-    --accent: #FAFAF7;
-    --accent-hover: #EBEBE6;
-    --accent-soft: rgba(250, 250, 247, 0.1);
-    --accent-glow: rgba(250, 250, 247, 0.15);
-
-    /* Status */
-    --success: #0CCE6B;
-    --success-soft: rgba(12, 206, 107, 0.1);
-    --warning: #F5A623;
-    --warning-soft: rgba(245, 166, 35, 0.1);
-    --error: #EE0000;
-    --error-soft: rgba(238, 0, 0, 0.1);
-
-    /* Score colors */
-    --score-high: #0CCE6B;
-    --score-medium: #F5A623;
-    --score-low: #EE0000;
-
-    /* Spacing & Radii (Matching Tzolkin Tile rx=14) */
+    /* Radii */
     --radius-sm: 6px;
     --radius-md: 8px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.6);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.7);
-    --shadow-glow: 0 0 20px rgba(250, 250, 247, 0.12);
+    /* Subtle Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.45);
+    --shadow-glass: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    /* Tzolkin Brand Colors */
+    --tzolkin-offwhite: #FAFAF7;
+    --tzolkin-lime: #D4FF00;
+
+    /* Score Scale */
+    --score-high: #10b981;
+    --score-medium: #f59e0b;
+    --score-low: #ef4444;
+
+    /* Glass Background */
+    --bg-glass: rgba(9, 9, 11, 0.75);
+
+    /* Typography (loaded via next/font/google as --font-inter) */
+    --font-heading: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: var(--font-sans);
+    --font-button: var(--font-sans);
 
     /* Transitions */
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 150ms ease;
+    --transition-normal: 200ms ease;
 }
 
 * {
@@ -71,13 +72,15 @@
     box-sizing: border-box;
 }
 
-html, body {
-    height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+html,
+body {
+    min-height: 100%;
+    font-family: var(--font-sans);
     background: var(--bg-primary);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 /* ---- Scrollbar ---- */
@@ -85,15 +88,52 @@ html, body {
     width: 6px;
     height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #0A0A0A;
 }
+
 ::-webkit-scrollbar-thumb {
     background: var(--border-secondary);
     border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+/* ---- Auth Form Labels (override eyebrow mono style) ---- */
+.auth-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* ---- Eyebrow & Micro Labels ---- */
+.eyebrow {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ---- Tzolkin Section Title ---- */
+.tzolkin-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-transform: none;
+    color: var(--text-primary);
+    line-height: 1.2;
 }
 
 /* ---- Buttons ---- */
@@ -101,12 +141,12 @@ html, body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border: none;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
-    font-family: inherit;
-    font-size: 14px;
+    font-family: var(--font-button);
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -115,58 +155,60 @@ html, body {
 }
 
 .btn-primary {
-    background: var(--tzolkin-offwhite);
-    color: var(--tzolkin-ink);
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(250, 250, 247, 0.15);
+    background: #ededed;
+    color: #000000;
+    border-color: #ededed;
 }
+
 .btn-primary:hover {
-    background: var(--accent-hover);
-    box-shadow: 0 4px 16px rgba(250, 250, 247, 0.25);
-    transform: translateY(-1px);
-}
-.btn-primary:active {
-    transform: translateY(0);
+    background: #ffffff;
+    border-color: #ffffff;
 }
 
 .btn-secondary {
     background: transparent;
-    color: var(--tzolkin-offwhite);
-    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    border-color: var(--border-secondary);
 }
+
 .btn-secondary:hover {
-    background: rgba(250, 250, 247, 0.06);
-    border-color: var(--tzolkin-offwhite);
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--border-accent);
 }
 
 .btn-danger {
     background: transparent;
     color: var(--error);
-    border: 1px solid rgba(238, 0, 0, 0.3);
+    border-color: rgba(239, 68, 68, 0.25);
 }
+
 .btn-danger:hover {
-    background: var(--error-soft);
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.4);
 }
 
 .btn-ghost {
     background: transparent;
     color: var(--text-secondary);
-    padding: 8px 12px;
+    border-color: transparent;
 }
+
 .btn-ghost:hover {
-    color: var(--tzolkin-offwhite);
-    background: rgba(250, 250, 247, 0.05);
+    color: var(--text-primary);
+    background: var(--bg-card);
 }
 
 .btn-sm {
-    padding: 6px 12px;
-    font-size: 13px;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
 }
 
 .btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
-    transform: none !important;
+    border-color: transparent !important;
 }
 
 /* ---- Inputs ---- */
@@ -177,17 +219,20 @@ html, body {
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-md);
     color: var(--text-primary);
-    font-family: inherit;
+    font-family: var(--font-sans);
     font-size: 14px;
+    font-weight: 400;
     transition: all var(--transition-fast);
     outline: none;
 }
+
 .input:focus {
-    border-color: var(--tzolkin-offwhite);
-    box-shadow: 0 0 0 3px rgba(250, 250, 247, 0.1);
+    border-color: var(--border-secondary);
+    background: var(--bg-card);
 }
+
 .input::placeholder {
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
 }
 
 /* ---- Cards ---- */
@@ -195,17 +240,18 @@ html, body {
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
-    padding: 24px;
-    transition: all var(--transition-normal);
+    padding: 20px;
+    transition: all var(--transition-fast);
+    position: relative;
 }
+
 .card:hover {
     border-color: var(--border-secondary);
 }
+
 .card-interactive:hover {
     background: var(--bg-card-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: rgba(250, 250, 247, 0.3);
+    border-color: var(--border-secondary);
     cursor: pointer;
 }
 
@@ -213,64 +259,66 @@ html, body {
 .badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 10px;
+    gap: 4px;
+    padding: 3px 10px;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 500;
-    border-radius: 100px;
-    letter-spacing: 0.02em;
+    border-radius: var(--radius-sm);
 }
+
 .badge-pending {
     background: var(--warning-soft);
     color: var(--warning);
-    border: 1px solid rgba(245, 166, 35, 0.3);
 }
+
 .badge-reviewed {
-    background: rgba(250, 250, 247, 0.08);
-    color: var(--tzolkin-offwhite);
-    border: 1px solid rgba(250, 250, 247, 0.25);
+    background: rgba(250, 250, 247, 0.06);
+    color: var(--text-secondary);
 }
+
 .badge-contacted {
     background: var(--success-soft);
     color: var(--success);
-    border: 1px solid rgba(12, 206, 107, 0.3);
 }
+
 .badge-rejected {
     background: var(--error-soft);
     color: var(--error);
-    border: 1px solid rgba(238, 0, 0, 0.3);
 }
 
-/* ---- Score ---- */
+/* ---- Score Circle Indicator ---- */
 .score-circle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    font-size: 14px;
-    font-weight: 700;
-    border: 2px solid;
-}
-.score-high {
-    color: var(--score-high);
-    border-color: var(--score-high);
-    background: rgba(12, 206, 107, 0.08);
-}
-.score-medium {
-    color: var(--score-medium);
-    border-color: var(--score-medium);
-    background: rgba(245, 166, 35, 0.08);
-}
-.score-low {
-    color: var(--score-low);
-    border-color: var(--score-low);
-    background: rgba(238, 0, 0, 0.08);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
 }
 
-/* ---- Grid / Layout ---- */
+.score-high {
+    color: var(--success);
+    background: var(--success-soft);
+}
+
+.score-medium {
+    color: var(--warning);
+    background: var(--warning-soft);
+}
+
+.score-low {
+    color: var(--error);
+    background: var(--error-soft);
+}
+
+/* ---- Layout & Container ---- */
 .container {
-    max-width: 1200px;
+    max-width: 1320px;
     margin: 0 auto;
     padding: 0 24px;
 }
@@ -281,170 +329,357 @@ html, body {
     background: var(--bg-primary);
 }
 
+/* ---- Header Glass Navbar ---- */
+.tzolkin-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-primary);
+    transition: all var(--transition-normal);
+}
+
+.tzolkin-nav-link {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.tzolkin-nav-link:hover,
+.tzolkin-nav-link.active {
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
 /* ---- Loader ---- */
 .spinner {
-    width: 20px;
-    height: 20px;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
     border: 2px solid var(--border-secondary);
-    border-top-color: var(--tzolkin-offwhite);
+    border-top-color: var(--text-primary);
     border-radius: 50%;
-    animation: spin 0.6s linear infinite;
+    animation: spin 0.7s linear infinite;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.loading-dots::after {
-    content: '';
-    animation: dots 1.5s infinite;
+.pulse-loader {
+    animation: pulseGlow 1.6s ease-in-out infinite alternate;
 }
-@keyframes dots {
-    0%, 20% { content: '.'; }
-    40% { content: '..'; }
-    60%, 100% { content: '...'; }
+
+@keyframes pulseGlow {
+    from {
+        opacity: 0.3;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.02);
+    }
 }
 
 /* ---- Fade In Animation ---- */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.fade-in {
-    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* ---- Modal / Overlay ---- */
+.fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ---- Native Vector SVG Morphing Animation (Tzolkin Logo -> Lead Finder Logo) ---- */
+.lead-finder-lockup.animated-morph .tile-rect {
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+    animation: drawTileOutline 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lead-finder-lockup.animated-morph .tzolkin-ring {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: drawRingOutline 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+/* 
+   Morphing Solid Disc Sequence:
+   0%..40%: Appears as the Tzolkin Institutional Mark (Ring + Large Overlapping Disc cx=42, cy=30, r=14)
+   40%..80%: Morphs, glides down and scales into the Lead Finder Target Disc (cx=42, cy=42, r=7)
+*/
+.lead-finder-lockup.animated-morph .tzolkin-disc {
+    animation: morphTzolkinDisc 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lead-finder-lockup.animated-morph .wordmark-group {
+    opacity: 0;
+    animation: revealWordmarkText 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.0s forwards;
+}
+
+.lead-finder-lockup.animated-morph .radar-reticle {
+    opacity: 0;
+    animation: popRadarReticle 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.4s forwards;
+}
+
+@keyframes drawTileOutline {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes drawRingOutline {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes morphTzolkinDisc {
+    0% {
+        cx: 42px;
+        cy: 30px;
+        r: 14px;
+        opacity: 0;
+    }
+
+    20% {
+        /* Full Tzolkin Institutional Mark */
+        cx: 42px;
+        cy: 30px;
+        r: 14px;
+        opacity: 1;
+    }
+
+    45% {
+        /* Hold Tzolkin Institutional Mark */
+        cx: 42px;
+        cy: 30px;
+        r: 14px;
+        opacity: 1;
+    }
+
+    85% {
+        /* Morphing: Glides down and shrinks into targeted lead disc */
+        cx: 42px;
+        cy: 40px;
+        r: 8px;
+    }
+
+    100% {
+        /* Lead Finder Mark Final Position */
+        cx: 42px;
+        cy: 42px;
+        r: 7px;
+        opacity: 1;
+    }
+}
+
+@keyframes revealWordmarkText {
+    from {
+        opacity: 0;
+        transform: translateX(-14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes popRadarReticle {
+    from {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ---- Pure Logo Tile Loader Animation (No Text) ---- */
+.tzolkin-loader-tile {
+    animation: loaderPulse 1.4s ease-in-out infinite alternate;
+}
+
+.tzolkin-loader-tile .tzolkin-ring {
+    transform-origin: 28px 30px;
+    animation: pulseRing 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+.tzolkin-loader-tile .tzolkin-disc-pulse {
+    transform-origin: 42px 42px;
+    animation: pulseDisc 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+@keyframes loaderPulse {
+    from {
+        transform: scale(0.96);
+        opacity: 0.85;
+    }
+
+    to {
+        transform: scale(1.04);
+        opacity: 1;
+    }
+}
+
+@keyframes pulseRing {
+    from {
+        stroke-width: 2px;
+    }
+
+    to {
+        stroke-width: 3.2px;
+    }
+}
+
+@keyframes pulseDisc {
+    from {
+        transform: scale(0.85);
+    }
+
+    to {
+        transform: scale(1.15);
+    }
+}
+
+
+/* ---- Modal Overlay ---- */
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    padding: 20px;
     animation: fadeIn 0.2s ease;
 }
+
 .modal {
     background: var(--bg-card);
-    border: 1px solid var(--border-primary);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-secondary);
     border-radius: var(--radius-xl);
-    padding: 32px;
+    padding: 36px;
     width: 100%;
-    max-width: 480px;
+    max-width: 540px;
     box-shadow: var(--shadow-lg);
-    animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 @keyframes modalIn {
     from {
         opacity: 0;
-        transform: scale(0.96) translateY(8px);
+        transform: scale(0.95) translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
 }
 
-/* ---- Table ---- */
+/* ---- Table Styling ---- */
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
+
 table {
     width: 100%;
     border-collapse: collapse;
 }
+
 th {
     text-align: left;
     padding: 12px 16px;
+    font-family: var(--font-sans);
     font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-weight: 500;
+    text-transform: none;
     color: var(--text-secondary);
-    background: var(--bg-card);
+    background: transparent;
     border-bottom: 1px solid var(--border-primary);
 }
+
 td {
     padding: 14px 16px;
     font-size: 14px;
     border-bottom: 1px solid var(--border-primary);
-    background: var(--bg-secondary);
+    background: transparent;
 }
+
 tr:last-child td {
     border-bottom: none;
 }
+
 tr:hover td {
     background: var(--bg-card-hover);
 }
 
-/* ---- Spinner & Loading Animations ---- */
-.spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(250, 250, 247, 0.2);
-    border-top-color: var(--tzolkin-offwhite);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.pulse-loader {
-    animation: pulseGlow 1.4s ease-in-out infinite alternate;
-}
-
-@keyframes pulseGlow {
-    from { opacity: 0.25; }
-    to { opacity: 1; }
-}
-
-/* ---- Toast / Notification ---- */
+/* ---- Toast Notification ---- */
 .toast {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 32px;
+    right: 32px;
     background: var(--bg-elevated);
-    border: 1px solid var(--border-primary);
+    border: 1px solid var(--border-secondary);
     border-radius: var(--radius-md);
-    padding: 14px 20px;
-    font-size: 14px;
+    padding: 12px 18px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
     box-shadow: var(--shadow-lg);
     z-index: 2000;
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-/* ---- Empty State ---- */
-.empty-state {
-    text-align: center;
-    padding: 64px 24px;
-    color: var(--text-secondary);
-}
-.empty-state-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-}
-.empty-state h3 {
-    font-size: 18px;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-.empty-state p {
-    font-size: 14px;
-    max-width: 400px;
-    margin: 0 auto;
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ---- Stat Card ---- */
@@ -453,39 +688,170 @@ tr:hover td {
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     padding: 20px;
-    transition: all var(--transition-normal);
+    transition: all var(--transition-fast);
 }
+
 .stat-card:hover {
-    border-color: rgba(250, 250, 247, 0.3);
+    border-color: var(--border-secondary);
 }
+
 .stat-card .stat-value {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 4px;
-    color: var(--tzolkin-offwhite);
+    font-family: var(--font-heading);
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 6px;
+    color: var(--text-primary);
 }
+
 .stat-card .stat-label {
+    font-family: var(--font-sans);
     font-size: 13px;
+    font-weight: 400;
+    text-transform: none;
     color: var(--text-secondary);
 }
 
-/* ---- Tzolkin Warm Gradient Background ---- */
+/* ---- Ambient Glow ---- */
 .gradient-bg {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 500px;
-    background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(250, 250, 247, 0.05), transparent);
+    height: 600px;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(250, 250, 247, 0.09), transparent);
     pointer-events: none;
     z-index: 0;
 }
 
-/* ---- Linktree Item Hover ---- */
-.linktree-item:hover {
-    background: var(--bg-card-hover) !important;
-    border-color: var(--tzolkin-offwhite) !important;
-    transform: translateX(4px);
-    box-shadow: var(--shadow-sm);
+/* Auth Graphism / Game Canvas */
+.auth-graphism {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 50% 30%, #170a33 0%, #080612 60%, #040407 100%);
+    overflow: hidden;
+    user-select: none;
+}
+
+.auth-graphism-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.game-hud {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    color: #ffffff;
+    font-family: var(--font-sans);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.game-hud-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(9, 9, 11, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-sans);
+}
+
+.game-hud-score .hud-kill-count {
+    color: #9d5cff;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.game-hud-score .hud-kill-label {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+
+/* Eye Toggle Animation */
+.eye-toggle {
+    color: var(--text-tertiary);
+    transition: color 150ms ease;
+}
+
+.eye-toggle:hover {
+    color: var(--text-secondary);
+}
+
+.eye-icon {
+    display: inline-flex;
+    transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.eye-icon.eye-open {
+    animation: eyeOpen 250ms ease forwards;
+}
+
+.eye-icon.eye-closed {
+    animation: eyeClose 250ms ease forwards;
+}
+
+@keyframes eyeOpen {
+    from {
+        opacity: 0;
+        transform: scale(0.85) rotate(-10deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes eyeClose {
+    from {
+        opacity: 0;
+        transform: scale(0.85) rotate(10deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/* Cockpit Glowing Pills & Card Enhancements */
+.cockpit-glow {
+    position: relative;
+    overflow: hidden;
+}
+
+.cockpit-glow::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(12, 206, 107, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+/* Split-screen Responsive Auth Styles (Asaas Layout) */
+@media (max-width: 960px) {
+    .auth-hero-panel {
+        display: none !important;
+    }
+
+    .auth-form-panel {
+        width: 100% !important;
+        padding: 24px 16px !important;
+    }
 }

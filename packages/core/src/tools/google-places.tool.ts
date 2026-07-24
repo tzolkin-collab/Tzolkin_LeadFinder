@@ -55,6 +55,13 @@ export const BusinessSchema = z.object({
   longitude: z.number().nullable(),
   photoResourceNames: z.array(z.string()),
   openingHours: z.string().nullable(),
+  cnpj: z.string().nullable().optional(),
+  razaoSocial: z.string().nullable().optional(),
+  nomeFantasia: z.string().nullable().optional(),
+  situacaoCadastral: z.string().nullable().optional(),
+  dataInicioAtividade: z.date().nullable().optional(),
+  cnaeDescricao: z.string().nullable().optional(),
+  capitalSocial: z.string().nullable().optional(),
 });
 
 export type Business = z.infer<typeof BusinessSchema>;
@@ -126,7 +133,34 @@ const FIELD_MASK = [
   'places.primaryType',
 ].join(',');
 
+export function isRealWebsiteUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const cleanUrl = url.trim().toLowerCase();
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) return false;
+    const hostname = new URL(cleanUrl).hostname.replace(/^www\./, '');
+    
+    const socialDomains = [
+      'instagram.com', 'instagr.am',
+      'facebook.com', 'fb.com', 'fb.me',
+      'wa.me', 'whatsapp.com', 'api.whatsapp.com',
+      'tiktok.com',
+      'youtube.com', 'youtu.be',
+      'twitter.com', 'x.com',
+      'linkedin.com',
+      'linktr.ee', 'beacons.ai', 'bio.link', 'taplink.cc'
+    ];
+    
+    return !socialDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+  } catch {
+    return false;
+  }
+}
+
 function mapRawPlaceToBusiness(place: RawPlace): Business {
+  const websiteUri = place.websiteUri ?? null;
+  const isRealSite = isRealWebsiteUrl(websiteUri);
+
   return {
     placeId: place.id,
     name: place.displayName?.text ?? '',
@@ -135,8 +169,8 @@ function mapRawPlaceToBusiness(place: RawPlace): Business {
     category: place.primaryType ?? (place.types?.[0] ?? null),
     rating: place.rating ?? null,
     reviewCount: place.userRatingCount ?? null,
-    hasWebsite: !!place.websiteUri,
-    websiteUrl: place.websiteUri ?? null,
+    hasWebsite: isRealSite,
+    websiteUrl: websiteUri,
     googleMapsUrl: place.googleMapsUri ?? null,
     latitude: place.location?.latitude ?? null,
     longitude: place.location?.longitude ?? null,

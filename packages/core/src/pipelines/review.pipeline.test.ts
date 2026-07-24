@@ -31,7 +31,7 @@ describe('ReviewPipeline', () => {
     vi.restoreAllMocks();
   });
 
-  it('runs end-to-end enrichment pipeline smoothly', async () => {
+  it('runs end-to-end enrichment pipeline smoothly', { timeout: 15000 }, async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockImplementation((url: string) => {
@@ -39,7 +39,24 @@ describe('ReviewPipeline', () => {
           return Promise.resolve({
             ok: true,
             json: async () => ({
-              organic: [{ link: 'https://www.instagram.com/salaoestilo/' }],
+              organic: [{ link: 'https://www.instagram.com/salaoestilo/' }, { snippet: 'CNPJ 12.345.678/0001-90' }],
+            }),
+          });
+        }
+        if (url.includes('brasilapi.com.br')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              cnpj: '12345678000190',
+              razao_social: 'Salão Estilo e Beleza Ltda',
+              nome_fantasia: 'Salão Estilo',
+              descricao_situacao_cadastral: 'ATIVA',
+              data_inicio_atividade: '2010-05-20',
+              cnae_fiscal_descricao: 'Cabeleireiros e outras atividades de tratamento de beleza',
+              capital_social: 10000,
+              municipio: 'São Paulo',
+              uf: 'SP',
+              qsa: [{ nome_socio: 'Maria Silva', qualificacao_socio: 'Sócio-Administrador' }],
             }),
           });
         }

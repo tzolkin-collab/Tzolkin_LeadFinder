@@ -1,8 +1,8 @@
-# Lead Finder — Tzolkin (Produtização SaaS)
+# Scanner Inteligente de PMEs Sem Anúncios e Sem Website — Lead Finder / Tzolkin
 
 ## 📌 Visão Geral & Contexto
 Porta de entrada para a **produtização do Lead Finder** (Task do Calendário Operacional — Gustavo, 21/07/2026).
-O Lead Finder é a ferramenta interna de prospecção e inteligência comercial da Tzolkin. Ele encontra negócios locais **sem website**, enriquece cada lead com dados públicos (Instagram, Meta Ads) e usa IA para pontuá-los (score 1–10) em relação à aderência para serviços de criação de site/landing page, gerando sugestões de abordagem.
+O **Scanner Inteligente de PMEs Sem Anúncios e Sem Website** é a ferramenta interna de prospecção e inteligência comercial da Tzolkin. Ele encontra negócios locais **sem website**, enriquece cada lead com dados públicos (Instagram, Meta Ads, CNPJ/Brasil API) e usa IA para pontuá-los (score 1–10) em relação à aderência para serviços de criação de site/landing page, gerando sugestões de abordagem.
 
 A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promessa central é **conectar leads ideais com prestadores de serviço**, assistindo o **last mile: identificar/alcançar o decisor e iniciar a conversa**.
 
@@ -18,36 +18,61 @@ A produtização transforma a ferramenta interna em um **SaaS B2B** cuja promess
 
 ---
 
+## 🔌 Fontes de Dados Padrão
+O scanner utiliza as seguintes fontes públicas e APIs por padrão (configuráveis via `.env`):
+
+| Fonte | Propósito | Chave Padrão (dev) |
+| --- | --- | --- |
+| **Google Places API** | Descoberta em massa de PMEs locais | `GOOGLE_PLACES_API_KEY` |
+| **Serper.dev** | Busca indexada no Google (Instagram, Meta Ads, CNPJ, LinkedIn) | `SERPER_API_KEY` |
+| **Brasil API** | Enriquecimento de CNPJ (gratuito, sem chave) | N/A |
+| **Meta Ads Library API** | Verificação de anúncios ativos no Facebook/Instagram | `META_ADS_TOKEN` (opcional) |
+| **OpenAI** | Geração do dossiê comercial e score | `OPENAI_API_KEY` |
+| **Redis** | Cache distribuído e rate limiting | `REDIS_URL` (opcional) |
+
+> O fallback para todas as fontes pagas é **graceful**: se a chave não estiver configurada ou a API falhar, o lead continua sendo enriquecido com os dados disponíveis.
+
 ## 🏗️ Arquitetura de Produto: Last Mile & Agente (Documento 4 da Wiki)
 
 O núcleo de valor do Lead Finder transiciona da simples *descoberta de leads* para a **assistência completa no Last Mile**: identificar o decisor real, obter contato direto, gerar a minuta personalizada da primeira conversa e controlar a execução da abordagem.
 
-### 🤖 1. Notebook-Agente (UI de Comando estilo NotebookLM)
-- **Conceito**: Cada lead qualificado é um "notebook" interativo cujas fontes de contexto são os enriquecimentos do negócio. O usuário conversa com um agente IA especialista em vez de clicar em botões isolados.
-- **Evolução da Arquitetura**: Os serviços backend existentes (`google-places`, `instagram`, `meta-ads`, `ai-review` e futuros `cnpj`, `linkedin`) são expostos como **Tools/Function Calling** da API Anthropic/Claude.
-  - Ex: *"Esse negócio veicula anúncios?"* → Tool `meta-ads`
-  - Ex: *"Quem é o sócio/decisor?"* → Tools `cnpj` + `linkedin`
-  - Ex: *"Escreva o 1º contato para WhatsApp"* → Tool `ai-review`
+### 🤖 1. Notebook-Agente (UI de Comando estilo Claude & Split Workspace)
+- **Conceito**: Substituição do botão estático único "Gerar Dossiê" por um **Workspace Dinâmico por Lead** estilo Claude (Chat Interativo na esquerda + Artefatos Atualizáveis na direita).
+- **Descoberta Inicial de LinkedIn no Topo do Funil**:
+  - Na busca inicial em lote (1 clique), o sistema já executa queries paralelas (`site:linkedin.com/company` e `site:linkedin.com/in`) via Serper API para capturar o LinkedIn da empresa e dos sócios **antes mesmo de abrir o dossiê**.
+- **Arquitetura de Memória & Swarm**:
+  - **Memory Consolidation**: Retém buscas passadas (< 30 dias). Não repete chamadas de API desnecessárias.
+  - **Agent Swarm (Multi-Model)**: Subagentes especializados (CNPJ/Bureau, Social OSINT, Meta Ads e Copywriter Sales Closer).
+  - **Chat com Streaming & Tool Access**: O usuário conversa diretamente com o lead ("Escreva um pitch pro WhatsApp do Raniere", "Qual a verba de anúncios deles?") com acesso a tools e integrações Tzolkin.
 - **Separação de Camadas (Volume vs Deep-Dive)**:
-  - **Topo do Funil (Volume)**: Busca em lote (1 clique, até 50 leads) + scoring automático de qualificação.
-  - **Fundo do Funil (Last Mile)**: Notebook-Agente focado no lead selecionado, acionável dentro do card no CRM.
+  - **Topo do Funil (Volume)**: Busca em lote (1 clique, até 50 leads) + badges de presença (`[🌐 Site]`, `[📸 IG]`, `[💼 LinkedIn]`, `[📢 Meta Ads]`).
+  - **Fundo do Funil (Last Mile)**: Notebook-Agente e revelação de WhatsApp do Sócio via sistema de créditos.
 
 ### 📋 2. Micro-CRM Outbound Integrado
 Evolução do enum simples atual (`PENDING → REVIEWED → CONTACTED → REJECTED`) para um pipeline de aquisição completo:
-$$\text{Novo} \rightarrow \text{Qualificado} \rightarrow \text{Decisor Identificado} \rightarrow \text{Contato Obtido} \rightarrow \text{Abordado} \rightarrow \text{Em Conversa} \rightarrow \text{Proposta} \rightarrow \text{Fechado / Perdido}$$
+$$\text{Novo} \rightarrow \text{Qualificado} \rightarrow \text{Decisor Identificado} \rightarrow \text{Contato Obtido}$$
 
-### 👤 3. Descoberta de Decisor (Cascata por Porte)
-- **Negócio PME / Owner-Operated** (padarias, clínicas locais, oficinas, salões):
-  - `CNPJ → Quadro de Sócios`: O sócio **é** o decisor direto (dado público por lei no Brasil — superpoder local inalcançável pela Apollo). Cruzado com Instagram pessoal e cadastro de anunciante na Meta.
-- **Empresa Maior / Estruturada** (franquias, hospitais, redes):
-  - `LinkedIn`: Utilizado estritamente para localizar a pessoa física do decisor por **cargo/função**, não como fonte primária de garimpo.
+### 👤 3. Descoberta & Mapeamento Multi-Decisor (Sem Descarte)
+- **Princípio da Não-Exclusão**: Nenhum decisor ou canal de contato é descartado. O sistema monta uma **Mini-lista de Decisores** por empresa (CEO, Sócios, CMO, CTO, RH, Diretor Comercial, Gerente).
+- **Fontes de Mapeamento**:
+  - `CNPJ → Quadro de Sócios`: Sócio-Administrador e demais sócios cotistas com CPF mascarado, cargo e faixa etária (dado público federal).
+  - `Meta Ads + Instagram + Bio`: Contatos vinculados aos responsáveis de marketing / comercial da operação.
+  - `LinkedIn`: Mapeamento de executivos e liderança por função em empresas maiores.
+- **Visibilidade Unificada (Dossiê + Pipeline Outbound)**:
+  - Exibido tanto no **Dossiê do Negócio (`/business/[id]`)** quanto no **Micro-CRM Outbound**, permitindo ao prestador selecionar para qual decisor deseja disparar o pitch ou cadência.
 
-### 📞 4. Aquisição de Contato (Resolução em Duas Frentes)
-- **(a) Contato do Negócio (Público & Legítimo)**:
-  - Cascata automatizada: Google Places → Bio do Instagram (`wa.me`, e-mail, Linktree) → CTA do Meta Ads → Site → Registro CNPJ. Alta cobertura e conformidade legal total.
-- **(b) Contato Pessoal do Decisor**:
-  - Para PMEs, o WhatsApp comercial costuma ser o próprio celular do dono.
-  - Para empresas estruturadas, o LinkedIn identifica o profissional, com finalização manual/assistida se necessário.
+### 📞 4. Aquisição de Contato, E-mails & Categorização por Badges
+- **(a) Mapeamento de E-mails Vinculados aos Decisores**:
+  - Extração de e-mails corporativos e pessoais vinculados (Registro CNPJ, Bio do Instagram, Linktree, formulários públicos e WHOIS).
+  - Associação direta: cada e-mail é vinculado ao seu respetivo decisor ou marcado como `[E-mail Geral / Comercial]`.
+- **(b) Preservação & Categorização de Todos os Telefones (Badges Visuais)**:
+  - **Validação Automática sem Descarte**: Telefones sem WhatsApp **NÃO são excluídos**. Eles são mantidos na lista com a categorização por Badges:
+    - `🟢 [WhatsApp Verificado]` — Celular móvel com conta ativa no WhatsApp (link padronizado obrigatoriamente como `https://wa.me/55...`).
+    - `☎️ [Telefone Fixo]` — Linha fixa identificada (útil para ligações diretas via recepção/secretária).
+    - `⚠️ [WhatsApp Não Encontrado / Móvel Inativo]` — Número móvel sem conta ativa detectada no protocolo.
+    - `📧 [E-mail Corporativo / Pessoal]` — E-mail associado com indicador de entregabilidade.
+- **(c) Validação / Override Manual pelo Usuário**:
+  - O usuário pode alterar manualmente o status de qualquer número ou e-mail (`[Validado]`, `[Falso / Inexistente]`, `[Não Pertence ao Decisor]`), personalizando o cadastro conforme a evolução da abordagem.
 
 ### 🛡️ 5. Guardrails Operacionais & Compliance (Evolution API & LGPD)
 - **Guardrails Operacionais (Ajustáveis nas Configurações)**:
