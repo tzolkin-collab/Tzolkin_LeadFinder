@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-const p = new PrismaClient();
+import { prisma } from './dist/index.js';
 
 async function main() {
-  const reports = await p.businessReport.findMany({
+  const reports = await prisma.businessReport.findMany({
     take: 3,
     orderBy: { updatedAt: 'desc' },
     include: { business: true }
@@ -10,4 +9,5 @@ async function main() {
   console.log(JSON.stringify(reports, null, 2));
 }
 
-main().catch(console.error).finally(() => p.$disconnect());
+main().catch(console.error).finally(() => prisma.$disconnect());
+

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '../../../components/Header.js';
+import { Header } from '../../../components/legacy/Header.js';
 import { TzolkinLoader } from '../../../components/brand/TzolkinLogo.js';
-import { SocialMediaEmbeds } from '../../../components/SocialMediaEmbeds.js';
+import { SocialMediaEmbeds } from '../../../components/legacy/SocialMediaEmbeds.js';
 import { GooglePlacesIcon, GoogleAdsIcon, InstagramIcon, MetaAdsIcon, OpenAiIcon, WhatsAppIcon, TikTokIcon } from '../../../components/brand/ServiceLogos.js';
 import { PhotosIcon, ActionsIcon, TargetIcon, WarningIcon, WrenchIcon, GlobeIcon, FolderIcon, CalendarIcon, LinkIcon, PaletteIcon, CheckIcon, CrossIcon, PinIcon, ClipboardIcon, SparklesIcon, IdeaIcon } from '../../../components/brand/UIIcons.js';
 
@@ -151,7 +151,7 @@ export default function BusinessDetailPage({ params }) {
         try {
             const res = await fetch(`${API_URL}/api/businesses/${id}`, { headers: authHeaders() });
             if (res.status === 401) { router.push('/'); return; }
-            if (res.status === 404) { router.push('/dashboard'); return; }
+            if (res.status === 404) { router.push('/feed'); return; }
             const data = await res.json();
             setBusiness(data);
         } catch (err) {
@@ -200,7 +200,7 @@ export default function BusinessDetailPage({ params }) {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
-            router.push('/dashboard');
+            router.push('/feed');
         } catch (err) {
             showToast('Erro ao remover', true);
         }
@@ -261,7 +261,7 @@ export default function BusinessDetailPage({ params }) {
                 
                 {/* Back Link */}
                 <div style={{ marginBottom: 16 }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => router.push('/dashboard')}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => router.push('/feed')}>
                         ← Voltar ao Pipeline
                     </button>
                 </div>
@@ -436,8 +436,8 @@ export default function BusinessDetailPage({ params }) {
 
                                     {/* WhatsApp Pitch Bubble */}
                                     {report.approachSuggestion && (
-                                        <div className="card" style={{ marginBottom: 20, borderLeft: '3px solid var(--tzolkin-lime)' }}>
-                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--tzolkin-lime)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div className="card" style={{ marginBottom: 20, borderLeft: '3px solid var(--tzolkin-yellow)' }}>
+                                            <div style={{ fontSize: 11, fontFamily: 'var(--font-sans)', textTransform: 'none', color: 'var(--tzolkin-yellow)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                 <WhatsAppIcon size={14} />
                                                 MINUTA DE ABORDAGEM (WHATSAPP)
                                             </div>

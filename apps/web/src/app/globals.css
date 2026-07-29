@@ -1,26 +1,38 @@
 /* ============================================================
-   Lead Finder — Minimalist Enterprise B2B Design System
+   Tzolkin Tracer — Minimalist Enterprise B2B Design System
    Linear / Vercel Aesthetic: Clean Typography & Hairline Borders
    ============================================================ */
 
 :root {
-    /* Vercel-like Minimal Dark Palette */
-    --bg-primary: #000000;
-    --bg-secondary: #0a0a0a;
-    --bg-card: #111111;
-    --bg-card-hover: #171717;
-    --bg-elevated: #1a1a1a;
-    --bg-input: #0a0a0a;
+    /* True neutral grey — R=G=B exactly, matiz 0deg, matching the anchor
+       philosophy of Anthropic's own gray ramp (white / near-black, no warm
+       or cool tint). Two earlier attempts added a hue bias — first ~41deg
+       (read green/olive next to the yellow accent), then ~26deg (still read
+       green and hurt legibility). A tinted grey this dark and desaturated
+       is read as "some hue" by the eye; true neutral is the only value that
+       is mathematically incapable of looking green. Don't reintroduce a
+       tint here — if warmth is wanted, put it in a distinct accent token,
+       never in the base neutral ramp. */
+    --bg-primary: #262626;
+    --bg-secondary: #2e2e2e;
+    --bg-card: #363636;
+    --bg-card-hover: #404040;
+    --bg-elevated: #4a4a4a;
+    --bg-input: #2e2e2e;
 
-    /* Hairline Crisp Borders */
-    --border-primary: rgba(255, 255, 255, 0.06);
-    --border-secondary: rgba(255, 255, 255, 0.12);
-    --border-accent: rgba(255, 255, 255, 0.2);
+    /* Hairline Crisp Borders — neutral white, no tint */
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.14);
+    --border-accent: rgba(255, 255, 255, 0.22);
 
-    /* Softer Typography Scale */
-    --text-primary: #ededed;
-    --text-secondary: #888888;
-    --text-tertiary: #555555;
+    /* Preenchimento translúcido — papel distinto de --border-primary (8%):
+       fundo sutil pra elemento tipo pílula/chip, não hairline de divisa. */
+    --bg-subtle-fill: rgba(255, 255, 255, 0.04);
+
+    /* Softer Typography Scale — true neutral greys */
+    --text-primary: #f2f2f2;
+    --text-secondary: #c2c2c2;
+    --text-tertiary: #949494;
 
     /* Muted Status Colors */
     --success: #22c55e;
@@ -45,7 +57,10 @@
 
     /* Tzolkin Brand Colors */
     --tzolkin-offwhite: #FAFAF7;
-    --tzolkin-lime: #D4FF00;
+    --tzolkin-yellow: #FFD400;
+    /* Mesma convenção alpha-sobre-token das variantes -soft semânticas
+       (--success-soft etc.), estendida ao amarelo — fundo de avatar/destaque. */
+    --tzolkin-yellow-soft: rgba(255, 212, 0, 0.12);
 
     /* Score Scale */
     --score-high: #10b981;
@@ -53,7 +68,7 @@
     --score-low: #ef4444;
 
     /* Glass Background */
-    --bg-glass: rgba(9, 9, 11, 0.75);
+    --bg-glass: rgba(38, 38, 38, 0.75);
 
     /* Typography (loaded via next/font/google as --font-inter) */
     --font-heading: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -205,6 +220,84 @@ body {
     border-radius: var(--radius-sm);
 }
 
+/* ---- Pill Button (InteractiveSlider / landing CTA) ---- */
+.btn-pill {
+    background: var(--text-primary);
+    color: #07070A;
+    border-radius: var(--radius-pill);
+    padding: 12px 32px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.18);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(255, 212, 0, 0.4);
+    background: var(--text-primary);
+    color: #07070A;
+}
+
+.btn-pill-ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--tzolkin-offwhite);
+    border-radius: var(--radius-pill);
+    padding: 12px 32px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: none;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-pill-ghost:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(255, 212, 0, 0.4);
+}
+
+/* ---- Tab Button (Segmented control — auth mode switcher) ---- */
+.btn-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-family: var(--font-button);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.btn-tab.active {
+    background: var(--bg-elevated);
+    color: var(--tzolkin-offwhite);
+}
+
+/* ---- Text Button (ghost link — "Reenviar código", links semânticos) ---- */
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    transition: color var(--transition-fast);
+}
+
+.btn-text:hover {
+    color: var(--text-primary);
+}
+
 .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -327,6 +420,37 @@ body {
     min-height: 100vh;
     position: relative;
     background: var(--bg-primary);
+}
+
+/* ---- Tracer Sidebar Nav Item ---- */
+.tracer-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 10px 0 9px;
+    border-left: 2px solid transparent;
+    border-radius: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 400;
+    text-decoration: none;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tracer-nav-item:hover {
+    color: var(--text-primary);
+}
+
+.tracer-nav-item[aria-current="page"] {
+    border-left-color: var(--tzolkin-yellow);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ---- Signal Row List (border-top separator between rows) ---- */
+.signal-row-list > * + * {
+    border-top: 1px solid var(--border-primary);
 }
 
 /* ---- Header Glass Navbar ---- */
@@ -730,7 +854,7 @@ tr:hover td {
     inset: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(ellipse at 50% 30%, #170a33 0%, #080612 60%, #040407 100%);
+    background: radial-gradient(ellipse at 50% 30%, #363636 0%, #2e2e2e 60%, #262626 100%);
     overflow: hidden;
     user-select: none;
 }
@@ -827,23 +951,6 @@ tr:hover td {
     }
 }
 
-/* Cockpit Glowing Pills & Card Enhancements */
-.cockpit-glow {
-    position: relative;
-    overflow: hidden;
-}
-
-.cockpit-glow::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(12, 206, 107, 0.08) 0%, transparent 60%);
-    pointer-events: none;
-}
-
 /* Split-screen Responsive Auth Styles (Asaas Layout) */
 @media (max-width: 960px) {
     .auth-hero-panel {
@@ -853,5 +960,24 @@ tr:hover td {
     .auth-form-panel {
         width: 100% !important;
         padding: 24px 16px !important;
+    }
+}
+
+/* ---- Header Legacy Responsive (migrated from Header.js style jsx) ---- */
+@media (max-width: 768px) {
+    .desktop-nav,
+    .desktop-btn {
+        display: none !important;
+    }
+
+    .mobile-toggle {
+        display: inline-flex !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-toggle,
+    .mobile-drawer {
+        display: none !important;
     }
 }

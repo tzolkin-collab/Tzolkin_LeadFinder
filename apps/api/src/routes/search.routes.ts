@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '@tzolkin/database';
+import {
+  prisma,
+  listTenantBusinesses,
+  resolveCanonicalBusiness,
+  recordObservation,
+  linkTenantBusiness,
+} from '@tzolkin/database';
 import { GooglePlacesTool, AiQueryPlannerTool, CoreLogger } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { env } from '../config/env.js';
@@ -148,6 +154,36 @@ router.post('/', async (req, res, next) => {
         include: { report: true },
       });
       savedBusinesses.push(saved);
+
+      // Fase 1 — base canônica compartilhada: toda busca paga por um tenant
+      // alimenta o cadastro comum, para que o próximo tenant que encontrar o
+      // mesmo negócio não recolete (nem repague) do zero. Efeito colateral
+      // best-effort: uma falha aqui não pode derrubar a busca do tenant, que
+      // já foi salva com sucesso na linha acima.
+      try {
+        const canonical = await resolveCanonicalBusiness({
+          placeId: biz.placeId,
+          name: biz.name,
+          address: biz.address,
+          category: biz.category,
+          latitude: biz.latitude,
+          longitude: biz.longitude,
+        });
+        await recordObservation({
+          canonicalId: canonical.id,
+          source: 'GOOGLE_PLACES',
+          payload: biz,
+          triggeredByTenantId: tenantId,
+        });
+        if (saved.canonicalId !== canonical.id) {
+          await linkTenantBusiness(saved.id, canonical.id);
+        }
+      } catch (canonicalError) {
+        logger.error('Falha ao gravar na base canônica (busca do tenant não foi afetada)', canonicalError, {
+          tenantId,
+          placeId: biz.placeId,
+        });
+      }
     }
 
     logger.info(`Garimpo concluído`, { tenantId, query: input.query, totalFound: result.data.total, withoutWebsite: result.data.withoutWebsite, savedCount: savedBusinesses.length });
@@ -164,21 +200,18 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// GET /api/v1/search/leads - List all saved leads for tenant
+// GET /api/v1/search/leads - List saved leads for tenant
 router.get('/leads', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
+    const page = parseInt((req.query.page as string) || '1', 10);
+    const limit = parseInt((req.query.limit as string) || '20', 10);
 
-    const businesses = await prisma.business.findMany({
-      where: { tenantId },
-      include: { report: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    // Mesma fonte de "listar negócios do tenant" que /api/businesses usa —
+    // ver packages/database/src/services/tenant-business.service.ts.
+    const result = await listTenantBusinesses(tenantId, { page, limit });
 
-    res.json({
-      total: businesses.length,
-      businesses,
-    });
+    res.json(result);
   } catch (error) {
     next(error);
   }

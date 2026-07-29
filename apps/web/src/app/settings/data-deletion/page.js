@@ -42,16 +42,16 @@ export default function DataDeletionPage() {
 
                             <section style={{ marginBottom: 32 }}>
                                 <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                                    1. Como excluir seus dados do Lead Finder
+                                    1. Como excluir seus dados do Tzolkin Tracer
                                 </h2>
                                 <p>
                                     De acordo com os regulamentos da Meta para Aplicativos e Sites, devemos fornecer uma URL de retorno de chamada de exclusão de dados ou uma URL de instruções de exclusão de dados.
-                                    Se você deseja excluir suas atividades para o aplicativo Lead Finder, pode fazê-lo seguindo estas etapas:
+                                    Se você deseja excluir suas atividades para o aplicativo Tzolkin Tracer, pode fazê-lo seguindo estas etapas:
                                 </p>
                                 <ol style={{ marginLeft: 20, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                                     <li>Vá para as Configurações e Privacidade do seu perfil do Facebook. Clique em &quot;Configurações&quot;.</li>
                                     <li>Role para baixo e clique em &quot;Aplicativos e Sites&quot;.</li>
-                                    <li>Procure e clique em &quot;Lead Finder&quot;.</li>
+                                    <li>Procure e clique em &quot;Tzolkin Tracer&quot;.</li>
                                     <li>Clique no botão &quot;Remover&quot;.</li>
                                 </ol>
                             </section>

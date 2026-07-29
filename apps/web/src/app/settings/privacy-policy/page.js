@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
                                     1. Introdução
                                 </h2>
                                 <p>
-                                    O Lead Finder (&quot;nós&quot;, &quot;nosso&quot; ou &quot;aplicação&quot;) está comprometido com a proteção da privacidade
+                                    O Tzolkin Tracer (&quot;nós&quot;, &quot;nosso&quot; ou &quot;aplicação&quot;) está comprometido com a proteção da privacidade
                                     dos nossos usuários. Esta Política de Privacidade explica como coletamos, usamos, armazenamos
                                     e compartilhamos informações quando você utiliza nossa plataforma de prospecção de clientes.
                                 </p>

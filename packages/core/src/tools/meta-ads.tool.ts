@@ -34,6 +34,17 @@ export const MetaAdItemSchema = z.object({
   pageId: z.string().optional(),
   pageName: z.string().optional(),
   snapshotUrl: z.string().url().optional(),
+  /**
+   * Data em que o anúncio começou a rodar, vinda da própria Meta Ad Library.
+   *
+   * É o que permite o sinal COMECOU_A_ANUNCIAR ter `observedAt` real ("há 16
+   * dias") **sem esperar duas observações** — diferente de PUBLICOU_SITE ou
+   * SALTO_DE_REVIEWS, que são genuinamente diff entre snapshots e por isso
+   * têm cold start. Só existe via Graph API oficial; o fallback por busca
+   * (Serper) não tem essa data.
+   */
+  deliveryStartTime: z.string().optional(),
+  deliveryStopTime: z.string().optional(),
 });
 
 export type MetaAdItem = z.infer<typeof MetaAdItemSchema>;
@@ -59,6 +70,8 @@ interface RawMetaAd {
   page_id?: string;
   page_name?: string;
   ad_snapshot_url?: string;
+  ad_delivery_start_time?: string;
+  ad_delivery_stop_time?: string;
 }
 
 interface MetaAdsApiResponse {
@@ -112,7 +125,9 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
             ad_reached_countries: `['${validated.country}']`,
             ad_active_status: 'ACTIVE',
             limit: '5',
-            fields: 'id,ad_snapshot_url,page_name,page_id',
+            // ad_delivery_start_time é o campo que destrava o sinal
+            // COMECOU_A_ANUNCIAR sem cold start — ver MetaAdItemSchema.
+            fields: 'id,ad_snapshot_url,page_name,page_id,ad_delivery_start_time,ad_delivery_stop_time',
           });
 
           const [response, googleResult, tiktokResult] = await Promise.all([
@@ -134,6 +149,8 @@ export class MetaAdsTool implements Tool<MetaAdsInput, MetaAdsOutput> {
                 pageId: ad.page_id,
                 pageName: ad.page_name,
                 snapshotUrl: ad.ad_snapshot_url,
+                deliveryStartTime: ad.ad_delivery_start_time,
+                deliveryStopTime: ad.ad_delivery_stop_time,
               }));
 
               const durationMs = Date.now() - startedAt;

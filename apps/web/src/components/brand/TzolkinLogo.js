@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * Official Tzolkin Brand System Logo & Product Drawn Wordmark for Lead Finder
+ * Official Tzolkin Brand System Logo & Product Drawn Wordmark for Tzolkin Tracer
  * 
  * Rules & Geometry (Grade 64):
- * - Tile: 64x64, rx=14, fill=#0A0A0A
+ * - Tile: 64x64, rx=14, fill=var(--bg-secondary)
  * - Tzolkin Mark: Ring (cx=28, cy=30, r=14) + Overlapping Disc (cx=42, cy=30, r=14)
- * - Lead Finder Mark: Ring (cx=28, cy=30, r=14) + Targeted Disc (cx=42, cy=42, r=7)
+ * - Tracer Mark: Ring (cx=28, cy=30, r=14) + Targeted Disc (cx=42, cy=42, r=7)
  */
 
 export function TzolkinGlyph({ size = 32, color = '#FAFAF7', className = '' }) {
@@ -18,7 +18,7 @@ export function TzolkinGlyph({ size = 32, color = '#FAFAF7', className = '' }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="Mark Lead Finder"
+      aria-label="Mark Tracer"
     >
       <circle cx="28" cy="30" r="14" fill="none" stroke={color} strokeWidth="2.4" />
       <circle cx="42" cy="42" r="7" fill={color} />
@@ -37,7 +37,7 @@ export function TzolkinTile({ size = 40, className = '' }) {
       className={className}
       aria-label="Tzolkin Initial Mark (SVG 1)"
     >
-      <rect width="64" height="64" rx="16" fill="#0A0A0A" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
+      <rect width="64" height="64" rx="16" fill="var(--bg-secondary)" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
       <circle cx="38" cy="26" r="13" fill="#B0B0B0" />
       <circle cx="26" cy="34" r="13" fill="none" stroke="#FFFFFF" strokeWidth="3.6" />
     </svg>
@@ -56,13 +56,18 @@ export function LeadFinderScannerTile({ size = 40, className = '' }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="Lead Finder Scanner Mark (SVG 2)"
+      aria-label="Tracer Scanner Mark (SVG 2)"
     >
-      <rect width="64" height="64" rx="16" fill="#0A0A0A" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
+      <rect width="64" height="64" rx="16" fill="var(--bg-secondary)" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
       <circle cx="38" cy="26" r="13" fill="#B0B0B0" />
       <circle cx="26" cy="26" r="13" fill="none" stroke="#FFFFFF" strokeWidth="3.8" />
       <path d="M 18 21 A 9 9 0 0 1 24 15" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" />
       <line x1="34" y1="34" x2="48" y2="48" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M 6 26 H 26" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M 26 26 C 34 26 36 18 44 14" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M 26 26 C 34 26 36 34 44 38" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+      <circle cx="44" cy="14" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
+      <circle cx="44" cy="38" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
     </svg>
   );
 }
@@ -75,6 +80,7 @@ export function LeadFinderScannerTile({ size = 40, className = '' }) {
  * 2. Main ring slides up into magnifying glass lens position.
  * 3. Magnifying handle pops out diagonally with spring elasticity.
  * 4. Inner glare arc illuminates.
+ * 5. Yellow tracer signal ray enters from left and bifurcates into twin signal dots!
  */
 export function TzolkinMorphingTile({ size = 40, className = '' }) {
   return (
@@ -146,11 +152,46 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
           .tzolkin-morphing-tile-container:hover .morph-glare {
             opacity: 1;
           }
+
+          /* 5. Input Radar Ray from Left */
+          .morph-signal-input {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            transition: stroke-dashoffset 350ms cubic-bezier(0.16, 1, 0.3, 1) 280ms, opacity 200ms ease 280ms;
+            opacity: 0;
+          }
+          .tzolkin-morphing-tile-container:hover .morph-signal-input {
+            stroke-dashoffset: 0;
+            opacity: 1;
+          }
+
+          /* 6. Yellow Bifurcated Line Drawing Animation */
+          .morph-bifurcated-line {
+            stroke-dasharray: 24;
+            stroke-dashoffset: 24;
+            transition: stroke-dashoffset 400ms cubic-bezier(0.16, 1, 0.3, 1) 360ms, opacity 250ms ease 360ms;
+            opacity: 0;
+          }
+          .tzolkin-morphing-tile-container:hover .morph-bifurcated-line {
+            stroke-dashoffset: 0;
+            opacity: 1;
+          }
+
+          .morph-bifurcated-dot {
+            transform-origin: 44px 26px;
+            transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1) 450ms, opacity 200ms ease 450ms;
+            transform: scale(0);
+            opacity: 0;
+          }
+          .tzolkin-morphing-tile-container:hover .morph-bifurcated-dot {
+            transform: scale(1);
+            opacity: 1;
+          }
         `}</style>
 
-        <rect className="morph-tile-rect" width="64" height="64" rx="16" fill="#0A0A0A" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
+        <rect className="morph-tile-rect" width="64" height="64" rx="16" fill="var(--bg-secondary)" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
 
-        {/* Grey Disc Group (Pure solid circle - spins & collapses on hover/loader) */}
+        {/* Grey Disc Group */}
         <g className="morph-disc-group">
           <circle cx="38" cy="26" r="13" fill="#B0B0B0" />
         </g>
@@ -163,13 +204,20 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
 
         {/* Magnifying Handle */}
         <line className="morph-handle" x1="34" y1="34" x2="48" y2="48" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" />
+
+        {/* Yellow Tracer Signal Line & Dots */}
+        <path className="morph-signal-input" d="M 6 26 H 26" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <path className="morph-bifurcated-line" d="M 26 26 C 34 26 36 18 44 14" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <path className="morph-bifurcated-line" d="M 26 26 C 34 26 36 34 44 38" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <circle className="morph-bifurcated-dot" cx="44" cy="14" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
+        <circle className="morph-bifurcated-dot" cx="44" cy="38" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
       </svg>
     </div>
   );
 }
 
 /**
- * Continuous Animated Loader Tile (Loops the exact same motion sequence: Grey Disc spins & splits -> Ring morphs to Lupa -> reverses back)
+ * Continuous Animated Loader Tile (Loops the exact same motion sequence)
  */
 export function TzolkinAnimatedTile({ size = 56, className = '' }) {
   return (
@@ -192,7 +240,7 @@ export function TzolkinAnimatedTile({ size = 56, className = '' }) {
       >
         <style>{`
           .loader-tile-rect {
-            animation: loaderPulseGlow 2s infinite ease-in-out;
+            animation: loaderPulseGlow 2.4s infinite ease-in-out;
           }
           @keyframes loaderPulseGlow {
             0%, 100% { stroke: rgba(255, 255, 255, 0.16); }
@@ -240,11 +288,45 @@ export function TzolkinAnimatedTile({ size = 56, className = '' }) {
             40%, 60% { opacity: 1; }
             75%, 100% { opacity: 0; }
           }
+
+          /* 5. Input Radar Ray coming from left */
+          .loader-signal-input {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            animation: loaderInputDraw 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          }
+          @keyframes loaderInputDraw {
+            0%, 30% { stroke-dashoffset: 20; opacity: 0; }
+            40%, 65% { stroke-dashoffset: 0; opacity: 1; }
+            78%, 100% { stroke-dashoffset: 20; opacity: 0; }
+          }
+
+          /* 6. Yellow Bifurcated Line Animation */
+          .loader-bifurcated-line {
+            stroke-dasharray: 24;
+            stroke-dashoffset: 24;
+            animation: loaderBifurcatedDraw 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+          }
+          @keyframes loaderBifurcatedDraw {
+            0%, 38% { stroke-dashoffset: 24; opacity: 0; }
+            50%, 65% { stroke-dashoffset: 0; opacity: 1; }
+            78%, 100% { stroke-dashoffset: 24; opacity: 0; }
+          }
+
+          .loader-bifurcated-dot {
+            transform-origin: 44px 26px;
+            animation: loaderBifurcatedDotPop 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+          }
+          @keyframes loaderBifurcatedDotPop {
+            0%, 46% { transform: scale(0); opacity: 0; }
+            54%, 65% { transform: scale(1); opacity: 1; }
+            78%, 100% { transform: scale(0); opacity: 0; }
+          }
         `}</style>
 
-        <rect className="loader-tile-rect" width="64" height="64" rx="16" fill="#0A0A0A" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
+        <rect className="loader-tile-rect" width="64" height="64" rx="16" fill="var(--bg-secondary)" stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1.2" />
 
-        {/* Grey Disc Group (Pure solid circle - spins & dissolves) */}
+        {/* Grey Disc Group */}
         <g className="loader-disc-group">
           <circle cx="38" cy="26" r="13" fill="#B0B0B0" />
         </g>
@@ -257,6 +339,13 @@ export function TzolkinAnimatedTile({ size = 56, className = '' }) {
 
         {/* Magnifying Handle */}
         <line className="loader-handle" x1="34" y1="34" x2="48" y2="48" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" />
+
+        {/* Yellow Tracer Signal Line & Dots */}
+        <path className="loader-signal-input" d="M 6 26 H 26" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <path className="loader-bifurcated-line" d="M 26 26 C 34 26 36 18 44 14" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <path className="loader-bifurcated-line" d="M 26 26 C 34 26 36 34 44 38" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="2.4" strokeLinecap="round" />
+        <circle className="loader-bifurcated-dot" cx="44" cy="14" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
+        <circle className="loader-bifurcated-dot" cx="44" cy="38" r="2.2" fill="var(--tzolkin-yellow, #FFD400)" />
       </svg>
     </div>
   );
@@ -280,13 +369,13 @@ export function LeadFinderLockup({ height = 36, animated = false, className = ''
       className={`lead-finder-lockup ${className}`}
     >
       <TzolkinMorphingTile size={height} />
-      <svg height={height} viewBox="0 0 200 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Lead Finder Wordmark">
+      <svg height={height} viewBox="0 0 264 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Tzolkin Tracer Wordmark">
         <text x="0" y="44" fontFamily="'Inter', system-ui, sans-serif" fontSize="34" letterSpacing="-0.04em">
-          <tspan fontWeight="800" fill="#FAFAF7">Lead</tspan>
-          <tspan fontWeight="300" fill="#9A9A92"> Finder</tspan>
+          <tspan fontWeight="800" fill="#FAFAF7">Tzolkin</tspan>
+          <tspan fontWeight="300" fill="#9A9A92"> Tracer</tspan>
         </text>
-        <circle cx="186" cy="22" r="3" fill="#FAFAF7" />
-        <circle cx="186" cy="22" r="7" fill="none" stroke="#FAFAF7" strokeWidth="0.8" strokeDasharray="2 2" />
+        <circle cx="248" cy="22" r="3" fill="#FAFAF7" />
+        <circle cx="248" cy="22" r="7" fill="none" stroke="#FAFAF7" strokeWidth="0.8" strokeDasharray="2 2" />
       </svg>
     </div>
   );

@@ -1,5 +1,1 @@
-<svg width="256" height="256" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lead Finder mark">
-  <rect width="64" height="64" rx="14" ry="14" fill="#0A0A0A"/>
-  <circle cx="28" cy="30" r="14" fill="none" stroke="#FAFAF7" stroke-width="2.4"/>
-  <circle cx="42" cy="42" r="7" fill="#FAFAF7"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-label="Lead Finder mark" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0a0a0a" rx="14" ry="14"/><circle cx="28" cy="30" r="14" fill="none" stroke="#fafaf7" stroke-width="2.4"/><circle cx="42" cy="42" r="7" fill="#fafaf7"/></svg>

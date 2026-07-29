@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LeadFinderLockup, LeadFinderScannerTile, TzolkinMorphingTile } from '../components/brand/TzolkinLogo.js';
 import { IntroAnimation } from '../components/brand/IntroAnimation.js';
 import { EyeIcon, EyeOffIcon } from '../components/brand/UIIcons.js';
-import { AuthGraphism } from '../components/brand/AuthGraphism.js';
+import { InteractiveSlider } from '../components/brand/InteractiveSlider.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -94,7 +94,7 @@ export default function AuthPage() {
         } else {
           sessionStorage.setItem('token', data.token);
         }
-        router.push('/dashboard');
+        router.push('/feed');
       } catch (err) {
         setError('Não foi possível conectar ao servidor backend');
       } finally {
@@ -156,14 +156,14 @@ export default function AuthPage() {
       setTimeout(() => {
         setSuccessMsg('E-mail verificado com sucesso! Acessando...');
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/feed');
         }, 800);
       }, 600);
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#09090b', color: '#FAFAF7', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
       {/* Intro Motion Animation */}
       {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
 
@@ -177,47 +177,27 @@ export default function AuthPage() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            padding: '48px 56px',
-            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.03), transparent 70%)',
+            padding: '36px 48px',
+            borderRight: '1px solid var(--border-secondary)',
             position: 'relative',
+            overflow: 'hidden',
           }}
           className="auth-hero-panel"
         >
-          {/* Background graphism fills the entire hero panel */}
-          <AuthGraphism />
+          {/* Interactive Card Slider Banner Background */}
+          <InteractiveSlider />
 
           {/* Header Lockup */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            {/* <LeadFinderLockup height={42} /> */}
-          </div>
-
-          {/* Hero Copy */}
-          <div style={{
-            position: 'relative',
-            zIndex: 2,
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            padding: '48px 0',
-          }}>
-            <h1 style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.25, color: '#FAFAF7', maxWidth: 480, marginBottom: 16 }}>
-              Seu ICP ideal a um clique.
-            </h1>
-            <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 460, lineHeight: 1.6 }}>
-              Sem tráfego pago, sem criar conteúdo e sem postar vídeos. Com o Lead Finder, vai parecer que você está de <span style={{ color: '#8670ff', fontWeight: 600 }}>hack</span>.
-            </p>
+          <div style={{ position: 'relative', zIndex: 4 }}>
+            <LeadFinderLockup height={36} />
           </div>
 
           {/* Security Seal & Footer */}
-          <div style={{ position: 'relative', zIndex: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'var(--text-tertiary)' }}>
+          <div style={{ position: 'relative', zIndex: 4, borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'rgba(255, 255, 255, 0.5)' }}>
               Tzolkin Enterprise © 2026
             </span>
-            <span style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-sans)', color: 'rgba(255, 255, 255, 0.5)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--success)' }} />
               Dev
             </span>
@@ -232,7 +212,7 @@ export default function AuthPage() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 40,
-            background: '#09090b',
+            background: 'var(--bg-primary)',
           }}
           className="auth-form-panel"
         >
@@ -248,7 +228,7 @@ export default function AuthPage() {
               <div
                 style={{
                   display: 'flex',
-                  background: '#121215',
+                  background: 'var(--bg-card)',
                   padding: 4,
                   borderRadius: 'var(--radius-md)',
                   marginBottom: 28,
@@ -257,36 +237,14 @@ export default function AuthPage() {
               >
                 <button
                   type="button"
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: 6,
-                    border: 'none',
-                    background: mode === 'login' ? '#27272a' : 'transparent',
-                    color: mode === 'login' ? '#FAFAF7' : 'var(--text-tertiary)',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    transition: 'all 200ms ease',
-                  }}
+                  className={`btn-tab${mode === 'login' ? ' active' : ''}`}
                   onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
                 >
                   Entrar na Conta
                 </button>
                 <button
                   type="button"
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    borderRadius: 6,
-                    border: 'none',
-                    background: mode === 'register' ? '#27272a' : 'transparent',
-                    color: mode === 'register' ? '#FAFAF7' : 'var(--text-tertiary)',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    transition: 'all 200ms ease',
-                  }}
+                  className={`btn-tab${mode === 'register' ? ' active' : ''}`}
                   onClick={() => { setMode('register'); setError(''); setSuccessMsg(''); }}
                 >
                   Criar Conta Grátis
@@ -358,7 +316,7 @@ export default function AuthPage() {
                       className="input"
                       value={accountType}
                       onChange={(e) => setAccountType(e.target.value)}
-                      style={{ cursor: 'pointer', background: '#18181b', color: '#FAFAF7' }}
+                      style={{ cursor: 'pointer', background: 'var(--bg-card-hover)', color: 'var(--tzolkin-offwhite)' }}
                     >
                       <option value="PJ">Pessoa Jurídica (PJ / Empresa)</option>
                       <option value="PF">Pessoa Física (PF / Profissional Liberal)</option>
@@ -417,7 +375,7 @@ export default function AuthPage() {
                         className="input"
                         value={regUf}
                         onChange={(e) => setRegUf(e.target.value)}
-                        style={{ cursor: 'pointer', background: '#18181b', color: '#FAFAF7' }}
+                        style={{ cursor: 'pointer', background: 'var(--bg-card-hover)', color: 'var(--tzolkin-offwhite)' }}
                       >
                         {BRAZIL_UFS.map((uf) => (
                           <option key={uf} value={uf}>{uf}</option>
@@ -557,9 +515,9 @@ export default function AuthPage() {
                           fontWeight: 700,
                           textAlign: 'center',
                           borderRadius: 8,
-                          background: '#18181b',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          color: '#FAFAF7',
+                          background: 'var(--bg-card-hover)',
+                          border: '1px solid var(--border-accent)',
+                          color: 'var(--tzolkin-offwhite)',
                         }}
                       />
                     ))}
@@ -569,7 +527,7 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => alert('Código reenviado com sucesso!')}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+                      className="btn-text"
                     >
                       Não recebeu o código? Reenviar
                     </button>

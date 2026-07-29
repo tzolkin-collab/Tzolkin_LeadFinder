@@ -10,17 +10,17 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'TZOLKIN | Lead Finder — Inteligência Comercial B2B',
+  title: 'Tzolkin Tracer — Inteligência Comercial B2B',
   description: 'Plataforma de prospecção outbound de alto padrão. Garimpo de PMEs sem website, enriquecimento de dados públicos, cruzamento de sócios e apoio ao Last Mile via WhatsApp.',
-  keywords: ['software house', 'lead finder', 'prospecção', 'tzolkin', 'vendas b2b', 'inteligência comercial'],
+  keywords: ['software house', 'tracer', 'prospecção', 'tzolkin', 'vendas b2b', 'inteligência comercial'],
   icons: {
     icon: [
-      { url: '/icon.svg?v=3', type: 'image/svg+xml' },
-      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
-      { url: '/favicon-static.svg?v=3', type: 'image/svg+xml' },
+      { url: '/icon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/favicon-static.svg?v=4', type: 'image/svg+xml' },
     ],
-    shortcut: ['/icon.svg?v=3'],
-    apple: ['/favicon-static.svg?v=3'],
+    shortcut: ['/icon.svg?v=4'],
+    apple: ['/favicon-static.svg?v=4'],
   },
 };
 

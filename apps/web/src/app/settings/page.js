@@ -1,6 +1,6 @@
 'use client';
 
-import { Header } from '../../components/Header.js';
+import { AppShell, PageHeader } from '../../components/shell/AppShell.js';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TzolkinLockup, TzolkinLoader } from '../../components/brand/TzolkinLogo.js';
@@ -324,21 +324,20 @@ async function safeFetch(url, options) {
 
   if (loading) {
     return (
-      <div className="page">
-        <TzolkinLoader message="Carregando configurações da agência..." />
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 56px)' }}>
+          <TzolkinLoader message="Carregando configurações da agência..." />
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="page">
-      <div className="gradient-bg" />
-
-      {/* Header */}
-      <Header />
+    <AppShell>
+      <PageHeader title="Ajustes" centered={false} />
 
       {/* Main Content */}
-      <main className="container" style={{ paddingTop: 32, paddingBottom: 64, position: 'relative', zIndex: 1 }}>
+      <main style={{ padding: '32px 24px 64px', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 32, alignItems: 'start' }}>
 
           {/* Sidebar Navigation */}
@@ -474,8 +473,8 @@ async function safeFetch(url, options) {
                   width: 10,
                   height: 10,
                   borderRadius: '50%',
-                  background: '#0CCE6B',
-                  boxShadow: '0 0 8px rgba(12, 206, 107, 0.4)',
+                  background: 'var(--tzolkin-yellow)',
+                  boxShadow: '0 0 8px rgba(255, 212, 0, 0.4)',
                   flexShrink: 0,
                 }} />
                 <div style={{ overflow: 'hidden' }}>
@@ -1051,7 +1050,7 @@ async function safeFetch(url, options) {
                                   borderRadius: 100, cursor: 'pointer',
                                   background: user.isActive ? 'var(--success-soft)' : 'var(--error-soft)',
                                   color: user.isActive ? 'var(--success)' : 'var(--error)',
-                                  border: user.isActive ? '1px solid rgba(12, 206, 107, 0.3)' : '1px solid rgba(238, 0, 0, 0.3)',
+                                  border: user.isActive ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
                                   transition: 'all var(--transition-fast)',
                                 }}
                               >
@@ -1134,7 +1133,7 @@ async function safeFetch(url, options) {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Política de Privacidade</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Como tratamos e protegemos os dados no Lead Finder</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Como tratamos e protegemos os dados no Tracer</div>
                       </div>
                       <span style={{ color: 'var(--text-tertiary)', fontSize: 18 }}>→</span>
                     </div>
@@ -1248,6 +1247,6 @@ async function safeFetch(url, options) {
           {toast.message}
         </div>
       )}
-    </div>
+    </AppShell>
   );
 }

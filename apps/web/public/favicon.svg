@@ -1,9 +1,6 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
   <style>
     .tile-bg {
-      fill: #0A0A0A;
-      stroke: rgba(255, 255, 255, 0.16);
-      stroke-width: 1.2px;
       animation: pulseBorder 2.4s ease-in-out infinite;
     }
     @keyframes pulseBorder {
@@ -48,9 +45,45 @@
       40%, 60% { opacity: 1; }
       75%, 100% { opacity: 0; }
     }
+
+    /* 1. Input Radar Ray coming from left into center (26, 26) */
+    .signal-input-line {
+      stroke-dasharray: 20;
+      stroke-dashoffset: 20;
+      animation: drawInputRay 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes drawInputRay {
+      0%, 30% { stroke-dashoffset: 20; opacity: 0; }
+      40%, 65% { stroke-dashoffset: 0; opacity: 1; }
+      78%, 100% { stroke-dashoffset: 20; opacity: 0; }
+    }
+
+    /* 2. Bifurcated Output Branches splitting to the right */
+    .signal-branch-line {
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+      animation: drawBifurcatedBranches 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+    @keyframes drawBifurcatedBranches {
+      0%, 38% { stroke-dashoffset: 24; opacity: 0; }
+      50%, 65% { stroke-dashoffset: 0; opacity: 1; }
+      78%, 100% { stroke-dashoffset: 24; opacity: 0; }
+    }
+
+    /* 3. Twin Signal Dots popping at output tips */
+    .signal-dot {
+      transform-origin: 44px 26px;
+      animation: popSignalDots 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    }
+    @keyframes popSignalDots {
+      0%, 46% { transform: scale(0); opacity: 0; }
+      54%, 65% { transform: scale(1); opacity: 1; }
+      78%, 100% { transform: scale(0); opacity: 0; }
+    }
   </style>
 
-  <rect class="tile-bg" width="64" height="64" rx="16" />
+  <!-- Inline fill attribute so browser favicons NEVER render black -->
+  <rect class="tile-bg" width="64" height="64" rx="16" fill="#18181B" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1.2" />
 
   <!-- Grey Disc -->
   <g class="disc-group">
@@ -65,4 +98,13 @@
 
   <!-- Handle -->
   <line class="handle-pop" x1="34" y1="34" x2="48" y2="48" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+
+  <!-- Yellow Tracer Signal System: Input Ray from Left + Bifurcated Output to Right -->
+  <g class="tracer-signal-group">
+    <path class="signal-input-line" d="M 6 26 H 26" fill="none" stroke="#FFD400" stroke-width="2.4" stroke-linecap="round" />
+    <path class="signal-branch-line" d="M 26 26 C 34 26 36 18 44 14" fill="none" stroke="#FFD400" stroke-width="2.4" stroke-linecap="round" />
+    <path class="signal-branch-line" d="M 26 26 C 34 26 36 34 44 38" fill="none" stroke="#FFD400" stroke-width="2.4" stroke-linecap="round" />
+    <circle class="signal-dot" cx="44" cy="14" r="2.2" fill="#FFD400" />
+    <circle class="signal-dot" cx="44" cy="38" r="2.2" fill="#FFD400" />
+  </g>
 </svg>

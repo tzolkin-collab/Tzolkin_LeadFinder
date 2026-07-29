@@ -158,44 +158,51 @@ O grande diferencial do lead entregue é a interseção entre **Dor + Dinheiro C
 
 ---
 
-## 💻 Estado Técnico Atual (Documento 1 da Wiki)
+## 💻 Estado Técnico Atual (atualizado em 29/07/2026)
+
+> ⚠️ **Onde mora o conhecimento.** As decisões de arquitetura e produto **não estão neste arquivo** — estão em ADRs no Notion (DB *Documentos Internos*, `Categoria: ADR`, todos com nó espelho na *Wiki* e ligados ao produto **Tracer (Lead Finder)** no DB *Produtos*). O design system tem skill própria e obrigatória: `.claude/skills/tracer-design/SKILL.md` — **carregue antes de tocar em qualquer tela**. Ela documenta o que já foi tentado e **rejeitado**, o que evita repetir erro.
 
 ### 🚀 Tech Stack
 | Camada | Tecnologia | Detalhes |
 | --- | --- | --- |
-| **Frontend** | Next.js 16.1.6, React 19.2 | App Router, JavaScript puro (sem TS), CSS nativo com variáveis (sem Tailwind/shadcn) |
-| **Backend** | Node.js ≥20, Express 4 | CommonJS, API REST rodando na porta `:3001` |
-| **Banco de Dados**| PostgreSQL + Prisma 6 | Utiliza o adapter `@prisma/adapter-pg` |
-| **IA** | OpenAI `gpt-4o-mini` | Análise estruturada e saída rigorosamente em JSON |
+| **Frontend** | Next.js 16, React 19 | App Router, **JavaScript puro** (sem TS no `apps/web`), CSS nativo com variáveis |
+| **Backend** | Node.js ≥20, Express 4 + **TypeScript** | ESM, API REST na porta `:3001` |
+| **Banco** | PostgreSQL + Prisma 7 | ⚠️ O projeto usa **`prisma db push`**, não `migrate dev` — não há histórico de migration, e `migrate dev` oferece **resetar o banco** |
+| **IA** | OpenAI `gpt-4o-mini` | Saída estruturada em JSON |
 
-### 🛠️ Arquitetura do Backend (Camadas Limpas)
-- `routes/`: Endpoints HTTP e orquestração (`auth`, `businesses`, `search`, `settings`).
-- `services/`: Integrações externas isoladas (1 serviço por arquivo):
-  - `google-places.js`: Busca de estabelecimentos locais via Google Places API.
-  - `instagram.js`: Extração via Serper API (ou fallback por scraping) + parsing de links/Linktree.
-  - `meta-ads.js`: Verificação de anúncios ativos na Meta Ads Library.
-  - `ai-review.js`: Chamada estruturada à OpenAI GPT-4o-mini.
-- `lib/prisma.js`: Singleton do Prisma Client.
-- `middleware/auth.js`: Middleware único de validação da senha de acesso.
-- **Padronização**: `router.use(authMiddleware)`, tratamento com `next(error)` central e logs padronizados (`[Search]`, `[Review]`).
+### ⚙️ Estrutura real do monorepo (Turborepo + pnpm)
+```
+apps/api          Express + TS  — routes: auth, businesses, search, review, settings, health
+apps/web          Next 16 (JS)  — App Router
+packages/core     TS — clients/, tools/, pipelines/, services/  (SEM dependência de banco, de propósito)
+packages/database TS — Prisma client + services/ (a camada que fala com o banco)
+```
+**Não existem** as pastas `backend/` e `frontend/` que versões antigas deste doc citavam.
 
-### 🗄️ Modelo de Dados (Prisma)
-- `Business`: Dados obtidos do Google Places (`name`, `phone`, `rating`, `hasWebsite`, geolocalização, fotos).
-- `BusinessReport` (Relação 1:1 com Business): Dados enriquecidos do Instagram (bio, seguidores, posts), identidade visual sugerida pela IA, `suitabilityScore` (1–10), `aiSummary`, `approachSuggestion` e status do lead (`PENDING → REVIEWED → CONTACTED → REJECTED`).
-- `User`: Estrutura de CRUD com papéis/roles, atualmente funcional para gerenciamento mas decorativa (sem rotas autenticadas por usuário individual).
+### 🗄️ Modelo de dados
+**Por tenant (privado):** `Tenant`, `User`, `ApiKey`, `Business` (`@@unique([tenantId, placeId])`), `BusinessReport` (status `PENDING → REVIEWED → CONTACTED → REJECTED`).
 
-### 🔄 Pipeline de Enriquecimento/Review (por Negócio)
-1. **Instagram**: Busca via Serper API (ou scraping) → atualiza `hasWebsite` se encontrar site na bio/linktree.
-2. **Meta Ads**: Checa veiculação de anúncios ativos.
-3. **IA (GPT-4o-mini)**: Gera análise estruturada com algoritmo de backoff/retry.
-4. **Lote**: Endpoint `/review-all` executa o pipeline em lote (até 10 leads simultâneos).
+**Base canônica (compartilhada entre tenants):** `CanonicalBusiness`, `Observation` (append-only, dedup por `payloadHash`), `Signal` (eixos `DOR`/`DINHEIRO`/`MOMENTO`/`ALCANCE`), `CanonicalField` (conferência com `confirmations`/`contradictions`). `Business.canonicalId` liga os dois lados.
+> `observerCount` e `triggeredByTenantId` **nunca** podem chegar à interface.
 
-### 🖥️ Frontend (Telas & Estrutura)
-- `/`: Autenticação por senha estática (`AUTH_PASSWORD`).
-- `/dashboard`: Painel principal com busca, estatísticas, listagem e filtros.
-- `/business/[id]`: Dossiê completo do lead enriquecido e pontuado.
-- `/settings`: CRUD de usuários e estimativa de custos das APIs.
-- **Sub-páginas Legais**: `/settings/privacy-policy`, `/settings/terms-of-use`, `/settings/data-deletion` (compliance para app review Meta).
+### 🔌 Fontes de dados — o que funciona hoje
+**Configurado e funcionando:** `SERPER_API_KEY` (11 métodos: Instagram, TikTok, LinkedIn, site oficial, Meta Ads, **Google Ads**, **TikTok Ads**, CNPJ, decisores), `GOOGLE_PLACES_API_KEY`, `OPENAI_API_KEY`, `SCRAPINGBEE_API_KEY`.
+
+**Escrito mas morto por falta de chave:** `APIFY_API_TOKEN` (4 scrapers prontos) e `META_ADS_TOKEN` (Ad Library oficial). As duas chaves são **gratuitas** — é a maior alavanca pendente.
+
+**Custo:** ~US$ 0,05 por lead enriquecido (~8–12 chamadas Serper + Places + OpenAI). Detalhe no ADR de fontes de dados.
+
+### 🔄 Pipeline de enriquecimento
+`packages/core/src/pipelines/review.pipeline.ts` — Instagram → site oficial → CNPJ → Meta Ads → auditoria de ads (Meta/Google/TikTok) → decisores → IA. Rotas: `POST /review/:id`, `POST /audit-ads/:id`, `POST /review-all` (10 leads sem report, seleção automática — **não há seleção manual persistida**).
+
+### 🖥️ Frontend — telas
+- `/` — autenticação
+- `/feed` — home do Tracer: sinais + momentos de mercado (hoje com dado de exemplo marcado)
+- `/tracer` — casca do chat do agente (**sem backend ainda**)
+- `/business/[id]` — dossiê
+- `/settings` (+ privacy-policy, terms-of-use, data-deletion)
+
+⚠️ **Dívida conhecida:** a sidebar aponta para `/busca`, `/pipeline` e `/vigilancias`, que **não existem** (404). E `business/[id]/page.js` tem um botão com **toast de sucesso falso** ("Abordagem vinculada ao Kanban"), sem API por trás.
 
 ---
 
@@ -231,8 +238,43 @@ O grande diferencial do lead entregue é a interseção entre **Dor + Dinheiro C
 ---
 
 ## ⚙️ Estrutura do Monorepo
-- `backend/`: API Express / Node.js (`src/routes`, `src/services`, `src/middleware`, `prisma/schema.prisma`).
-- `frontend/`: Aplicação Next.js 16 (`src/app/`, `public/`).
+
+Ver "Estado Técnico Atual" acima — `apps/api`, `apps/web`, `packages/core`, `packages/database`.
+
+---
+
+## 🧭 Onde continuar (estado em 29/07/2026)
+
+### Decisões já tomadas — não relitigar sem ler o ADR
+Todos no Notion, DB *Documentos Internos* (`Categoria: ADR`), espelhados na *Wiki* e ligados ao produto *Tracer*:
+
+| ADR | Decisão em uma linha |
+|---|---|
+| **Bureau / LGPD** | Feature "Revelar WhatsApp do Sócio" via bureau **removida** — precedente MPDFT × Serasa julgou ilícita a venda de contato pessoal para captação. Last mile = canal comercial que o próprio negócio publicou. |
+| **Escopo** | Sistema de registro da **abordagem**, não do cliente. Nada de "CRM completo". Inbound entra como adaptador, não módulo. **Tracer é SaaS puro** (sem white-label). |
+| **Backend** | `observacao` (append-only) → diff → `sinal` → `diagnostico` → feed. Observação compartilhada, desfecho privado. **Regra decide, LLM só redige.** |
+| **Stack** | Node/TS. Ruby descartado (BullMQ + Prisma já cobrem o que ele traria). |
+| **Identidade** | Marca "lente de divergência". Ver skill `tracer-design`. |
+| **Fontes de dados** | Serper varre (barato, massa), Apify aprofunda (caro, sob demanda). **Não migrar para SerpApi** (30× mais caro). |
+
+### O que está feito
+Fase 1 (ingestão canônica) **ligada e verificada contra o banco real**: `search.routes.ts` chama `resolveCanonicalBusiness → recordObservation → linkTenantBusiness`. Query duplicada consolidada em `listTenantBusinesses` (`packages/database/src/services/tenant-business.service.ts`). App shell + `/feed` + casca do `/tracer` no ar.
+
+### O que vem a seguir
+Tasks abertas no Notion (DB *Tasks — Gustavo*, ligadas ao produto Tracer). Em ordem:
+
+1. **Adicionar `APIFY_API_TOKEN` e `META_ADS_TOKEN`** — gratuitas, destravam código já escrito
+2. **Ligar o coletor de sinal** — ⏱️ tem cold start; ver nota abaixo
+3. **Fase 2: motor de diff → sinal** — ⚠️ **BullMQ não está instalado** no repo, apesar do plano pressupor
+4. **Validar ADR do bureau com advogado** — depende de terceiro
+5. **Cliente zero + 5 entrevistas ICP** — a validação que nunca aconteceu
+
+> ⏱️ **Sobre o cold start:** `PUBLICOU_SITE` e `SALTO_DE_REVIEWS` são genuinamente diff entre snapshots — levam semanas para existir. Mas `COMECOU_A_ANUNCIAR` **não**: a data vem de `ad_delivery_start_time` da Ad Library oficial, então funciona desde a primeira coleta (campo já adicionado ao `meta-ads.tool.ts`, falta só o token).
+
+### Princípio que guiou a sessão inteira
+**Nunca fabricar dado ou atividade.** Estado vazio explica por que está vazio; exemplo é marcado como exemplo; nota sem evidência virou fato verificável (as pílulas de eixo mostram `dor · sem site`, não `dor 9`). Foi o que motivou matar a feature do bureau e recusar o "wire" com atividade falsa.
+
+⚠️ **Teste pré-existente falhando:** `packages/core` → `serper.client.test.ts` (1 de 41). Já falhava antes das mudanças desta sessão.
 
 ---
 

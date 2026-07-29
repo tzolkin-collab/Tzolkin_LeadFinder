@@ -21,7 +21,7 @@ function LogoImg({ src, alt, size, className }) {
 }
 
 export function GooglePlacesIcon({ size = 20, className = '' }) {
-  return <LogoImg src="/logos/googleMaps.svg" alt="Google Maps" size={size} className={className} />;
+  return <LogoImg src="/logos/google-maps.svg" alt="Google Maps" size={size} className={className} />;
 }
 
 export function GoogleAdsIcon({ size = 20, className = '' }) {

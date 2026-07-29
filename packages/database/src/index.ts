@@ -1,7 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 
 declare global {
   // eslint-disable-next-line no-var
@@ -14,6 +20,7 @@ declare global {
 export const prisma =
   globalThis.globalPrisma ??
   new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
@@ -22,3 +29,33 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export * from '@prisma/client';
+
+// ─── Base master canônica ─────────────────────────────────────────────
+// Só dado comercial público observado entra aqui. Análise calibrada no ICP do
+// tenant fica em BusinessReport; conteúdo de chat é privado por tenant.
+export {
+  resolveCanonicalBusiness,
+  linkTenantBusiness,
+  type ResolveCanonicalInput,
+} from './services/canonical.service.js';
+export {
+  recordObservation,
+  latestObservations,
+  observationAgeHours,
+  hashPayload,
+  type RecordObservationInput,
+  type RecordObservationResult,
+} from './services/observation.service.js';
+export {
+  recordField,
+  bestValue,
+  fieldsByKey,
+  contestedKeys,
+  computeConfidence,
+  type RecordFieldInput,
+} from './services/canonical-field.service.js';
+export {
+  listTenantBusinesses,
+  type ListTenantBusinessesInput,
+  type ListTenantBusinessesResult,
+} from './services/tenant-business.service.js';

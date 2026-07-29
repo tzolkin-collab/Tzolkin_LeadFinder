@@ -24,8 +24,8 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
 
   if (!visible) return null;
 
-  const leadLetters = ['L', 'e', 'a', 'd'];
-  const finderLetters = ['F', 'i', 'n', 'd', 'e', 'r'];
+  const tzolkinLetters = ['T', 'z', 'o', 'l', 'k', 'i', 'n'];
+  const tracerLetters = ['T', 'r', 'a', 'c', 'e', 'r'];
 
   return (
     <div
@@ -38,7 +38,7 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
         width: '100vw',
         height: '100vh',
         zIndex: 99999,
-        background: '#09090b',
+        background: 'var(--bg-primary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -56,12 +56,12 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
     >
       <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
         <svg
-          width="390"
+          width="440"
           height="90"
-          viewBox="0 0 390 90"
+          viewBox="0 0 440 90"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          aria-label="Lead Finder Kinetic Motion Intro"
+          aria-label="Tzolkin Tracer Kinetic Motion Intro"
         >
           <style>{`
             /* 1. Tile Pop & Glow */
@@ -116,6 +116,41 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
               100% { opacity: 1; }
             }
 
+            /* 4.5. Input Radar Ray coming from left */
+            .intro-signal-input {
+              animation: introInputRay 500ms cubic-bezier(0.16, 1, 0.3, 1) 820ms forwards;
+              stroke-dasharray: 26;
+              stroke-dashoffset: 26;
+              opacity: 0;
+            }
+            @keyframes introInputRay {
+              0% { stroke-dashoffset: 26; opacity: 0; }
+              100% { stroke-dashoffset: 0; opacity: 1; }
+            }
+
+            /* 4.6. Yellow Bifurcated Line Drawing Animation */
+            .intro-bifurcated-line {
+              animation: introBifurcatedDraw 550ms cubic-bezier(0.16, 1, 0.3, 1) 950ms forwards;
+              stroke-dasharray: 30;
+              stroke-dashoffset: 30;
+              opacity: 0;
+            }
+            @keyframes introBifurcatedDraw {
+              0% { stroke-dashoffset: 30; opacity: 0; }
+              100% { stroke-dashoffset: 0; opacity: 1; }
+            }
+
+            .intro-bifurcated-dot {
+              animation: introBifurcatedDotPop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 1100ms forwards;
+              transform-origin: 54px 32px;
+              transform: scale(0);
+              opacity: 0;
+            }
+            @keyframes introBifurcatedDotPop {
+              0% { transform: scale(0); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+
             /* 5. Laser Underline Sweep */
             .intro-scanline {
               animation: scanlineSweep 850ms cubic-bezier(0.16, 1, 0.3, 1) 750ms forwards;
@@ -148,7 +183,7 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
             /* 7. Radar Reticle Radar Scan Rotation */
             .intro-reticle-ring {
               animation: reticleSpin 2.5s linear infinite 1200ms;
-              transform-origin: 362px 30px;
+              transform-origin: 412px 30px;
             }
             @keyframes reticleSpin {
               from { transform: rotate(0deg); }
@@ -157,7 +192,7 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
 
             .intro-reticle-dot {
               animation: reticlePulse 1.2s infinite ease-in-out 1100ms;
-              transform-origin: 362px 30px;
+              transform-origin: 412px 30px;
             }
             @keyframes reticlePulse {
               0% { transform: scale(0.8); opacity: 0.5; }
@@ -168,16 +203,28 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
 
           {/* Icon Tile */}
           <g className="intro-tile" transform="translate(5, 5)">
-            <rect width="80" height="80" rx="20" fill="#0A0A0A" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.5" />
+            <rect width="80" height="80" rx="20" fill="var(--bg-secondary)" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1.5" />
             
-            {/* Grey Disc Group (Pure solid circle - spins & dissolves) */}
+            {/* Grey Disc Group */}
             <g className="intro-disc-group">
               <circle cx="48" cy="32" r="16" fill="#B0B0B0" />
             </g>
 
+            {/* Main Ring -> Morphs to Lens */}
             <circle className="intro-ring" cx="32" cy="42" r="16" fill="none" stroke="#FFFFFF" strokeWidth="3.6" />
+            
+            {/* Glare Arc */}
             <path className="intro-glare" d="M 22 26 A 11 11 0 0 1 30 18" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
+            
+            {/* Magnifying Handle */}
             <line className="intro-handle" x1="42" y1="42" x2="60" y2="60" stroke="#FFFFFF" strokeWidth="5.5" strokeLinecap="round" />
+
+            {/* Yellow Tracer Signal System: Input Ray + Bifurcated Output Lines & Dots */}
+            <path className="intro-signal-input" d="M 8 32 H 32" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="3" strokeLinecap="round" />
+            <path className="intro-bifurcated-line" d="M 32 32 C 42 32 44 22 54 18" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="3" strokeLinecap="round" />
+            <path className="intro-bifurcated-line" d="M 32 32 C 42 32 44 42 54 46" fill="none" stroke="var(--tzolkin-yellow, #FFD400)" strokeWidth="3" strokeLinecap="round" />
+            <circle className="intro-bifurcated-dot" cx="54" cy="18" r="2.8" fill="var(--tzolkin-yellow, #FFD400)" />
+            <circle className="intro-bifurcated-dot" cx="54" cy="46" r="2.8" fill="var(--tzolkin-yellow, #FFD400)" />
           </g>
 
           {/* Laser Underline Accent */}
@@ -185,7 +232,7 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
             className="intro-scanline"
             x1="105"
             y1="68"
-            x2="355"
+            x2="395"
             y2="68"
             stroke="url(#scanline-gradient)"
             strokeWidth="2"
@@ -203,10 +250,10 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
           {/* Kinetic Typography Group: Staggered Letters */}
           <g transform="translate(105, 58)">
             <text fontFamily="'Inter', system-ui, -apple-system, sans-serif" fontSize="42" letterSpacing="-0.03em">
-              {/* "Lead" - Bold White */}
-              {leadLetters.map((char, index) => (
+              {/* "Tzolkin" - Bold White */}
+              {tzolkinLetters.map((char, index) => (
                 <tspan
-                  key={`lead-${index}`}
+                  key={`tzolkin-${index}`}
                   className="char-lead"
                   fontWeight="800"
                   fill="#FAFAF7"
@@ -219,14 +266,14 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
               {/* Space */}
               <tspan fill="transparent"> </tspan>
 
-              {/* "Finder" - Light Metallic Silver */}
-              {finderLetters.map((char, index) => (
+              {/* "Tracer" - Light Metallic Silver */}
+              {tracerLetters.map((char, index) => (
                 <tspan
-                  key={`finder-${index}`}
+                  key={`tracer-${index}`}
                   className="char-finder"
                   fontWeight="300"
                   fill="#A1A1AA"
-                  style={{ animationDelay: `${980 + index * 55}ms` }}
+                  style={{ animationDelay: `${1135 + index * 55}ms` }}
                 >
                   {char}
                 </tspan>
@@ -236,8 +283,8 @@ export function IntroAnimation({ onComplete, durationMs = 3400 }) {
 
           {/* Precision Radar Reticle Target Accent (Positioned elegantly with wide breathing room after 'r') */}
           <g transform="translate(0, 5)">
-            <circle className="intro-reticle-dot" cx="362" cy="30" r="4" fill="#FAFAF7" />
-            <circle className="intro-reticle-ring" cx="362" cy="30" r="10" fill="none" stroke="#FAFAF7" strokeWidth="1" strokeDasharray="3 3" />
+            <circle className="intro-reticle-dot" cx="412" cy="30" r="4" fill="#FAFAF7" />
+            <circle className="intro-reticle-ring" cx="412" cy="30" r="10" fill="none" stroke="#FAFAF7" strokeWidth="1" strokeDasharray="3 3" />
           </g>
         </svg>
       </div>

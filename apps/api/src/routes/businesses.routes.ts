@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '@tzolkin/database';
+import { prisma, listTenantBusinesses } from '@tzolkin/database';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router: Router = Router();
@@ -13,42 +13,15 @@ router.get('/', async (req, res, next) => {
     const tenantId = req.user!.tenantId;
     const page = parseInt((req.query.page as string) || '1', 10);
     const limit = parseInt((req.query.limit as string) || '20', 10);
-    const status = req.query.status as string | undefined;
+    const status = req.query.status as 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'REJECTED' | undefined;
     const search = req.query.search as string | undefined;
 
-    // Strict tenant isolation: never reassign existing leads across tenants.
-    const whereClause: Record<string, unknown> = { tenantId };
+    // Fonte única de "listar negócios do tenant" — ver
+    // packages/database/src/services/tenant-business.service.ts. Isolamento
+    // por tenant é garantido dentro da própria função.
+    const result = await listTenantBusinesses(tenantId, { search, status, page, limit });
 
-    const skip = (page - 1) * limit;
-
-    if (search) {
-      whereClause['name'] = { contains: search, mode: 'insensitive' };
-    }
-
-    if (status) {
-      whereClause['report'] = { is: { status: status as 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'REJECTED' } };
-    }
-
-    const [total, businesses] = await Promise.all([
-      prisma.business.count({ where: whereClause }),
-      prisma.business.findMany({
-        where: whereClause,
-        include: { report: true },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-    ]);
-
-    res.json({
-      businesses,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 1,
-      },
-    });
+    res.json(result);
   } catch (error) {
     next(error);
   }

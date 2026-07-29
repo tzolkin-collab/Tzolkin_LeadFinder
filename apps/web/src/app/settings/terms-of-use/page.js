@@ -45,7 +45,7 @@ export default function TermsOfUsePage() {
                                     1. Aceitação dos Termos
                                 </h2>
                                 <p>
-                                    Ao acessar ou utilizar o Lead Finder, você concorda em estar vinculado a estes Termos de Uso.
+                                    Ao acessar ou utilizar o Tzolkin Tracer, você concorda em estar vinculado a estes Termos de Uso.
                                     Se você não concordar com qualquer parte destes termos, não deve utilizar a aplicação.
                                     O uso continuado da plataforma constitui aceitação de quaisquer atualizações destes termos.
                                 </p>
@@ -56,7 +56,7 @@ export default function TermsOfUsePage() {
                                     2. Descrição do Serviço
                                 </h2>
                                 <p>
-                                    O Lead Finder é uma ferramenta de prospecção que identifica empresas sem presença digital
+                                    O Tzolkin Tracer é uma ferramenta de prospecção que identifica empresas sem presença digital
                                     adequada (websites), utilizando dados públicos do Google Places, redes sociais e análise
                                     por inteligência artificial para gerar relatórios e recomendações de abordagem comercial.
                                 </p>
@@ -66,7 +66,7 @@ export default function TermsOfUsePage() {
                                 <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
                                     3. Uso Permitido
                                 </h2>
-                                <p style={{ marginBottom: 12 }}>Você concorda em utilizar o Lead Finder apenas para:</p>
+                                <p style={{ marginBottom: 12 }}>Você concorda em utilizar o Tzolkin Tracer apenas para:</p>
                                 <ul style={{ marginLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
                                     <li>Prospecção comercial legítima e ética</li>
                                     <li>Análise de oportunidades de negócio</li>
@@ -93,7 +93,7 @@ export default function TermsOfUsePage() {
                                     5. Propriedade Intelectual
                                 </h2>
                                 <p>
-                                    Toda a propriedade intelectual relacionada ao Lead Finder — incluindo código-fonte, design,
+                                    Toda a propriedade intelectual relacionada ao Tzolkin Tracer — incluindo código-fonte, design,
                                     algoritmos e documentação — pertence aos seus desenvolvedores. Os relatórios gerados pela
                                     plataforma podem ser utilizados livremente para fins comerciais pelo usuário autorizado.
                                 </p>
@@ -104,7 +104,7 @@ export default function TermsOfUsePage() {
                                     6. APIs de Terceiros
                                 </h2>
                                 <p style={{ marginBottom: 12 }}>
-                                    O Lead Finder integra-se com serviços de terceiros. Ao utilizar nossa plataforma,
+                                    O Tzolkin Tracer integra-se com serviços de terceiros. Ao utilizar nossa plataforma,
                                     você também concorda com os termos de:
                                 </p>
                                 <ul style={{ marginLeft: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -134,7 +134,7 @@ export default function TermsOfUsePage() {
                                     7. Limitação de Responsabilidade
                                 </h2>
                                 <p>
-                                    O Lead Finder é fornecido &quot;como está&quot;, sem garantias de qualquer tipo, expressas ou implícitas.
+                                    O Tzolkin Tracer é fornecido &quot;como está&quot;, sem garantias de qualquer tipo, expressas ou implícitas.
                                     Não nos responsabilizamos por decisões comerciais tomadas com base nos dados ou análises
                                     gerados pela plataforma. As análises de IA são estimativas e não devem ser consideradas
                                     como aconselhamento profissional definitivo.
