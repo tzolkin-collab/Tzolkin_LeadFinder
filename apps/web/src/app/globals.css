@@ -61,6 +61,11 @@
     /* Mesma convenção alpha-sobre-token das variantes -soft semânticas
        (--success-soft etc.), estendida ao amarelo — fundo de avatar/destaque. */
     --tzolkin-yellow-soft: rgba(255, 212, 0, 0.12);
+    /* Acento secundário — usado antes sem definição (var(--tzolkin-cyan) sem
+       token, cor herdada quebrada). Tom fixado no rgba(56,189,248) que já
+       estava hardcoded em business/[id]/page.js. */
+    --tzolkin-cyan: #38BDF8;
+    --tzolkin-cyan-soft: rgba(56, 189, 248, 0.12);
 
     /* Score Scale */
     --score-high: #10b981;
@@ -378,6 +383,14 @@ body {
 .badge-rejected {
     background: var(--error-soft);
     color: var(--error);
+}
+
+/* Rótulo visível de dado ilustrativo — isExample não pode ser só opacidade,
+   precisa de texto que o usuário realmente leia (ver tracer-design skill). */
+.badge-example {
+    background: var(--bg-subtle-fill);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-primary);
 }
 
 /* ---- Score Circle Indicator ---- */

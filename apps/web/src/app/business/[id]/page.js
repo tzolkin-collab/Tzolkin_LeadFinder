@@ -637,7 +637,7 @@ export default function BusinessDetailPage({ params }) {
                                                 {pitchAudit && (
                                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
                                                         {pitchAudit.detectedGatekeeperStrategy && (
-                                                            <span style={{ background: 'rgba(56, 189, 248, 0.12)', color: 'var(--tzolkin-cyan)', padding: '2px 6px', borderRadius: 3, fontWeight: 600 }}>
+                                                            <span style={{ background: 'var(--tzolkin-cyan-soft)', color: 'var(--tzolkin-cyan)', padding: '2px 6px', borderRadius: 3, fontWeight: 600 }}>
                                                                 Transposição Gatekeeper: {GATEKEEPER_LABELS[pitchAudit.detectedGatekeeperStrategy]}
                                                             </span>
                                                         )}

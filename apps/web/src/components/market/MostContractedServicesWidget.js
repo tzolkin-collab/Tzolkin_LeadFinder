@@ -33,9 +33,17 @@ export function MostContractedServicesWidget({ isExample = true }) {
             DEMANDA B2B MAIS CONTRATADA NO BRASIL
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: 'var(--text-tertiary)' }}>
-          <TargetIcon size={12} color="var(--text-tertiary)" />
-          <span>Amostragem 1.400+ prospecções</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, color: 'var(--text-tertiary)' }}>
+          {isExample ? (
+            <span className="badge badge-example" style={{ fontSize: 9, padding: '2px 6px' }}>
+              exemplo
+            </span>
+          ) : (
+            <>
+              <TargetIcon size={12} color="var(--text-tertiary)" />
+              <span>Estimativa de mercado</span>
+            </>
+          )}
         </div>
       </div>
 

@@ -58,6 +58,20 @@ export function SignalRow({ name, fact, timestamp, href, isExample = false }) {
       </span>
       <span
         style={{
+          width: 60,
+          flexShrink: 0,
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        {isExample && (
+          <span className="badge badge-example" style={{ fontSize: 9, padding: '2px 6px' }}>
+            exemplo
+          </span>
+        )}
+      </span>
+      <span
+        style={{
           fontSize: 10,
           color: 'var(--text-tertiary)',
           fontFamily: 'var(--font-mono)',
