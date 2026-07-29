@@ -5,7 +5,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM"],
+    "paths": {
+      "@tzolkin/database": ["../database/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

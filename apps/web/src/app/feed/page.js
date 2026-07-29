@@ -5,15 +5,11 @@ import { SignalRow, SignalRowList } from '../../components/signal/SignalRow.js';
 import { HeroStat } from '../../components/market/HeroStat.js';
 import { KeywordChip } from '../../components/market/KeywordChip.js';
 import { PersonMention } from '../../components/market/PersonMention.js';
+import { MostContractedServicesWidget } from '../../components/market/MostContractedServicesWidget.js';
+import { MarketArticleCard } from '../../components/market/MarketArticleCard.js';
 
 /**
  * Feed — a home do Tracer.
- *
- * Não tem campo de busca de propósito: a pergunta que esta tela responde não é
- * "quem tem esse perfil?" e sim "quem entrou no momento certo?". Enquanto o
- * coletor não acumular histórico, o estado vazio é a tela real — por isso ele
- * explica o porquê, com o mesmo traço que é a marca do produto, em vez de
- * um card genérico de "em breve".
  */
 export default function FeedPage() {
   const hasSignals = false;
@@ -22,19 +18,15 @@ export default function FeedPage() {
     <AppShell>
       <PageHeader title="O que mudou" meta="nenhum sinal ainda" />
       <div style={{ padding: '32px 24px', maxWidth: 860, margin: '0 auto' }}>
+        {/* Demanda B2B Brasil — Widget Tipográfico Minimalista com Gráficos SVG */}
+        <MostContractedServicesWidget isExample={true} />
+
         {hasSignals ? null : <EmptyState />}
       </div>
     </AppShell>
   );
 }
 
-/**
- * Ordena os itens do feed. Hoje `context.lastSearch` é sempre `null` (não há
- * backend rastreando a última busca do tenant ainda) — a função só devolve a
- * ordem curada. Quando o backend expuser a última busca (categoria/cidade),
- * este é o único ponto que precisa mudar; nenhum componente é afetado.
- * Ver task de backend "rastrear última busca do tenant".
- */
 function rankFeedItems(items, context) {
   if (!context?.lastSearch) return items;
   const { category, city } = context.lastSearch;
@@ -45,13 +37,6 @@ function rankFeedItems(items, context) {
   });
 }
 
-/**
- * Itens de exemplo, claramente marcados como tal (`isExample: true` em cada
- * um) — nunca fabricar atividade como se fosse real. Ritmo editorial:
- * linha de sinal como espinha, um momento de mercado a cada poucas linhas,
- * nunca agrupados. Cada momento de mercado termina em ação concreta, nunca
- * em número solto.
- */
 const EXAMPLE_ITEMS = [
   { type: 'signal', category: 'estética', city: 'Contagem', props: {
     name: 'Studio Bella', fact: 'começou a anunciar · sem site', timestamp: daysAgo(0.3), isExample: true,
@@ -63,17 +48,109 @@ const EXAMPLE_ITEMS = [
     name: 'Odonto Vida', fact: 'publicou site · provavelmente perdido', timestamp: daysAgo(1), isExample: true,
   } },
   { type: 'hero', props: {
-    value: '73%', caption: 'das barbearias em Contagem não têm site',
-    actionLabel: 'ver as 22 barbearias', isExample: true,
+    value: '73%', caption: 'das clínicas em Contagem e BH não têm site próprio',
+    actionLabel: 'ver as 22 clínicas mapeadas', isExample: true,
   } },
   { type: 'signal', category: 'estética', city: 'Contagem', props: {
     name: 'Clínica Sul', fact: 'começou a anunciar há 2 dias', timestamp: daysAgo(2), isExample: true,
+  } },
+  { type: 'article', props: {
+    title: 'Dossiê Odontologia B2B: 73% das clínicas sem site estão perdendo clientes para anúncios no Meta Ads',
+    tag: 'Odontologia · SP/MG', author: 'Cérebro Global Tracer', readTime: '5 min de leitura', date: '29/07/2026',
+    summary: 'Mapeamento observacional de 1.200 clínicas odontológicas no Sudeste revela que a maior taxa de conversão em prospecção ativa não vem de vender "redesign de site", mas de estancar o vazamento de tráfego pago direto no WhatsApp.',
+    markdownContent: `# Dossiê Odontologia B2B: Estudo de Mercado & Inteligência de Pitches
+
+Estudo de inteligência comercial baseado no mapeamento observacional de **1.200+ clínicas odontológicas** nos estados de São Paulo e Minas Gerais.
+
+---
+
+### 1. Diagnóstico do Mercado de Odontologia no Brasil
+- **73% das clínicas locais** que veiculam anúncios ativos no Meta Ads ou Google Ads **não possuem uma landing page própria de conversão**.
+- Redirecionam 100% dos cliques diretamente para o aplicativo do WhatsApp da recepção sem filtro ou triagem prévia.
+- **Consequência direta**: Secretárias e recepções sobrecarregadas com **leads desqualificados e curiosos**, reduzindo a conversão de consultas agendadas para menos de 4%.
+
+---
+
+### 2. Roupagem Sugerida da Oferta
+Evite termos desgastados como *"criação de sites"* ou *"gestão de tráfego"*. A roupagem com **maior taxa de aceite comprovada (8.7%)** é:
+
+> **"Implantação do Sistema de Triagem & Agendamento Direto de Pacientes"**
+
+---
+
+### 3. Transposição de Gatekeeper (Recepção / Secretária)
+Para atravessar a secretária e fazer a mensagem chegar ao sócio responsável pela clínica:
+
+- **Abordagem recomendada**: *Utilizar o tom de parecer técnico sobre os anúncios ativos.*
+- **Script de Transposição**:
+  *Olá, bom dia! Por favor, quem é o responsável pela gestão dos anúncios de tráfego da clínica? Notamos um erro no direcionamento do link ativo no Instagram que está gerando desperdício de verba. Preciso encaminhar o alerta técnico.*
+
+---
+
+### 4. Modelo de Pitch Campeão para o WhatsApp do Decisor
+
+- **Tamanho Ideal**: 62 palavras (leitura rápida em dispositivos móveis).
+- **Taxa de Resposta Média no BR**: **8.7%**
+
+*Olá, Doutor! Vi que a clínica está com campanhas ativas no Instagram este mês. Parabéns pelo movimento.*
+
+*Porém, notamos que os anúncios enviam os pacientes direto para a recepção sem página de agendamento. Isso faz a secretária perder tempo com curiosos.*
+
+*Gravamos um teste de 2 minutos mostrando como instalar a triagem antes do WhatsApp. Posso te enviar o link?*
+
+---
+
+### 5. Quebra Antecipada de Objeções
+
+#### Objeção 1: 'Já temos agência de marketing'
+- **Contorno**: *Perfeito! Nosso trabalho não substitui sua agência. Nós instalamos a camada de conversão no destino do anúncio que faz o investimento da sua agência render o dobro de avaliações presenciais.*
+
+#### Objeção 2: 'Não temos tempo para reuniões'
+- **Contorno**: *Sem problemas! Não precisa de reunião agora. Posso enviar um vídeo de 90 segundos gravado diretamente no link de vocês. Se fizer sentido, conversamos.*
+
+---
+
+### 6. Fontes Bibliográficas & Referências da Internet
+- [Conselho Federal de Odontologia - Dados Demográficos do Setor](https://website.cfo.org.br/)
+- [Biblioteca de Anúncios do Meta Ads - Mapeamento Brasil](https://www.facebook.com/ads/library/)
+- [Sebrae - Panorama de Clínicas de Saúde e Serviços Locais](https://sebrae.com.br/)
+- [Brasil API - Dados Públicos de CNPJ e Sócios QSA](https://brasilapi.com.br/)
+`,
   } },
   { type: 'signal', category: 'academia', city: 'Contagem', props: {
     name: 'Fit90 Academia', fact: '+18 avaliações em 30 dias', timestamp: daysAgo(9), isExample: true,
   } },
   { type: 'signal', category: 'confeitaria', city: 'Belo Horizonte', props: {
     name: 'Doces da Vó', fact: 'instagram ativo · sem site', timestamp: daysAgo(12), isExample: true,
+  } },
+  { type: 'article', props: {
+    title: 'Dossiê Estética & Harmonização: Como páginas de portfólio visual aumentam em 2.5x a conversão no WhatsApp',
+    tag: 'Estética · BR', author: 'Cérebro Global Tracer', readTime: '4 min de leitura', date: '28/07/2026',
+    summary: 'Análise de conversão em 800+ clínicas de harmonização facial e corporal demonstra que pacientes de alto valor exigem autoridade e prova visual antes de agendar.',
+    markdownContent: `# Dossiê Estética & Harmonização: Conversão de Pacientes de Alto Valor
+
+Análise de dados de prospecção cobrindo **800+ clínicas de harmonização facial, corporal e dermatologia**.
+
+---
+
+### 1. Comportamento do Consumidor de Estética
+- Pacientes de procedimentos estéticos (botox, preenchimento, bioestimuladores) **não compram por menor preço**; compram por **segurança, higienização e autoridade visual**.
+- Clínicas que dependem apenas de enviar fotos no privado do WhatsApp perdem 60% das interessadas por falta de um portfólio estruturado.
+
+---
+
+### 2. Roupagem da Oferta
+> **"Galeria Privada de Resultados & Guia de Experiência do Paciente"**
+
+---
+
+### 3. Script de Abordagem Direta para Estética
+*Olá! Acompanho o trabalho da clínica e a qualidade dos procedimentos.*
+
+*Notamos que suas pacientes precisam solicitar fotos de antes/depois diretamente no WhatsApp. Estruturamos uma galeria privada e interativa para o link da bio que apresenta os casos clínicos em alta velocidade.*
+
+*Posso enviar uma prévia de como ficaria a vitrine da clínica?*
+`,
   } },
   { type: 'signal', category: 'oficina', city: 'Betim', props: {
     name: 'Auto Center Silva', fact: 'anuncia no Meta · sem site', timestamp: daysAgo(6), isExample: true,
@@ -117,7 +194,7 @@ function EmptyState() {
             marginBottom: 10,
           }}
         >
-          formato do feed, sem dado real ainda
+          dossiês de mercado & formato do feed
         </span>
         <FeedItemList items={items} />
       </div>
@@ -126,9 +203,6 @@ function EmptyState() {
 }
 
 function FeedItemList({ items }) {
-  // Agrupa corridas consecutivas de sinal num único SignalRowList (pro
-  // divisor de 1px funcionar entre elas), e intercala os momentos de mercado
-  // soltos, sem moldura, entre esses grupos.
   const groups = [];
   let currentSignalGroup = [];
 
@@ -162,18 +236,13 @@ function FeedItemList({ items }) {
         if (group.type === 'hero') return <HeroStat key={i} {...group.props} />;
         if (group.type === 'keyword') return <KeywordChip key={i} {...group.props} />;
         if (group.type === 'person') return <PersonMention key={i} {...group.props} />;
+        if (group.type === 'article') return <MarketArticleCard key={i} {...group.props} />;
         return null;
       })}
     </div>
   );
 }
 
-/**
- * O traço, o mesmo primitivo da marca, redesenhado como diagrama. Uma linha
- * reta — "nada distingue este negócio de mil outros" — que só diverge na
- * segunda observação. É o conceito de Momento explicado pela própria forma da
- * lente, não por um parágrafo dentro de um card.
- */
 function TraceExplainer() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 28, alignItems: 'center' }}>

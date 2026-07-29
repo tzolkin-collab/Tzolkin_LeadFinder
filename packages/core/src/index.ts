@@ -30,3 +30,28 @@ export {
   getScannerConfig,
   type ScannerConfig,
 } from './config/scanner.config.js';
+export { SignalService, type EvaluatedSignal } from './services/signal.service.js';
+export { DiagnosticService, type CommercialDiagnosis } from './services/diagnostic.service.js';
+export {
+  OutboundPatternIntelligenceService,
+  type PitchAuditResult,
+  type RecordPatternOutcomeInput,
+} from './services/outbound-pattern-intelligence.service.js';
+export {
+  KeywordTrendsService,
+  type KeywordOpportunity,
+  type CategoryTrendReport,
+} from './services/keyword-trends.service.js';
+export {
+  SocialCommunityClient,
+  type B2BCommunityMention,
+  type B2BCommunityAnalysis,
+} from './clients/social-community.client.js';
+export {
+  WebTrafficAnalyzerClient,
+  type WebTrafficSignature,
+} from './clients/web-traffic-analyzer.client.js';
+
+
+
+

@@ -24,6 +24,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@tzolkin/database": "workspace:*",
     "cheerio": "^1.2.0",
     "ioredis": "^5.11.1",
     "puppeteer": "^25.3.0",

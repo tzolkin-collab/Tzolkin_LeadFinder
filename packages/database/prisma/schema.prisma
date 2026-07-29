@@ -15,16 +15,16 @@ enum PlatformRole {
 }
 
 model PlatformAdmin {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   name         String
   passwordHash String
-  role         PlatformRole  @default(ADMIN)
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  role         PlatformRole @default(ADMIN)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  auditLogs    AdminAuditLog[]
+  auditLogs AdminAuditLog[]
 
   @@map("platform_admins")
 }
@@ -48,30 +48,30 @@ enum AssetType {
 }
 
 model SystemAsset {
-  id          String       @id @default(cuid())
-  name        String       // ex: "Google Places API Key Primary", "Domínio SaaS Principal"
-  service     AssetService
-  assetType   AssetType
-  value       String       // Encrypted secret value, API token or domain URL
-  isShared    Boolean      @default(true)
-  tenantId    String?      // Optional: if asset is dedicated to a specific tenant
-  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  status      String       @default("ACTIVE") // "ACTIVE", "ROTATED", "DISABLED"
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String       @id @default(cuid())
+  name      String // ex: "Google Places API Key Primary", "Domínio SaaS Principal"
+  service   AssetService
+  assetType AssetType
+  value     String // Encrypted secret value, API token or domain URL
+  isShared  Boolean      @default(true)
+  tenantId  String? // Optional: if asset is dedicated to a specific tenant
+  tenant    Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  status    String       @default("ACTIVE") // "ACTIVE", "ROTATED", "DISABLED"
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@map("system_assets")
 }
 
 model AdminAuditLog {
-  id          String        @id @default(cuid())
-  adminId     String
-  admin       PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  action      String        // "CREATE_TENANT", "ROTATE_ASSET", "UPDATE_PERMISSIONS"
-  resource    String
-  ipAddress   String?
-  details     Json?
-  createdAt   DateTime      @default(now())
+  id        String        @id @default(cuid())
+  adminId   String
+  admin     PlatformAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String // "CREATE_TENANT", "ROTATE_ASSET", "UPDATE_PERMISSIONS"
+  resource  String
+  ipAddress String?
+  details   Json?
+  createdAt DateTime      @default(now())
 
   @@map("admin_audit_logs")
 }
@@ -92,33 +92,33 @@ enum TenantStatus {
 }
 
 model Tenant {
-  id                     String       @id @default(cuid())
-  slug                   String       @unique
-  name                   String
-  plan                   TenantPlan   @default(STARTER)
-  status                 TenantStatus @default(ACTIVE)
-  
+  id     String       @id @default(cuid())
+  slug   String       @unique
+  name   String
+  plan   TenantPlan   @default(STARTER)
+  status TenantStatus @default(ACTIVE)
+
   // 🎯 ICP (Perfil de Cliente Ideal - QUEM É O CLIENTE)
-  icpNiche               String?      // Segmento/Nicho Alvo (ex: "Clínicas Médicas e Odontológicas")
-  icpRegion              String?      // Região ou Porte (ex: "Capitais e Regiões Metropolitanas do SE/SUL")
-  icpDecisionMaker       String?      // Cargos dos Decisores (ex: "Diretor Clínico, Sócio Proprietário")
-  icpPainPoints          String?      // Dores e Desafios (ex: "Dependência de indicações, falta de presença digital")
+  icpNiche         String? // Segmento/Nicho Alvo (ex: "Clínicas Médicas e Odontológicas")
+  icpRegion        String? // Região ou Porte (ex: "Capitais e Regiões Metropolitanas do SE/SUL")
+  icpDecisionMaker String? // Cargos dos Decisores (ex: "Diretor Clínico, Sócio Proprietário")
+  icpPainPoints    String? // Dores e Desafios (ex: "Dependência de indicações, falta de presença digital")
 
   // 🚀 PROPOSTA DE VALOR (O QUE E COMO RESOLVE)
-  valuePropHeadline      String?      // Promessa Principal (ex: "Transformamos clínicas em referência digital gerando 3x mais agendamentos")
-  valuePropServices      String?      // Serviços & Soluções (ex: "Criação de Sites de Alta Conversão, Google Ads, SEO Local, Meta Ads")
-  valuePropDifferentials String?      // Diferenciais Únicos (ex: "Entrega em 7 dias, garantia de performance, suporte dedicado")
+  valuePropHeadline      String? // Promessa Principal (ex: "Transformamos clínicas em referência digital gerando 3x mais agendamentos")
+  valuePropServices      String? // Serviços & Soluções (ex: "Criação de Sites de Alta Conversão, Google Ads, SEO Local, Meta Ads")
+  valuePropDifferentials String? // Diferenciais Únicos (ex: "Entrega em 7 dias, garantia de performance, suporte dedicado")
 
-  selectedAiModel        String       @default("gpt-4o-mini") // "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet"
-  subscriptionPlan       String       @default("starter") // "starter", "pro"
-  stripeCustomerId       String?
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  selectedAiModel  String   @default("gpt-4o-mini") // "gpt-4o-mini", "gpt-4o", "claude-3-5-sonnet"
+  subscriptionPlan String   @default("starter") // "starter", "pro"
+  stripeCustomerId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  users       User[]
-  businesses  Business[]
-  apiKeys     ApiKey[]
-  assets      SystemAsset[]
+  users      User[]
+  businesses Business[]
+  apiKeys    ApiKey[]
+  assets     SystemAsset[]
 
   @@map("tenants")
 }
@@ -131,48 +131,48 @@ enum UserRole {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   email        String
   name         String
   passwordHash String
-  role         UserRole  @default(MEMBER)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  role         UserRole @default(MEMBER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([tenantId, email])
   @@map("users")
 }
 
 model ApiKey {
-  id          String    @id @default(cuid())
-  tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String    // ex: "Integração CRM Maior B2B"
-  keyHash     String    @unique // Hash SHA-256 da chave de API
-  keyPrefix   String    // ex: "tz_live_..."
-  scopes      String[]  // ["leads:read", "leads:write", "search:execute"]
-  lastUsedAt  DateTime?
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(cuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String // ex: "Integração CRM Maior B2B"
+  keyHash    String    @unique // Hash SHA-256 da chave de API
+  keyPrefix  String // ex: "tz_live_..."
+  scopes     String[] // ["leads:read", "leads:write", "search:execute"]
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
 
   @@map("api_keys")
 }
 
 model Business {
-  id             String          @id @default(cuid())
-  tenantId       String
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  placeId        String
-  name           String
-  address        String?
-  phone          String?
-  category       String?
-  rating         Float?
-  reviewCount    Int?
-  hasWebsite          Boolean         @default(false)
+  id                  String    @id @default(cuid())
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  placeId             String
+  name                String
+  address             String?
+  phone               String?
+  category            String?
+  rating              Float?
+  reviewCount         Int?
+  hasWebsite          Boolean   @default(false)
   websiteUrl          String?
   googleMapsUrl       String?
   latitude            Float?
@@ -187,15 +187,15 @@ model Business {
   dataInicioAtividade DateTime?
   cnaeDescricao       String?
   capitalSocial       String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  report         BusinessReport?
+  report BusinessReport?
 
   // Link para o cadastro canônico compartilhado. Opcional durante a migração:
   // registros antigos sobem para a base master conforme forem observados.
-  canonicalId    String?
-  canonical      CanonicalBusiness? @relation(fields: [canonicalId], references: [id], onDelete: SetNull)
+  canonicalId String?
+  canonical   CanonicalBusiness? @relation(fields: [canonicalId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, placeId])
   @@index([tenantId])
@@ -211,33 +211,33 @@ enum ReportStatus {
 }
 
 model BusinessReport {
-  id                   String       @id @default(cuid())
-  businessId           String       @unique
-  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
-  instagramUrl         String?
-  instagramBio         String?
-  instagramFollowers   String?
-  instagramPosts       Int?
-  profilePicUrl        String?
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  brandColors          String[]
-  visualIdentityNotes  String?
+  instagramUrl       String?
+  instagramBio       String?
+  instagramFollowers String?
+  instagramPosts     Int?
+  profilePicUrl      String?
 
-  aiAnalysis           Json?
-  cnpjAnalysis         Json?
-  adsAuditAnalysis     Json?
-  suitabilityScore     Int          @default(5)
-  aiSummary            String?
-  approachSuggestion   String?
+  brandColors         String[]
+  visualIdentityNotes String?
 
-  websiteScreenshotUrl String?
+  aiAnalysis         Json?
+  cnpjAnalysis       Json?
+  adsAuditAnalysis   Json?
+  suitabilityScore   Int     @default(5)
+  aiSummary          String?
+  approachSuggestion String?
+
+  websiteScreenshotUrl   String?
   instagramScreenshotUrl String?
-  scrapedCodeUrl       String?
+  scrapedCodeUrl         String?
 
-  status               ReportStatus @default(PENDING)
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   @@map("business_reports")
 }
@@ -254,31 +254,31 @@ model BusinessReport {
 // BusinessReport / Conversa, que são privados por tenant.
 
 model CanonicalBusiness {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  placeId        String?  @unique
-  cnpj           String?  @unique
+  placeId String? @unique
+  cnpj    String? @unique
 
-  name           String
-  address        String?
-  city           String?
-  state          String?
-  category       String?
-  cnaeCode       String?
-  latitude       Float?
-  longitude      Float?
+  name      String
+  address   String?
+  city      String?
+  state     String?
+  category  String?
+  cnaeCode  String?
+  latitude  Float?
+  longitude Float?
 
   firstObservedAt DateTime @default(now())
   lastObservedAt  DateTime @default(now())
 
   // Quantos tenants distintos já observaram este negócio. Alimenta a
   // confiança agregada — NUNCA é exposto na interface do usuário.
-  observerCount   Int      @default(0)
+  observerCount Int @default(0)
 
-  observations   Observation[]
-  signals        Signal[]
-  fields         CanonicalField[]
-  tenantRecords  Business[]
+  observations  Observation[]
+  signals       Signal[]
+  fields        CanonicalField[]
+  tenantRecords Business[]
 
   @@index([city, category])
   @@index([lastObservedAt])
@@ -299,14 +299,14 @@ enum ObservationSource {
 // Append-only. Nunca UPDATE. Se o payloadHash repetir, descarta sem
 // escrever — é o que torna o diff trivial e a coleta barata.
 model Observation {
-  id           String            @id @default(cuid())
-  canonicalId  String
-  canonical    CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
+  id          String            @id @default(cuid())
+  canonicalId String
+  canonical   CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
 
-  source       ObservationSource
-  payload      Json
-  payloadHash  String
-  observedAt   DateTime          @default(now())
+  source      ObservationSource
+  payload     Json
+  payloadHash String
+  observedAt  DateTime          @default(now())
 
   // Qual tenant provocou a coleta — para atribuição de custo e billing.
   // Nunca sai da camada de dados.
@@ -346,21 +346,21 @@ enum SignalType {
 // Derivado do diff entre observações consecutivas. É o ativo real do
 // produto e a fonte do feed.
 model Signal {
-  id           String            @id @default(cuid())
-  canonicalId  String
-  canonical    CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
+  id          String            @id @default(cuid())
+  canonicalId String
+  canonical   CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
 
-  type         SignalType
-  axis         SignalAxis
-  value        Json?
-  evidence     Json?
-  source       ObservationSource
+  type     SignalType
+  axis     SignalAxis
+  value    Json?
+  evidence Json?
+  source   ObservationSource
 
   // Quando o mundo mudou — não quando nós percebemos. Sem isto não há
   // "começou a anunciar há 16 dias".
-  observedAt   DateTime
-  detectedAt   DateTime          @default(now())
-  confidence   Float             @default(1)
+  observedAt DateTime
+  detectedAt DateTime @default(now())
+  confidence Float    @default(1)
 
   @@index([canonicalId, observedAt])
   @@index([type, observedAt])
@@ -372,21 +372,117 @@ model Signal {
 // observações independentes o confirmaram. Telefone visto três vezes
 // em datas diferentes vale mais que telefone raspado uma vez.
 model CanonicalField {
-  id              String            @id @default(cuid())
-  canonicalId     String
-  canonical       CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
+  id          String            @id @default(cuid())
+  canonicalId String
+  canonical   CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
 
-  key             String
-  value           String
-  source          ObservationSource
-  confidence      Float             @default(0.5)
-  confirmations   Int               @default(1)
-  contradictions  Int               @default(0)
+  key            String
+  value          String
+  source         ObservationSource
+  confidence     Float             @default(0.5)
+  confirmations  Int               @default(1)
+  contradictions Int               @default(0)
 
-  firstSeenAt     DateTime          @default(now())
-  lastConfirmedAt DateTime          @default(now())
+  firstSeenAt     DateTime @default(now())
+  lastConfirmedAt DateTime @default(now())
 
   @@unique([canonicalId, key, value])
   @@index([canonicalId, key])
   @@map("canonical_fields")
+}
+
+// ─── CÉREBRO GLOBAL DE INTEL DE OUTBOUND & ESTRATÉGIAS ───────────────
+
+enum OutboundStrategyCategory {
+  OUTBOUND_PITCH_ROI
+  OUTBOUND_PITCH_BRAND
+  OUTBOUND_PITCH_AUDIT
+  OUTBOUND_PITCH_QUICK_MEETING
+  OUTBOUND_EVENT_TRIGGER
+}
+
+model GlobalOutboundMetric {
+  id           String                   @id @default(cuid())
+  category     OutboundStrategyCategory
+  niche        String
+  region       String?
+  hasWebsite   Boolean
+  hasActiveAds Boolean
+
+  totalAttempts         Int   @default(0)
+  totalResponses        Int   @default(0)
+  totalMeetingsSet      Int   @default(0)
+  responseRate          Float @default(0.0)
+  meetingConversionRate Float @default(0.0)
+  frictionScore         Float @default(3.0)
+
+  optimalWordCount Int      @default(60)
+  topHookPhrases   Json?
+  updatedAt        DateTime @updatedAt
+
+  @@unique([category, niche, hasWebsite, hasActiveAds])
+  @@index([niche, category])
+  @@map("global_outbound_metrics")
+}
+
+model OutboundOutcomeLog {
+  id           String                   @id @default(cuid())
+  tenantId     String
+  category     OutboundStrategyCategory
+  niche        String
+  hasWebsite   Boolean
+  hasActiveAds Boolean
+  outcome      String
+  wordCount    Int?
+  createdAt    DateTime                 @default(now())
+
+  @@index([category, niche])
+  @@map("outbound_outcome_logs")
+}
+
+// ─── MATRIZ DE INDICADORES DE APRENDIZADO DE OUTBOUND (5 CAMADAS) ───
+
+enum GatekeeperBypassStrategy {
+  GK_DIRECT_DECISION_MAKER
+  GK_TECHNICAL_PARTNER
+  GK_SCHEDULED_REASON
+  GK_LOW_FRICTION_QUESTION
+}
+
+enum PainPointCategory {
+  PAIN_WASTED_AD_SPEND
+  PAIN_REFERRAL_DEPENDENCY
+  PAIN_COMPETITOR_DOMINANCE
+  PAIN_LOW_CONVERSION_LEADS
+  PAIN_POOR_DIGITAL_AUTHORITY
+}
+
+enum ObjectionHandlingType {
+  AUDIT_GAP_PROOF
+  ASYNC_MICRO_DEMO
+  ROI_WASTE_CALCULATION
+  METHOD_DIFFERENTIATION
+}
+
+model OutboundPatternIntelligence {
+  id                 String                   @id @default(cuid())
+  niche              String
+  gatekeeperStrategy GatekeeperBypassStrategy
+  painPoint          PainPointCategory
+  objectionStrategy  ObjectionHandlingType
+
+  attemptsCount         Int   @default(0)
+  gatekeeperBypassRate  Float @default(0.0)
+  responseRate          Float @default(0.0)
+  meetingConversionRate Float @default(0.0)
+
+  optimalWordCount   Int   @default(65)
+  winningHookPhrases Json?
+  winningCTAs        Json?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([niche, gatekeeperStrategy, painPoint, objectionStrategy])
+  @@index([niche, responseRate])
+  @@map("outbound_pattern_intelligence")
 }

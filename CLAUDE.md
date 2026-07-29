@@ -260,16 +260,21 @@ Todos no Notion, DB *Documentos Internos* (`Categoria: ADR`), espelhados na *Wik
 ### O que está feito
 Fase 1 (ingestão canônica) **ligada e verificada contra o banco real**: `search.routes.ts` chama `resolveCanonicalBusiness → recordObservation → linkTenantBusiness`. Query duplicada consolidada em `listTenantBusinesses` (`packages/database/src/services/tenant-business.service.ts`). App shell + `/feed` + casca do `/tracer` no ar.
 
+Fase 2 (diff → sinal → diagnóstico) **implementada em 29/07** — `signal.service.ts` e `diagnostic.service.ts` em `packages/core/src/services/`, mais uma camada de aprendizado de padrões de outbound (`outbound-pattern-intelligence.service.ts` + tabelas `GlobalOutboundMetric`/`OutboundPatternIntelligence` no schema). `/pipeline` e `/vigilancias` deixaram de ser 404 (301 e 165 linhas respectivamente); o toast falso do dossiê foi trocado por chamada real a `PATCH /api/businesses/:id/status`. Verificado: typecheck limpo nos três pacotes, schema Prisma válido, suíte de testes sem regressão nova.
+
+> ⚠️ **Tudo isso está sem commit no momento em que este parágrafo foi escrito** — confirme com `git status` antes de assumir que ainda está no working tree. Chegou a este repo via sessão concorrente (outro Claude Code rodando no mesmo diretório), não pela sessão que escreveu o restante deste arquivo.
+
 ### O que vem a seguir
-Tasks abertas no Notion (DB *Tasks — Gustavo*, ligadas ao produto Tracer). Em ordem:
+Tasks no Notion (DB *Tasks — Gustavo*, ligadas ao produto Tracer):
 
-1. **Adicionar `APIFY_API_TOKEN` e `META_ADS_TOKEN`** — gratuitas, destravam código já escrito
+1. **Adicionar `APIFY_API_TOKEN`** — gratuito, destrava 4 scrapers já escritos. `META_ADS_TOKEN` foi **descartado** (ver nota abaixo).
 2. **Ligar o coletor de sinal** — ⏱️ tem cold start; ver nota abaixo
-3. **Fase 2: motor de diff → sinal** — ⚠️ **BullMQ não está instalado** no repo, apesar do plano pressupor
-4. **Validar ADR do bureau com advogado** — depende de terceiro
-5. **Cliente zero + 5 entrevistas ICP** — a validação que nunca aconteceu
+3. **Validar ADR do bureau com advogado** — depende de terceiro
+4. **Cliente zero + 5 entrevistas ICP** — a validação que nunca aconteceu
 
-> ⏱️ **Sobre o cold start:** `PUBLICOU_SITE` e `SALTO_DE_REVIEWS` são genuinamente diff entre snapshots — levam semanas para existir. Mas `COMECOU_A_ANUNCIAR` **não**: a data vem de `ad_delivery_start_time` da Ad Library oficial, então funciona desde a primeira coleta (campo já adicionado ao `meta-ads.tool.ts`, falta só o token).
+> ⏱️ **Sobre o cold start:** `PUBLICOU_SITE` e `SALTO_DE_REVIEWS` são genuinamente diff entre snapshots — levam semanas para existir.
+>
+> ⚠️ **Correção de 29/07 — `COMECOU_A_ANUNCIAR` também tem cold start, ao contrário do que este arquivo disse antes.** A suposição era que `ad_delivery_start_time` da Graph API oficial (`/ads_archive`) daria a data sem esperar diff. **Falso para o Brasil**: esse endpoint só cobre anúncios políticos/eleitorais fora de UK/EU — para uma PME brasileira ele retorna array vazio, ponto (confirmado via documentação da Meta). O campo `deliveryStartTime` continua no `meta-ads.tool.ts` mas não resolve nada aqui. Substituto real: `facebook-ads-library-scraper` do Apify, que raspa a página pública e pega a data de lá — por isso `APIFY_API_TOKEN` subiu de prioridade e `META_ADS_TOKEN` saiu da lista.
 
 ### Princípio que guiou a sessão inteira
 **Nunca fabricar dado ou atividade.** Estado vazio explica por que está vazio; exemplo é marcado como exemplo; nota sem evidência virou fato verificável (as pílulas de eixo mostram `dor · sem site`, não `dor 9`). Foi o que motivou matar a feature do bureau e recusar o "wire" com atividade falsa.

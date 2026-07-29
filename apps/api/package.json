@@ -9,6 +9,7 @@
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
+    "seed:dev": "tsx src/scripts/seed-dev-data.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

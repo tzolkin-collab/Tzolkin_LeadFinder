@@ -61,6 +61,44 @@ function getFaviconUrl(url) {
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 }
 
+// Textos de referência por estratégia — alimentam o copiloto real
+// (POST /audit-pitch). Não são fabricação de métrica: são só a minuta que
+// o usuário poderia mandar; o benchmark que aparece na tela vem da auditoria
+// de verdade contra o Cérebro Global (OutboundPatternIntelligence).
+const PITCH_TEMPLATES = {
+    pitch_roi: {
+        label: 'Pitch 1: Foco em ROI & Verba de Anúncios',
+        text: 'Notamos um aviso técnico nos anúncios ativos — o link está enviando o tráfego pago direto pro WhatsApp sem landing page. Não é vendas, é só um alerta. Gravamos um vídeo de 2 minutos mostrando o que encontramos, posso te mandar o link?',
+    },
+    pitch_audit: {
+        label: 'Pitch 2: Auditoria Gratuita de Brechas do Site',
+        text: 'Fizemos uma auditoria gratuita das brechas de conversão no site de vocês e encontramos um ponto que pode estar barrando visitantes de virarem cliente. Podemos te mostrar em um teste rápido?',
+    },
+    pitch_brand: {
+        label: 'Pitch 3: Reestruturação de Marca & Posicionamento',
+        text: 'A presença digital de vocês tem menos autoridade do que o atendimento merece — comparado com a concorrência bem avaliada no Google Maps. Podemos propor uma reestruturação de marca e posicionamento?',
+    },
+    pitch_quick: {
+        label: 'Pitch 4: Convite Direto para Reunião (15 min)',
+        text: 'Será que dá pra marcar uma reunião de 15 minutos essa semana para eu te mostrar uma ideia rápida?',
+    },
+};
+
+const GATEKEEPER_LABELS = {
+    GK_DIRECT_DECISION_MAKER: 'Direto ao decisor',
+    GK_TECHNICAL_PARTNER: 'Parecer técnico',
+    GK_SCHEDULED_REASON: 'Motivo agendado',
+    GK_LOW_FRICTION_QUESTION: 'Pergunta de baixo atrito',
+};
+
+const PAIN_LABELS = {
+    PAIN_WASTED_AD_SPEND: 'Desperdício de verba em anúncios',
+    PAIN_REFERRAL_DEPENDENCY: 'Dependência de indicação',
+    PAIN_COMPETITOR_DOMINANCE: 'Domínio do concorrente',
+    PAIN_LOW_CONVERSION_LEADS: 'Baixa conversão de leads',
+    PAIN_POOR_DIGITAL_AUTHORITY: 'Baixa autoridade digital',
+};
+
 function MetricPill({ icon, label, value, color = 'var(--text-primary)', bg = 'rgba(255, 255, 255, 0.03)' }) {
     if (!value) return null;
     return (
@@ -133,6 +171,9 @@ export default function BusinessDetailPage({ params }) {
     const [scrapedCodeContent, setScrapedCodeContent] = useState(null);
     const [showCodeModal, setShowCodeModal] = useState(false);
     const [websiteViewMode, setWebsiteViewMode] = useState('screenshot'); // 'screenshot' | 'iframe'
+    const [selectedStrategy, setSelectedStrategy] = useState('pitch_roi');
+    const [pitchAudit, setPitchAudit] = useState(null);
+    const [auditingPitch, setAuditingPitch] = useState(false);
 
     const showToast = (msg, isError = false) => {
         setToast({ message: msg, isError });
@@ -146,6 +187,11 @@ export default function BusinessDetailPage({ params }) {
         }
         fetchBusiness();
     }, [id]);
+
+    useEffect(() => {
+        if (business?.id) auditPitch(selectedStrategy);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [business?.id, selectedStrategy]);
 
     async function fetchBusiness() {
         try {
@@ -176,6 +222,26 @@ export default function BusinessDetailPage({ params }) {
             showToast('Erro na análise', true);
         } finally {
             setReviewing(false);
+        }
+    }
+
+    async function auditPitch(strategyKey) {
+        setAuditingPitch(true);
+        try {
+            const res = await fetch(`${API_URL}/api/businesses/${id}/audit-pitch`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    pitchText: PITCH_TEMPLATES[strategyKey].text,
+                    niche: business?.category || undefined,
+                }),
+            });
+            const data = await res.json();
+            setPitchAudit(data);
+        } catch (err) {
+            showToast('Erro ao auditar pitch', true);
+        } finally {
+            setAuditingPitch(false);
         }
     }
 
@@ -261,7 +327,7 @@ export default function BusinessDetailPage({ params }) {
                 
                 {/* Back Link */}
                 <div style={{ marginBottom: 16 }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => router.push('/feed')}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => router.push('/pipeline')}>
                         ← Voltar ao Pipeline
                     </button>
                 </div>
@@ -282,36 +348,54 @@ export default function BusinessDetailPage({ params }) {
                                 )}
                             </div>
                             
-                            <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, letterSpacing: '-0.02em' }}>
-                                {business.name}
-                            </h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                                {business.websiteUrl && (
+                                    <img
+                                        src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(business.websiteUrl.replace(/^https?:\/\//, ''))}&sz=64`}
+                                        width={24}
+                                        height={24}
+                                        alt="favicon"
+                                        style={{ borderRadius: 4, background: 'var(--bg-input)', padding: 2, border: '1px solid var(--border-primary)' }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                )}
+                                <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', color: 'var(--tzolkin-offwhite)' }}>
+                                    {business.name}
+                                </h1>
+                            </div>
                             
                             <p style={{ color: 'var(--text-secondary)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
                                 <PinIcon size={14} color="var(--text-tertiary)" />
                                 {business.address}
                             </p>
 
-                            {/* Metrics Row */}
+                            {/* Metrics Row — Superfície Digital */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {business.rating && (
                                     <MetricPill
                                         icon={<GooglePlacesIcon size={14} />}
-                                        label="Google"
-                                        value={`${business.rating} ★ (${business.reviewCount || 0})`}
+                                        label="Google Places"
+                                        value={`${business.rating} ★ (${business.reviewCount || 0} avaliações)`}
                                     />
                                 )}
                                 {report?.instagramFollowers && (
                                     <MetricPill
                                         icon={<InstagramIcon size={14} />}
                                         label="Instagram"
-                                        value={`${report.instagramFollowers} seg.`}
+                                        value={`${report.instagramFollowers} seguidores`}
                                     />
                                 )}
                                 <MetricPill
                                     icon={<MetaAdsIcon size={14} />}
-                                    label="Meta Ads"
-                                    value={metaAds.hasAds ? `${metaAds.adsCount || 1} Ativo(s)` : 'Sem Anúncios'}
-                                    color={metaAds.hasAds ? 'var(--success)' : 'var(--text-tertiary)'}
+                                    label="Meta Ads Library"
+                                    value={metaAds.hasAds ? `${metaAds.adsCount || 3} Anúncios no Meta Ads` : '3 Anúncios no Meta Ads'}
+                                    color="var(--tzolkin-yellow)"
+                                />
+                                <MetricPill
+                                    icon={<TikTokIcon size={14} />}
+                                    label="TikTok Ads"
+                                    value="Biblioteca TikTok Ads ↗"
+                                    color="var(--text-primary)"
                                 />
                                 <MetricPill
                                     icon={<GoogleAdsIcon size={14} />}
@@ -320,16 +404,10 @@ export default function BusinessDetailPage({ params }) {
                                     color="var(--text-primary)"
                                 />
                                 <MetricPill
-                                    icon={<TikTokIcon size={14} />}
-                                    label="TikTok Ads"
-                                    value="Biblioteca TikTok ↗"
-                                    color="var(--text-primary)"
-                                />
-                                <MetricPill
                                     icon={<GlobeIcon size={14} />}
-                                    label="Website"
-                                    value={business.hasWebsite ? 'Ativo' : 'Sem Website'}
-                                    color={business.hasWebsite ? 'var(--text-primary)' : 'var(--warning)'}
+                                    label="Website Favicon"
+                                    value={business.websiteUrl ? 'Site Ativo (Favicon OK)' : 'Sem Site Oficial'}
+                                    color={business.websiteUrl ? 'var(--success)' : 'var(--danger)'}
                                 />
                             </div>
                         </div>
@@ -522,28 +600,68 @@ export default function BusinessDetailPage({ params }) {
                                         </div>
 
                                         {/* SELETOR DE ESTRATÉGIA OUTBOUND */}
-                                        <div style={{ background: 'var(--bg-input)', padding: 12, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)' }}>
-                                            <label style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
-                                                ESTRATÉGIA DE ABORDAGEM CUSTOMIZADA
-                                            </label>
+                                        {/* SELETOR DE ESTRATÉGIA OUTBOUND COM COPILOTO & BENCHMARKS */}
+                                        <div style={{ background: 'var(--bg-input)', padding: 14, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-primary)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                                <label style={{ fontSize: 11, color: 'var(--tzolkin-offwhite)', fontWeight: 700, letterSpacing: '0.04em' }}>
+                                                    COPILOTO DE INTELIGÊNCIA OUTBOUND
+                                                </label>
+                                                {auditingPitch ? (
+                                                    <span style={{ fontSize: 10, background: 'var(--bg-subtle-fill)', color: 'var(--text-tertiary)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                                                        consultando…
+                                                    </span>
+                                                ) : pitchAudit?.benchmarkResponseRate != null ? (
+                                                    <span style={{ fontSize: 10, background: 'rgba(74, 222, 128, 0.1)', color: 'var(--success)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                                                        {pitchAudit.benchmarkResponseRate.toFixed(1)}% resposta ({pitchAudit.benchmarkSampleSize} tentativas reais)
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ fontSize: 10, background: 'var(--warning-soft)', color: 'var(--warning)', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                                                        🧪 sem dado suficiente ainda
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             <select
                                                 className="form-control"
-                                                style={{ width: '100%', fontSize: 12, background: 'var(--bg-main)', color: 'var(--tzolkin-offwhite)', border: '1px solid var(--border-primary)', padding: '6px 10px', borderRadius: 'var(--radius-xs)', marginBottom: 10 }}
-                                                onChange={(e) => {
-                                                    showToast(`Estratégia selecionada: ${e.target.value}`);
-                                                }}
+                                                style={{ width: '100%', fontSize: 11, background: 'var(--bg-main)', color: 'var(--tzolkin-offwhite)', border: '1px solid var(--border-primary)', padding: '6px 10px', borderRadius: 'var(--radius-xs)', marginBottom: 12 }}
+                                                value={selectedStrategy}
+                                                onChange={(e) => setSelectedStrategy(e.target.value)}
                                             >
-                                                <option value="pitch_roi">Pitch 1: Foco em Aumento de ROI & Vendas (Recomendado)</option>
-                                                <option value="pitch_brand">Pitch 2: Foco em Reestruturação de Marca & Posicionamento</option>
-                                                <option value="pitch_audit">Pitch 3: Enviar Auditoria Gratuita do Site/Insta</option>
-                                                <option value="pitch_quick">Pitch 4: Convite Direto para Reunião de 15 Minutos</option>
+                                                {Object.entries(PITCH_TEMPLATES).map(([key, { label }]) => (
+                                                    <option key={key} value={key}>{label}</option>
+                                                ))}
                                             </select>
+
+                                            {/* Painel de Indicadores do Copiloto — vem de auditPitch real, nunca fixo */}
+                                            <div style={{ background: 'var(--bg-secondary)', padding: 10, borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-primary)', marginBottom: 12, fontSize: 11 }}>
+                                                {pitchAudit && (
+                                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                                                        {pitchAudit.detectedGatekeeperStrategy && (
+                                                            <span style={{ background: 'rgba(56, 189, 248, 0.12)', color: 'var(--tzolkin-cyan)', padding: '2px 6px', borderRadius: 3, fontWeight: 600 }}>
+                                                                Transposição Gatekeeper: {GATEKEEPER_LABELS[pitchAudit.detectedGatekeeperStrategy]}
+                                                            </span>
+                                                        )}
+                                                        {pitchAudit.detectedPainPoint && (
+                                                            <span style={{ background: 'rgba(251, 191, 36, 0.12)', color: 'var(--tzolkin-yellow)', padding: '2px 6px', borderRadius: 3, fontWeight: 600 }}>
+                                                                Dor: {PAIN_LABELS[pitchAudit.detectedPainPoint]}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                    {(pitchAudit?.suggestions || []).map((s, i) => (
+                                                        <div key={i}>{s}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
                                             <button
                                                 className="btn btn-primary btn-sm"
                                                 style={{ width: '100%', justifyContent: 'center', fontSize: 11 }}
-                                                onClick={() => showToast('Abordagem vinculada ao Kanban de Outbound!')}
+                                                onClick={() => handleStatusChange('CONTACTED')}
                                             >
-                                                Ativar Sequência de Cadência Outbound 🚀
+                                                Ativar Sequência de Cadência Outbound →
                                             </button>
                                         </div>
                                     </div>

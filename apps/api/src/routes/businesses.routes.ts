@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma, listTenantBusinesses } from '@tzolkin/database';
+import { SignalService, DiagnosticService, OutboundPatternIntelligenceService } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+
+const signalService = new SignalService();
+const diagnosticService = new DiagnosticService();
+const outboundIntelligenceService = new OutboundPatternIntelligenceService();
 
 const router: Router = Router();
 
@@ -107,6 +112,88 @@ router.patch('/:id/status', async (req, res, next) => {
     });
 
     res.json({ message: 'Status atualizado com sucesso', report });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/businesses/:id/analyze (or /api/v1/businesses/:id/analyze)
+// Roda o motor real de diff → sinal → diagnóstico sobre o negócio canônico
+// ligado a este Business. Não fabrica nada: se não há canonicalId ou não há
+// observação suficiente, os arrays/campos voltam vazios/neutros — nunca
+// preenchidos com placeholder que pareça dado.
+router.post('/:id/analyze', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const id = req.params.id;
+
+    const business = await prisma.business.findFirst({ where: { id, tenantId } });
+    if (!business) {
+      res.status(404).json({ error: 'Negócio não encontrado' });
+      return;
+    }
+
+    if (!business.canonicalId) {
+      res.status(409).json({
+        error: 'Este negócio ainda não está ligado à base canônica — refaça a busca para vincular.',
+      });
+      return;
+    }
+
+    const [signals, diagnosis] = await Promise.all([
+      signalService.evaluateSignals(business.canonicalId),
+      diagnosticService.generateDiagnosis(business.canonicalId),
+    ]);
+
+    res.json({ signals, diagnosis });
+  } catch (error) {
+    next(error);
+  }
+});
+
+const AuditPitchSchema = z.object({
+  pitchText: z.string(),
+  niche: z.string().optional(),
+});
+
+// POST /api/businesses/:id/audit-pitch (or /api/v1/businesses/:id/audit-pitch)
+// Audita uma minuta de pitch contra o Cérebro Global de padrões de outbound
+// real (OutboundPatternIntelligence). benchmarkResponseRate vem null quando
+// não há amostra — nunca um número de preenchimento.
+router.post('/:id/audit-pitch', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const id = req.params.id;
+    const { pitchText, niche } = AuditPitchSchema.parse(req.body);
+
+    const business = await prisma.business.findFirst({ where: { id, tenantId } });
+    if (!business) {
+      res.status(404).json({ error: 'Negócio não encontrado' });
+      return;
+    }
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+
+    let hasAds = false;
+    if (business.canonicalId) {
+      const adSignal = await prisma.signal.findFirst({
+        where: {
+          canonicalId: business.canonicalId,
+          type: { in: ['COMECOU_A_ANUNCIAR', 'AUMENTOU_CRIATIVOS', 'PAROU_DE_ANUNCIAR'] },
+        },
+        orderBy: { observedAt: 'desc' },
+      });
+      hasAds = adSignal?.type === 'COMECOU_A_ANUNCIAR' || adSignal?.type === 'AUMENTOU_CRIATIVOS';
+    }
+
+    const resolvedNiche = niche ?? tenant?.icpNiche ?? undefined;
+    const result = await outboundIntelligenceService.auditPitch(pitchText, {
+      ...(resolvedNiche ? { niche: resolvedNiche } : {}),
+      hasWebsite: business.hasWebsite,
+      hasAds,
+    });
+
+    res.json(result);
   } catch (error) {
     next(error);
   }

@@ -981,3 +981,14 @@ tr:hover td {
         display: none !important;
     }
 }
+
+/* ---- Global Caret Fix: Prevents blinking text cursor caret on non-editable UI elements ---- */
+*:not(input):not(textarea):not([contenteditable="true"]) {
+    caret-color: transparent !important;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+    caret-color: var(--text-primary) !important;
+}
