@@ -117,7 +117,7 @@ export default function PipelinePage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifySpace: 'space-between',
+                      justifyContent: 'space-between',
                       paddingBottom: 10,
                       borderBottom: '1px solid var(--border-primary)',
                     }}
@@ -188,7 +188,7 @@ export default function PipelinePage() {
                           <div
                             style={{
                               display: 'flex',
-                              justifySpace: 'space-between',
+                              justifyContent: 'space-between',
                               alignItems: 'flex-start',
                               marginBottom: 6,
                             }}
@@ -249,7 +249,7 @@ export default function PipelinePage() {
                           <div
                             style={{
                               display: 'flex',
-                              justifySpace: 'space-between',
+                              justifyContent: 'space-between',
                               alignItems: 'center',
                               paddingTop: 8,
                               borderTop: '1px solid var(--border-primary)',

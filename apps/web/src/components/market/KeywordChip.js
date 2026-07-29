@@ -53,6 +53,11 @@ export function KeywordChip({ query, volume, competition, href, isExample = fals
       >
         {volume.toLocaleString('pt-BR')}/mês · {competition}
       </span>
+      {isExample && (
+        <span className="badge badge-example" style={{ fontSize: 9, padding: '2px 6px', flexShrink: 0 }}>
+          exemplo
+        </span>
+      )}
     </a>
   );
 }

@@ -28,7 +28,14 @@ export function HeroStat({ value, caption, actionLabel, actionHref, isExample = 
       >
         {value}
       </div>
-      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 5 }}>{caption}</div>
+      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {caption}
+        {isExample && (
+          <span className="badge badge-example" style={{ fontSize: 9, padding: '2px 6px' }}>
+            exemplo
+          </span>
+        )}
+      </div>
       {actionLabel ? (
         <a
           href={actionHref || '#'}

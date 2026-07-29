@@ -34,6 +34,11 @@ export function PersonMention({ initials, headline, detail, href, isExample = fa
       <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
         <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{headline}</span> {detail}
       </span>
+      {isExample && (
+        <span className="badge badge-example" style={{ fontSize: 9, padding: '2px 6px', flexShrink: 0 }}>
+          exemplo
+        </span>
+      )}
     </>
   );
 
