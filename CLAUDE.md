@@ -279,6 +279,8 @@ Tasks no Notion (DB *Tasks — Gustavo*, ligadas ao produto Tracer):
 ### Princípio que guiou a sessão inteira
 **Nunca fabricar dado ou atividade.** Estado vazio explica por que está vazio; exemplo é marcado como exemplo; nota sem evidência virou fato verificável (as pílulas de eixo mostram `dor · sem site`, não `dor 9`). Foi o que motivou matar a feature do bureau e recusar o "wire" com atividade falsa.
 
+> ⚠️ **Correção de 29/07 — "exemplo é marcado como exemplo" não é verdade na tela, só no dado.** Auditoria em `packages/core` achou fabricação real em 3 arquivos (`keyword-trends.service.ts`, `social-community.client.ts`, `web-traffic-analyzer.client.ts` — corrigidos no commit `a19e27f`) e no benchmark do copiloto de pitch (também corrigido — ver ADR de fontes de dados no Notion). Mas o achado maior: `SignalRow.js` e `MostContractedServicesWidget.js` recebem `isExample={true}` do `feed/page.js` e só reduzem opacidade (0.7 e 0.95) — **nenhum rótulo textual "exemplo" visível ao usuário**. O flag existe no dado, não na tela. `MostContractedServicesWidget` ainda tem percentuais fixos (`42/28/18/12%`) com "Amostragem 1.400+ prospecções" sem fonte real. Pendente de decisão: rótulo visível de verdade, ou remover os componentes até existir dado real.
+
 ⚠️ **Teste pré-existente falhando:** `packages/core` → `serper.client.test.ts` (1 de 41). Já falhava antes das mudanças desta sessão.
 
 ---
