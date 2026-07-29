@@ -56,6 +56,9 @@ export {
 } from './services/canonical-field.service.js';
 export {
   listTenantBusinesses,
+  aggregateNicheSignal,
   type ListTenantBusinessesInput,
   type ListTenantBusinessesResult,
+  type NicheSignalBucket,
+  type NicheSignalResult,
 } from './services/tenant-business.service.js';

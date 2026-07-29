@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma, listTenantBusinesses } from '@tzolkin/database';
+import { prisma, listTenantBusinesses, aggregateNicheSignal } from '@tzolkin/database';
 import { SignalService, DiagnosticService, OutboundPatternIntelligenceService } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
@@ -26,6 +26,20 @@ router.get('/', async (req, res, next) => {
     // por tenant é garantido dentro da própria função.
     const result = await listTenantBusinesses(tenantId, { search, status, page, limit });
 
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/businesses/niche-signal (or /api/v1/businesses/niche-signal)
+// Distribuição real de "sem site" por categoria, só dos negócios que este
+// tenant já mapeou. Ver aggregateNicheSignal — não é claim de mercado
+// nacional, é sinal da própria base de prospecção do tenant.
+router.get('/niche-signal', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const result = await aggregateNicheSignal(tenantId);
     res.json(result);
   } catch (error) {
     next(error);

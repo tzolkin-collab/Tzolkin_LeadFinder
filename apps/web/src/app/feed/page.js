@@ -5,7 +5,7 @@ import { SignalRow, SignalRowList } from '../../components/signal/SignalRow.js';
 import { HeroStat } from '../../components/market/HeroStat.js';
 import { KeywordChip } from '../../components/market/KeywordChip.js';
 import { PersonMention } from '../../components/market/PersonMention.js';
-import { MostContractedServicesWidget } from '../../components/market/MostContractedServicesWidget.js';
+import { NicheSignalWidget } from '../../components/market/NicheSignalWidget.js';
 import { MarketArticleCard } from '../../components/market/MarketArticleCard.js';
 
 /**
@@ -18,8 +18,8 @@ export default function FeedPage() {
     <AppShell>
       <PageHeader title="O que mudou" meta="nenhum sinal ainda" />
       <div style={{ padding: '32px 24px', maxWidth: 860, margin: '0 auto' }}>
-        {/* Demanda B2B Brasil — Widget Tipográfico Minimalista com Gráficos SVG */}
-        <MostContractedServicesWidget isExample={true} />
+        {/* Sinal real de "sem site" por nicho, agregado da própria base do tenant */}
+        <NicheSignalWidget />
 
         {hasSignals ? null : <EmptyState />}
       </div>
