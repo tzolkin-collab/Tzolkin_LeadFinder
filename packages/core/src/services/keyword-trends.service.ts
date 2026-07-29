@@ -12,62 +12,39 @@ export interface KeywordOpportunity {
 export interface CategoryTrendReport {
   niche: string;
   city: string;
-  totalSearchVolume: number;
+  /** null enquanto não houver fonte real (Keyword Planner — Google Ads API). */
+  totalSearchVolume: number | null;
   topKeywords: KeywordOpportunity[];
-  trendDirection: 'GROWING' | 'STABLE' | 'DECLINING';
-  growthPercentage: number;
+  trendDirection: 'GROWING' | 'STABLE' | 'DECLINING' | null;
+  growthPercentage: number | null;
+  /** true enquanto o campo acima vier vazio por falta de fonte, não por erro. */
+  dataUnavailable: boolean;
 }
 
+/**
+ * Volume de busca e tendência por nicho+cidade exige o Keyword Planner
+ * (Google Ads API + developer token) — a fonte mais burocrática do roadmap,
+ * priorizada por último no ADR de fontes de dados. Não existe ainda: o
+ * Serper detecta presença de Google Ads, não volume de busca.
+ *
+ * Sem essa integração, este service não inventa número — devolve estado
+ * vazio explícito (dataUnavailable: true), no mesmo padrão que o resto do
+ * produto usa para "ainda não temos esse dado".
+ */
 export class KeywordTrendsService {
   private readonly logger = new CoreLogger('KeywordTrendsService');
 
-  /**
-   * Avalia o volume de busca e oportunidades de palavras-chave para um nicho e cidade no Brasil.
-   */
   async evaluateKeywordTrends(niche: string, city: string): Promise<CategoryTrendReport> {
-    const cleanNiche = niche.toLowerCase().trim();
-    const cleanCity = city.trim();
-
-    // Mock/Deterministic trends matrix based on Brasil regional data
-    const topKeywords: KeywordOpportunity[] = [
-      {
-        query: `${cleanNiche} ${cleanCity}`,
-        volume: 2400,
-        competition: 'baixa',
-        growth: '+18% este mês',
-        recommendedCategory: cleanNiche,
-        isGoodOpportunity: true,
-      },
-      {
-        query: `melhor ${cleanNiche} em ${cleanCity}`,
-        volume: 1800,
-        competition: 'baixa',
-        growth: '+24% este mês',
-        recommendedCategory: cleanNiche,
-        isGoodOpportunity: true,
-      },
-      {
-        query: `preço ${cleanNiche} ${cleanCity}`,
-        volume: 980,
-        competition: 'média',
-        growth: '+5% este mês',
-        recommendedCategory: cleanNiche,
-        isGoodOpportunity: false,
-      },
-    ];
-
-    this.logger.info(`Trends e palavras-chave avaliadas para ${niche} em ${city}`, {
-      totalVolume: 5180,
-      keywordsCount: topKeywords.length,
-    });
+    this.logger.debug(`Keyword Planner ainda não integrado — sem dado real para ${niche} em ${city}`);
 
     return {
       niche,
       city,
-      totalSearchVolume: 5180,
-      topKeywords,
-      trendDirection: 'GROWING',
-      growthPercentage: 18,
+      totalSearchVolume: null,
+      topKeywords: [],
+      trendDirection: null,
+      growthPercentage: null,
+      dataUnavailable: true,
     };
   }
 }

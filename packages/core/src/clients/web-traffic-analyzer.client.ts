@@ -3,20 +3,23 @@ import { CoreLogger } from '../utils/logger.js';
 
 export interface WebTrafficSignature {
   domain: string;
-  estimatedMonthlyVisits: string;
-  mobilePerformanceScore: number; // 0 to 100
   technologiesDetected: string[];
   hasMetaPixel: boolean;
   hasGoogleAnalytics: boolean;
   hasGtm: boolean;
   cms: string | null;
-  speedRating: 'RÁPIDO' | 'MODERADO' | 'LENTO';
 }
 
 /**
- * Cliente de Análise de Tráfego & Pilha Tecnológica do Site (Alternativa de Elite ao SimilarWeb).
- * Utiliza APIs gratuitas/open (PageSpeed Insights, HTML Tech Signatures, Serper Index)
- * para extrair estimativas de tráfego, velocidade mobile e pixels instalados sem custo de $2k/mês.
+ * Detecta pixels de rastreamento e stack tecnológica de um site a partir de
+ * assinaturas literais no HTML (fbq(), gtag(), wp-content etc.) — sinal real,
+ * o mesmo tipo de checagem que browsers/extensões de ad-tech fazem.
+ *
+ * Não estima tráfego nem performance: a versão anterior derivava
+ * "mobilePerformanceScore" do tamanho em bytes do HTML e chamava isso de
+ * "simulação do PageSpeed" — nem o nome do campo era verdade. Para esses dois
+ * dados, a fonte real é a API do PageSpeed Insights (gratuita, sem token) e
+ * uma API de tráfego de fato — nenhuma das duas está integrada ainda.
  */
 export class WebTrafficAnalyzerClient {
   private readonly logger = new CoreLogger('WebTrafficAnalyzerClient');
@@ -28,14 +31,11 @@ export class WebTrafficAnalyzerClient {
     if (!websiteUrl) {
       return {
         domain: '',
-        estimatedMonthlyVisits: 'Indisponível',
-        mobilePerformanceScore: 0,
         technologiesDetected: [],
         hasMetaPixel: false,
         hasGoogleAnalytics: false,
         hasGtm: false,
         cms: null,
-        speedRating: 'LENTO',
       };
     }
 
@@ -89,11 +89,7 @@ export class WebTrafficAnalyzerClient {
       this.logger.debug(`HTML probe parcial para ${domain}`, { error: String(err) });
     }
 
-    // Performance estimate (Google PageSpeed open score simulation)
-    const mobilePerformanceScore = html.length > 50000 ? 42 : 78;
-    const speedRating = mobilePerformanceScore >= 70 ? 'RÁPIDO' : mobilePerformanceScore >= 50 ? 'MODERADO' : 'LENTO';
-
-    this.logger.info(`Assinatura de tráfego e tecnologia concluída para ${domain}`, {
+    this.logger.info(`Assinatura de tecnologia concluída para ${domain}`, {
       hasMetaPixel,
       hasGoogleAnalytics,
       cms,
@@ -102,14 +98,11 @@ export class WebTrafficAnalyzerClient {
 
     return {
       domain,
-      estimatedMonthlyVisits: hasMetaPixel ? '1.5k – 5k visitas/mês (Anúncios Ativos)' : '< 1k visitas/mês',
-      mobilePerformanceScore,
       technologiesDetected,
       hasMetaPixel,
       hasGoogleAnalytics,
       hasGtm,
       cms,
-      speedRating,
     };
   }
 }

@@ -76,11 +76,10 @@ export class SocialCommunityClient {
       targetNicheOrBrand: targetQuery,
       mentionsCount: mentions.length,
       mentions,
-      dominantComplaints: [
-        'Baixo retorno em anúncios sem página de conversão',
-        'Lentidão no atendimento do WhatsApp da recepção',
-        'Dependência excessiva de indicações boca a boca',
-      ],
+      // Sem NLP de sumarização, não há como derivar "queixa dominante" dos
+      // snippets — inventar 3 frases fixas aqui era o mesmo erro do
+      // diagnostic.service.ts. O consumidor lê `mentions` (dado real) direto.
+      dominantComplaints: [],
     };
   }
 }
