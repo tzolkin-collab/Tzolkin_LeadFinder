@@ -100,6 +100,17 @@ body {
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* overflow-x só em body, nunca nos dois — "html, body { overflow-x: hidden }"
+   força overflow-y a computar "auto" nos dois elementos (regra CSS: um eixo
+   non-visible promove o outro de visible pra auto), criando DOIS containers
+   de scroll independentes. O scroll real acontecia em html; a sidebar
+   position:sticky rastreava body, que nunca se movia — por isso ela
+   "escorregava" junto com o conteúdo em vez de ficar fixa. Reproduzido e
+   confirmado isolando o CSS num HTML estático fora do Next antes de mexer
+   aqui. */
+body {
     overflow-x: hidden;
 }
 
