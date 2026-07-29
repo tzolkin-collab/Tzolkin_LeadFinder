@@ -1,5 +1,5 @@
 import { prisma } from '../index.js';
-import type { ReportStatus } from '@prisma/client';
+import type { ReportStatus, SignalType } from '@prisma/client';
 
 export interface ListTenantBusinessesInput {
   search?: string | undefined;
@@ -67,38 +67,102 @@ export async function listTenantBusinesses(
 
 export interface NicheSignalBucket {
   category: string;
+  /** Negócios deste tenant nesta categoria. */
   total: number;
-  withoutWebsite: number;
-  withoutWebsitePct: number;
+  /** Quantos têm ao menos um sinal relevante para a especialidade do usuário. */
+  withRelevantSignal: number;
+  withRelevantSignalPct: number;
+  /** Quantas vezes cada tipo de sinal relevante apareceu nesta categoria. */
+  signalCounts: Record<string, number>;
 }
 
 export interface NicheSignalResult {
   buckets: NicheSignalBucket[];
   totalBusinesses: number;
+  /** Sinais que a agregação considerou — eco do que o chamador pediu. */
+  signalTypesConsidered: SignalType[];
 }
 
-/** Abaixo disto, uma % de "sem site" por categoria é ruído, não sinal. */
+/** Abaixo disto, uma % por categoria é ruído, não sinal. */
 const MIN_CATEGORY_SAMPLE = 2;
 
+export interface AggregateNicheSignalInput {
+  /**
+   * Tipos de sinal que importam para este usuário. Vem de fora de propósito:
+   * quem traduz "especialidade → sinal relevante" é
+   * `packages/core/specialty-relevance.service.ts`, e esta camada não pode
+   * importar de `core` (a dependência é core → database, não o contrário).
+   * Lista vazia = nenhum sinal relevante; devolve buckets vazios em vez de
+   * cair num default arbitrário.
+   */
+  signalTypes: SignalType[];
+  topN?: number;
+}
+
 /**
- * Distribuição real de "sem site" por categoria — só dos negócios que este
- * tenant já mapeou. Não é (e não pode ser) "demanda nacional por serviço": a
- * base não sabe qual serviço um negócio contratou, só observa presença
- * digital pública. Fonte #1 do widget de mercado na skill tracer-design —
- * agregação da própria base, zero integração nova.
+ * Distribuição de sinal por categoria, só dos negócios que este tenant já
+ * mapeou — e só dos sinais que importam para a especialidade dele.
+ *
+ * A primeira versão disto agregava apenas `hasWebsite`, o que era inútil para
+ * quem não vende site: um designer não tem o que fazer com "50% não tem site".
+ * Ver ADR de perfil de usuário. Não é (e não pode ser) "demanda nacional por
+ * serviço" — a base observa presença digital pública, nunca qual serviço um
+ * negócio contratou.
  */
-export async function aggregateNicheSignal(tenantId: string, topN = 4): Promise<NicheSignalResult> {
+export async function aggregateNicheSignal(
+  tenantId: string,
+  input: AggregateNicheSignalInput,
+): Promise<NicheSignalResult> {
+  const topN = input.topN ?? 4;
+
   const businesses = await prisma.business.findMany({
     where: { tenantId, category: { not: null } },
-    select: { category: true, hasWebsite: true },
+    select: { category: true, canonicalId: true },
   });
 
-  const grouped = new Map<string, { total: number; withoutWebsite: number }>();
+  if (input.signalTypes.length === 0) {
+    return { buckets: [], totalBusinesses: businesses.length, signalTypesConsidered: [] };
+  }
+
+  const canonicalIds = businesses
+    .map((b) => b.canonicalId)
+    .filter((id): id is string => id !== null);
+
+  const signals =
+    canonicalIds.length > 0
+      ? await prisma.signal.findMany({
+          where: { canonicalId: { in: canonicalIds }, type: { in: input.signalTypes } },
+          select: { canonicalId: true, type: true },
+        })
+      : [];
+
+  // canonicalId → tipos de sinal relevantes encontrados nele.
+  const signalsByCanonical = new Map<string, Set<SignalType>>();
+  for (const s of signals) {
+    const set = signalsByCanonical.get(s.canonicalId) ?? new Set<SignalType>();
+    set.add(s.type);
+    signalsByCanonical.set(s.canonicalId, set);
+  }
+
+  const grouped = new Map<
+    string,
+    { total: number; withRelevantSignal: number; signalCounts: Record<string, number> }
+  >();
+
   for (const b of businesses) {
     const category = b.category as string;
-    const entry = grouped.get(category) ?? { total: 0, withoutWebsite: 0 };
+    const entry =
+      grouped.get(category) ?? { total: 0, withRelevantSignal: 0, signalCounts: {} };
     entry.total += 1;
-    if (!b.hasWebsite) entry.withoutWebsite += 1;
+
+    const found = b.canonicalId ? signalsByCanonical.get(b.canonicalId) : undefined;
+    if (found && found.size > 0) {
+      entry.withRelevantSignal += 1;
+      for (const type of found) {
+        entry.signalCounts[type] = (entry.signalCounts[type] ?? 0) + 1;
+      }
+    }
+
     grouped.set(category, entry);
   }
 
@@ -107,11 +171,18 @@ export async function aggregateNicheSignal(tenantId: string, topN = 4): Promise<
     .map(([category, v]) => ({
       category,
       total: v.total,
-      withoutWebsite: v.withoutWebsite,
-      withoutWebsitePct: Math.round((v.withoutWebsite / v.total) * 100),
+      withRelevantSignal: v.withRelevantSignal,
+      withRelevantSignalPct: Math.round((v.withRelevantSignal / v.total) * 100),
+      signalCounts: v.signalCounts,
     }))
-    .sort((a, b) => b.total - a.total)
+    // Categoria com mais negócios com sinal relevante primeiro — é onde há
+    // mais o que fazer, não onde há mais cadastro.
+    .sort((a, b) => b.withRelevantSignal - a.withRelevantSignal || b.total - a.total)
     .slice(0, topN);
 
-  return { buckets, totalBusinesses: businesses.length };
+  return {
+    buckets,
+    totalBusinesses: businesses.length,
+    signalTypesConsidered: input.signalTypes,
+  };
 }

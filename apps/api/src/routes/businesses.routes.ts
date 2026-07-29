@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma, listTenantBusinesses, aggregateNicheSignal } from '@tzolkin/database';
-import { SignalService, DiagnosticService, OutboundPatternIntelligenceService } from '@tzolkin/core';
+import {
+  SignalService,
+  DiagnosticService,
+  OutboundPatternIntelligenceService,
+  combineRelevance,
+} from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const signalService = new SignalService();
@@ -33,14 +38,38 @@ router.get('/', async (req, res, next) => {
 });
 
 // GET /api/businesses/niche-signal (or /api/v1/businesses/niche-signal)
-// Distribuição real de "sem site" por categoria, só dos negócios que este
-// tenant já mapeou. Ver aggregateNicheSignal — não é claim de mercado
-// nacional, é sinal da própria base de prospecção do tenant.
+// Sinal por categoria, filtrado pela ESPECIALIDADE do usuário — um designer
+// não recebe a mesma coisa que quem vende site. Esta rota é o ponto de
+// composição: lê o perfil, traduz para sinal relevante via core, e passa a
+// lista pronta para a camada de dados (que não conhece especialidade).
 router.get('/niche-signal', async (req, res, next) => {
   try {
     const tenantId = req.user!.tenantId;
-    const result = await aggregateNicheSignal(tenantId);
-    res.json(result);
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { specialties: true, specialtyOther: true },
+    });
+
+    const specialties = tenant?.specialties ?? [];
+    const relevance = combineRelevance(specialties);
+
+    const result = await aggregateNicheSignal(tenantId, { signalTypes: relevance.all });
+
+    res.json({
+      ...result,
+      // O cliente precisa distinguir "não configurou perfil" de "configurou e
+      // não temos sinal pra isso" — são estados diferentes com respostas
+      // diferentes, e nenhum dos dois deve virar um número silencioso.
+      profileConfigured: specialties.length > 0,
+      specialties,
+      relevance: {
+        primary: relevance.primary,
+        secondary: relevance.secondary,
+        noPrimaryCoverage: relevance.noPrimaryCoverage,
+        gaps: relevance.gaps,
+      },
+    });
   } catch (error) {
     next(error);
   }

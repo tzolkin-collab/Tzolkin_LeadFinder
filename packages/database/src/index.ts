@@ -61,4 +61,5 @@ export {
   type ListTenantBusinessesResult,
   type NicheSignalBucket,
   type NicheSignalResult,
+  type AggregateNicheSignalInput,
 } from './services/tenant-business.service.js';

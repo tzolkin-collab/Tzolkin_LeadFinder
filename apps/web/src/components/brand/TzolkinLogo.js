@@ -106,6 +106,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
           .morph-tile-rect {
             transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
           }
+          .lead-finder-lockup:hover .morph-tile-rect,
           .tzolkin-morphing-tile-container:hover .morph-tile-rect {
             stroke: rgba(255, 255, 255, 0.4);
             filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.12));
@@ -118,6 +119,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transform: rotate(0deg) scale(1);
             opacity: 1;
           }
+          .lead-finder-lockup:hover .morph-disc-group,
           .tzolkin-morphing-tile-container:hover .morph-disc-group {
             transform: rotate(180deg) scale(0);
             opacity: 0;
@@ -127,6 +129,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
           .morph-ring {
             transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1) 120ms, stroke-width 450ms ease 120ms;
           }
+          .lead-finder-lockup:hover .morph-ring,
           .tzolkin-morphing-tile-container:hover .morph-ring {
             transform: translateY(-8px);
             stroke-width: 3.8;
@@ -139,6 +142,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transform: scale(0);
             opacity: 0;
           }
+          .lead-finder-lockup:hover .morph-handle,
           .tzolkin-morphing-tile-container:hover .morph-handle {
             transform: scale(1);
             opacity: 1;
@@ -149,6 +153,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transition: opacity 300ms ease 300ms;
             opacity: 0;
           }
+          .lead-finder-lockup:hover .morph-glare,
           .tzolkin-morphing-tile-container:hover .morph-glare {
             opacity: 1;
           }
@@ -160,6 +165,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transition: stroke-dashoffset 350ms cubic-bezier(0.16, 1, 0.3, 1) 280ms, opacity 200ms ease 280ms;
             opacity: 0;
           }
+          .lead-finder-lockup:hover .morph-signal-input,
           .tzolkin-morphing-tile-container:hover .morph-signal-input {
             stroke-dashoffset: 0;
             opacity: 1;
@@ -172,6 +178,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transition: stroke-dashoffset 400ms cubic-bezier(0.16, 1, 0.3, 1) 360ms, opacity 250ms ease 360ms;
             opacity: 0;
           }
+          .lead-finder-lockup:hover .morph-bifurcated-line,
           .tzolkin-morphing-tile-container:hover .morph-bifurcated-line {
             stroke-dashoffset: 0;
             opacity: 1;
@@ -183,6 +190,7 @@ export function TzolkinMorphingTile({ size = 40, className = '' }) {
             transform: scale(0);
             opacity: 0;
           }
+          .lead-finder-lockup:hover .morph-bifurcated-dot,
           .tzolkin-morphing-tile-container:hover .morph-bifurcated-dot {
             transform: scale(1);
             opacity: 1;

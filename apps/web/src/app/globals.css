@@ -404,6 +404,39 @@ body {
     border: 1px solid var(--border-primary);
 }
 
+/* ---- Chip de multi-seleção ---- */
+/* .btn-tab existente é segmented control (exclusivo). Este é para escolha
+   múltipla independente — estado vem de aria-pressed, não de classe extra,
+   pelo mesmo motivo que a Sidebar usa aria-current: acessível e dirigido por
+   CSS, sem estado duplicado em JS. */
+.chip-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-primary);
+    background: var(--bg-subtle-fill);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.chip-toggle:hover {
+    border-color: var(--border-secondary);
+    color: var(--text-primary);
+}
+
+.chip-toggle[aria-pressed='true'] {
+    background: var(--tzolkin-yellow-soft);
+    border-color: var(--tzolkin-yellow);
+    color: var(--tzolkin-yellow);
+    font-weight: 500;
+}
+
 /* ---- Score Circle Indicator ---- */
 .score-circle {
     display: inline-flex;

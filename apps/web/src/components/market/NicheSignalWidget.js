@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { GlobeIcon } from '../brand/UIIcons.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -10,16 +11,32 @@ function getToken() {
   return localStorage.getItem('token') || sessionStorage.getItem('token') || null;
 }
 
+/** Rótulos de sinal para leitura humana. Espelha SignalType do schema. */
+const SIGNAL_LABELS = {
+  SEM_SITE: 'sem site',
+  SITE_FORA_DO_AR: 'site fora do ar',
+  SO_LINKTREE: 'só Linktree',
+  PUBLICOU_SITE: 'publicou site',
+  COMECOU_A_ANUNCIAR: 'começou a anunciar',
+  PAROU_DE_ANUNCIAR: 'parou de anunciar',
+  AUMENTOU_CRIATIVOS: 'aumentou criativos',
+  SALTO_DE_REVIEWS: 'salto de avaliações',
+  CNPJ_RECENTE: 'CNPJ recente',
+  NOVA_UNIDADE: 'nova unidade',
+  INSTAGRAM_ATIVO: 'Instagram ativo',
+  WHATSAPP_COMERCIAL: 'WhatsApp comercial',
+  DM_ABERTO: 'DM aberto',
+  RECLAMACAO_EM_REVIEW: 'reclamação em avaliação',
+};
+
 /**
- * Substitui o antigo MostContractedServicesWidget — aquele mostrava
- * "distribuição de demanda B2B" com 4 percentuais fixos e uma amostragem
- * inventada ("1.400+ prospecções"). A base canônica não sabe qual serviço um
- * negócio contratou, só observa presença digital pública — não tinha como
- * aquele widget virar real na forma como existia.
+ * Sinal por nicho, filtrado pela especialidade do usuário.
  *
- * Este mostra o que a base realmente sabe: % sem site por categoria, só dos
- * negócios que ESTE tenant já mapeou (packages/database
- * aggregateNicheSignal). Não é claim de mercado nacional.
+ * Duas versões anteriores erraram aqui e vale registrar: a primeira mostrava
+ * percentuais fixos com uma amostragem inventada; a segunda agregava só
+ * `hasWebsite`, o que é inútil para quem não vende site. Agora o backend
+ * resolve "especialidade → sinal relevante" e esta tela renderiza os estados
+ * honestos que ele expõe — inclusive "seu perfil não tem sinal ainda".
  */
 export function NicheSignalWidget() {
   const [data, setData] = useState(null);
@@ -28,7 +45,6 @@ export function NicheSignalWidget() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      // Adiado por microtask — mesmo padrão assíncrono dos setState no .then/.finally abaixo.
       Promise.resolve().then(() => setLoading(false));
       return;
     }
@@ -47,81 +63,117 @@ export function NicheSignalWidget() {
   }
 
   const buckets = data?.buckets ?? [];
+  const profileConfigured = data?.profileConfigured ?? false;
+  const gaps = data?.relevance?.gaps ?? [];
 
   return (
     <div style={{ marginBottom: 36 }}>
-      <SectionHeader total={data?.totalBusinesses} />
+      <SectionHeader total={data?.totalBusinesses} configured={profileConfigured} />
 
-      {buckets.length === 0 ? (
-        <div
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px dashed var(--border-primary)',
-            borderRadius: 'var(--radius-md)',
-            padding: 24,
-            textAlign: 'center',
-            fontSize: 12,
-            color: 'var(--text-tertiary)',
-          }}
-        >
-          {data && data.totalBusinesses > 0
-            ? `${data.totalBusinesses} negócio${data.totalBusinesses === 1 ? '' : 's'} mapeado${data.totalBusinesses === 1 ? '' : 's'}, ainda sem categoria com amostra suficiente.`
+      {!profileConfigured ? (
+        <Panel dashed>
+          <p style={{ margin: 0, marginBottom: 10 }}>
+            O Tracer ainda não sabe o que você faz — então não sabe que sinal é relevante
+            pra você.
+          </p>
+          <Link href="/settings" style={{ color: 'var(--tzolkin-yellow)', fontSize: 12 }}>
+            definir minha especialidade →
+          </Link>
+        </Panel>
+      ) : buckets.length === 0 ? (
+        <Panel dashed>
+          {data?.totalBusinesses > 0
+            ? `${data.totalBusinesses} negócio${data.totalBusinesses === 1 ? '' : 's'} mapeado${data.totalBusinesses === 1 ? '' : 's'}, nenhum com sinal relevante para a sua especialidade ainda.`
             : 'Nenhum negócio mapeado ainda — busque leads para ver o sinal por nicho.'}
-        </div>
+        </Panel>
       ) : (
-        <div
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)',
-            borderRadius: 'var(--radius-md)',
-            padding: 18,
-          }}
-        >
+        <Panel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {buckets.map((b, i) => {
-              // Só a barra de maior "sem site" leva o amarelo — uma ênfase
-              // por tela. O ícone do cabeçalho fica neutro de propósito.
-              const isTop = i === 0;
-              return (
-                <div key={b.category} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{b.category}</span>
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontWeight: 500,
-                        color: isTop ? 'var(--tzolkin-yellow)' : 'var(--text-secondary)',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {b.withoutWebsitePct}%
-                    </span>
-                  </div>
-                  <div style={{ height: 6, background: 'var(--bg-input)', borderRadius: 3, overflow: 'hidden', width: '100%' }}>
-                    <div
-                      style={{
-                        width: `${b.withoutWebsitePct}%`,
-                        height: '100%',
-                        background: isTop ? 'var(--tzolkin-yellow)' : 'var(--text-tertiary)',
-                        borderRadius: 3,
-                        transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.3 }}>
-                    sem site, de {b.total} mapeado{b.total === 1 ? '' : 's'}
-                  </span>
-                </div>
-              );
-            })}
+            {buckets.map((b, i) => (
+              <CategoryRow key={b.category} bucket={b} isTop={i === 0} />
+            ))}
           </div>
+        </Panel>
+      )}
+
+      {gaps.length > 0 && (
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {gaps.map((g) => (
+            <p
+              key={g.specialty}
+              style={{ fontSize: 11, color: 'var(--warning)', margin: 0, lineHeight: 1.5 }}
+            >
+              <strong style={{ fontWeight: 500 }}>{g.label}:</strong> {g.gap}
+            </p>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function SectionHeader({ total }) {
+function CategoryRow({ bucket, isTop }) {
+  const topSignals = Object.entries(bucket.signalCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+        <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{bucket.category}</span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500,
+            // Uma ênfase por tela: só a categoria com mais sinal leva o amarelo.
+            color: isTop ? 'var(--tzolkin-yellow)' : 'var(--text-secondary)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {bucket.withRelevantSignal}/{bucket.total}
+        </span>
+      </div>
+
+      <div style={{ height: 6, background: 'var(--bg-input)', borderRadius: 3, overflow: 'hidden', width: '100%' }}>
+        <div
+          style={{
+            width: `${bucket.withRelevantSignalPct}%`,
+            height: '100%',
+            background: isTop ? 'var(--tzolkin-yellow)' : 'var(--text-tertiary)',
+            borderRadius: 3,
+            transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        />
+      </div>
+
+      <span style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.3 }}>
+        {topSignals.length > 0
+          ? topSignals.map(([type, count]) => `${SIGNAL_LABELS[type] || type} (${count})`).join(' · ')
+          : 'sem sinal relevante nesta categoria'}
+      </span>
+    </div>
+  );
+}
+
+function Panel({ children, dashed = false }) {
+  return (
+    <div
+      style={{
+        background: 'var(--bg-secondary)',
+        border: `1px ${dashed ? 'dashed' : 'solid'} var(--border-primary)`,
+        borderRadius: 'var(--radius-md)',
+        padding: dashed ? 24 : 18,
+        fontSize: 12,
+        color: 'var(--text-tertiary)',
+        textAlign: dashed ? 'center' : 'left',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeader({ total, configured }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -136,7 +188,7 @@ function SectionHeader({ total }) {
             textTransform: 'uppercase',
           }}
         >
-          SEM SITE POR NICHO NA SUA BASE
+          {configured ? 'SINAL RELEVANTE PARA VOCÊ, POR NICHO' : 'SINAL POR NICHO'}
         </span>
       </div>
       {total ? (

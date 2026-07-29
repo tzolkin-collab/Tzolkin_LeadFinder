@@ -91,12 +91,34 @@ enum TenantStatus {
   CANCELED
 }
 
+// O que o USUÁRIO PAGANTE faz — não confundir com o ICP dele (abaixo), que é
+// para quem ele vende. Sem isto o produto não sabe o que mostrar: um designer
+// não se importa se o alvo tem site, um gestor de tráfego se importa com quem
+// anuncia sem landing page. É o eixo de relevância de todo o resto.
+//
+// Array, não valor único: freelancer produtizado real acumula especialidade
+// ("faço site e tráfego"), e forçar escolha única produziria perfil errado.
+enum ProviderSpecialty {
+  DESENVOLVIMENTO_WEB // sites, landing pages, sistemas
+  TRAFEGO_PAGO // Meta/Google/TikTok Ads
+  SOCIAL_MEDIA // gestão de redes, conteúdo orgânico
+  DESIGN_BRANDING // identidade visual, material gráfico
+  AUTOMACAO_IA // automação de atendimento, agentes, integrações
+  SEO_CONTEUDO // busca orgânica, blog, autoridade
+  CONSULTORIA_ESTRATEGIA // diagnóstico, posicionamento, gestão
+  OUTRO // ver specialtyOther
+}
+
 model Tenant {
   id     String       @id @default(cuid())
   slug   String       @unique
   name   String
   plan   TenantPlan   @default(STARTER)
   status TenantStatus @default(ACTIVE)
+
+  // 👤 PERFIL DO PRESTADOR (O QUE EU FAÇO — dirige toda a relevância)
+  specialties    ProviderSpecialty[]
+  specialtyOther String? // preenchido quando specialties inclui OUTRO
 
   // 🎯 ICP (Perfil de Cliente Ideal - QUEM É O CLIENTE)
   icpNiche         String? // Segmento/Nicho Alvo (ex: "Clínicas Médicas e Odontológicas")

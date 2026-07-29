@@ -30,6 +30,15 @@ export {
   getScannerConfig,
   type ScannerConfig,
 } from './config/scanner.config.js';
+export {
+  relevanceFor,
+  combineRelevance,
+  isSignalRelevant,
+  SPECIALTY_LABELS,
+  type RelevanceWeight,
+  type SpecialtyRelevance,
+  type CombinedRelevance,
+} from './services/specialty-relevance.service.js';
 export { SignalService, type EvaluatedSignal } from './services/signal.service.js';
 export { DiagnosticService, type CommercialDiagnosis } from './services/diagnostic.service.js';
 export {
