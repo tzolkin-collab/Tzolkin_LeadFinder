@@ -33,3 +33,5 @@ tmp/
 # Turborepo cache
 .turbo/
 
+# Uploads
+**/public/uploads/
