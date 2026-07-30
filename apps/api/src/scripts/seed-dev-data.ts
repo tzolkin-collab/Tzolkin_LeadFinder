@@ -57,8 +57,30 @@ interface SeedBusinessDef {
   longitude: number;
   /** Observações do Google Places, da mais antiga para a mais nova. */
   placesHistory: Array<{ daysAgo: number; hasWebsite: boolean; websiteUrl: string | null; reviewCount: number }>;
-  /** Observações do Meta Ads Library, da mais antiga para a mais nova. Omitir = sem histórico de ads. */
-  adsHistory?: Array<{ daysAgo: number; adsCount: number }>;
+  /**
+   * Observações do Meta Ads Library, da mais antiga para a mais nova.
+   *
+   * `checkMethod` importa: só `GRAPH_API`/`SERPER_SEARCH` contam como
+   * verificação real. Omitir `adsHistory` inteiro simula "nunca checamos" —
+   * caso que NÃO deve gerar SEM_ANUNCIOS_DETECTADOS.
+   */
+  adsHistory?: Array<{
+    daysAgo: number;
+    adsCount: number;
+    checkMethod?: 'GRAPH_API' | 'SERPER_SEARCH' | 'FALLBACK_LINK';
+  }>;
+  /**
+   * Observação de Instagram. `found: false` com `discoveryMethod: 'SERPER'`
+   * é ausência verificada; com `'SCRAPING'` não vale como fato.
+   * Omitir = nunca buscamos.
+   */
+  instagram?: {
+    daysAgo: number;
+    found: boolean;
+    handle?: string;
+    followers?: string;
+    discoveryMethod: 'SERPER' | 'SCRAPING' | 'DIRECT';
+  };
   /** Idade do CNPJ em dias. <= 90 dispara CNPJ_RECENTE. */
   cnpjAgeDays: number;
 }
@@ -160,6 +182,60 @@ const BUSINESSES: SeedBusinessDef[] = [
     // interessante ainda" — sem segunda observação não há diff possível.
     placesHistory: [{ daysAgo: 10, hasWebsite: true, websiteUrl: 'https://autocenternovaalianca.example.com', reviewCount: 52 }],
     cnpjAgeDays: 2000,
+  },
+
+  // ── Casos de ausência VERIFICADA ──────────────────────────────────────
+  {
+    // Alvo clássico de gestor de tráfego: tem site pronto, checamos anúncio e
+    // não há nenhum. A estrutura para receber tráfego existe e está sem uso.
+    key: 'seed-clinica-derma-viva',
+    name: 'Clínica Derma Viva',
+    niche: 'dermatologia',
+    category: 'Clínica dermatológica',
+    city: 'Belo Horizonte',
+    state: 'MG',
+    address: 'Rua Antônio de Albuquerque, 800 - Savassi',
+    latitude: -19.9382,
+    longitude: -43.9384,
+    placesHistory: [{ daysAgo: 15, hasWebsite: true, websiteUrl: 'https://dermaviva.example.com', reviewCount: 88 }],
+    adsHistory: [{ daysAgo: 2, adsCount: 0, checkMethod: 'SERPER_SEARCH' }],
+    instagram: { daysAgo: 2, found: true, handle: 'dermaviva', followers: '12.4k', discoveryMethod: 'SERPER' },
+    cnpjAgeDays: 1100,
+  },
+  {
+    // Alvo de social media: buscamos por Instagram na busca indexada e não
+    // achamos. Tem site, então não é caso de dev.
+    key: 'seed-contabilidade-horizonte',
+    name: 'Contabilidade Horizonte',
+    niche: 'contabilidade',
+    category: 'Escritório de contabilidade',
+    city: 'Betim',
+    state: 'MG',
+    address: 'Rua Pará, 120 - Centro',
+    latitude: -19.9682,
+    longitude: -44.1985,
+    placesHistory: [{ daysAgo: 20, hasWebsite: true, websiteUrl: 'https://contabilidadehorizonte.example.com', reviewCount: 31 }],
+    adsHistory: [{ daysAgo: 3, adsCount: 0, checkMethod: 'SERPER_SEARCH' }],
+    instagram: { daysAgo: 3, found: false, discoveryMethod: 'SERPER' },
+    cnpjAgeDays: 3000,
+  },
+  {
+    // ⚠️ CONTRA-EXEMPLO deliberado: nunca checamos anúncio (sem adsHistory) e
+    // a busca de Instagram foi por raspagem, que pode ter falhado. NENHUM
+    // sinal de ausência deve ser emitido aqui — é o teste de que ausência de
+    // dado não vira fato sobre o negócio.
+    key: 'seed-restaurante-sabor-mineiro',
+    name: 'Restaurante Sabor Mineiro',
+    niche: 'restaurante',
+    category: 'Restaurante',
+    city: 'Belo Horizonte',
+    state: 'MG',
+    address: 'Av. Getúlio Vargas, 1400 - Funcionários',
+    latitude: -19.9401,
+    longitude: -43.9302,
+    placesHistory: [{ daysAgo: 12, hasWebsite: true, websiteUrl: 'https://sabormineiro.example.com', reviewCount: 210 }],
+    instagram: { daysAgo: 4, found: false, discoveryMethod: 'SCRAPING' },
+    cnpjAgeDays: 4000,
   },
 ];
 
@@ -267,6 +343,16 @@ async function seedBusiness(tenantId: string, def: SeedBusinessDef) {
 
   await linkTenantBusiness(business.id, canonical.id);
 
+  // ⚠️ Observation é append-only POR CONTRATO em produção. Aqui é violado de
+  // propósito, e só para negócio de seed: sem isto, rodar o seed de novo
+  // acumula observação duplicada (o `payloadHash` muda quando o formato do
+  // payload muda, e `daysAgo` desloca o `observedAt`), e o motor de diff passa
+  // a comparar dois snapshots idênticos.
+  //
+  // Foi exatamente o que aconteceu: Sorriso Pleno perdeu COMECOU_A_ANUNCIAR
+  // porque as duas observações mais recentes ficaram ambas com adsCount 3.
+  await prisma.observation.deleteMany({ where: { canonicalId: canonical.id } });
+
   for (const snapshot of def.placesHistory) {
     await recordObservation({
       canonicalId: canonical.id,
@@ -289,7 +375,24 @@ async function seedBusiness(tenantId: string, def: SeedBusinessDef) {
       observedAt: daysAgo(snapshot.daysAgo),
       payload: {
         adsCount: snapshot.adsCount,
+        hasAds: snapshot.adsCount > 0,
+        checkMethod: snapshot.checkMethod ?? 'SERPER_SEARCH',
         adsLibraryUrl: `https://www.facebook.com/ads/library/?q=${encodeURIComponent(def.name)}`,
+      },
+    });
+  }
+
+  if (def.instagram) {
+    await recordObservation({
+      canonicalId: canonical.id,
+      source: 'SERPER_INSTAGRAM',
+      observedAt: daysAgo(def.instagram.daysAgo),
+      payload: {
+        found: def.instagram.found,
+        handle: def.instagram.handle ?? null,
+        followers: def.instagram.followers ?? null,
+        posts: null,
+        discoveryMethod: def.instagram.discoveryMethod,
       },
     });
   }

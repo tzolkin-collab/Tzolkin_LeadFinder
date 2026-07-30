@@ -143,6 +143,9 @@ export class ReviewPipeline {
             profilePicUrl: null,
             website: null,
             extraLinks: null,
+            // A tool falhou por completo — não houve busca, então nada pode
+            // ser afirmado sobre ausência de Instagram.
+            discoveryMethod: null,
           };
 
     // Step 1.5: If Google Places missed website, attempt Serper official domain search

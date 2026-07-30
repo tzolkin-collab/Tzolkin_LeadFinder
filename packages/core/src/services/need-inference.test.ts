@@ -100,6 +100,32 @@ describe('inferNeeds', () => {
     }
   });
 
+  it('site + ausência verificada de anúncio = tráfego pago', () => {
+    // O caso que destravou o perfil mais comum do ICP.
+    const needs = inferNeeds(['SEM_ANUNCIOS_DETECTADOS']);
+    const tp = needs.find((n) => n.needsSubcategorySlug === 'trafego-pago');
+    expect(tp).toBeDefined();
+    expect(tp!.mechanism).toBe('INVESTIMENTO_COM_LACUNA');
+  });
+
+  it('sem anúncio E sem site vira site primeiro, não tráfego', () => {
+    // Não faz sentido vender mídia para quem não tem onde receber o clique.
+    const needs = inferNeeds(['SEM_ANUNCIOS_DETECTADOS', 'SEM_SITE']);
+    expect(needs.some((n) => n.ruleId === 'tem-site-e-nao-anuncia')).toBe(false);
+    expect(needs.some((n) => n.needsSubcategorySlug === 'site-institucional')).toBe(true);
+  });
+
+  it('ausência verificada de Instagram = social media', () => {
+    const needs = inferNeeds(['SEM_INSTAGRAM']);
+    expect(needs[0]!.needsSubcategorySlug).toBe('social-media');
+  });
+
+  it('anuncia sem perfil social é lacuna de investimento', () => {
+    const needs = inferNeeds(['COMECOU_A_ANUNCIAR', 'SEM_INSTAGRAM']);
+    const sm = needs.find((n) => n.needsSubcategorySlug === 'social-media');
+    expect(sm!.mechanism).toBe('INVESTIMENTO_COM_LACUNA');
+  });
+
   it('toda regra aponta para um slug que a semente da taxonomia cria', () => {
     // Se isto quebrar, a regra dispara e o matching não encontra o serviço.
     for (const rule of NEED_RULES) {

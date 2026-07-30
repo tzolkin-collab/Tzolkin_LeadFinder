@@ -86,6 +86,39 @@ export class SignalService {
       const firstMeta = metaObs[0];
       const secondMeta = metaObs[1];
 
+      // 2a. Ausência VERIFICADA de anúncio — basta UMA observação, porque não é
+      // diff: é o fato "procuramos e não achou". Destrava o perfil de tráfego
+      // pago, que só tinha sinal para quem JÁ anuncia.
+      //
+      // ⚠️ Só vale se a checagem aconteceu de verdade. `FALLBACK_LINK` quer
+      // dizer que devolvemos um link sem consultar nada — e nem chega a virar
+      // observação (ver record-enrichment-observations), mas a guarda fica aqui
+      // também porque este serviço não controla quem escreveu o payload.
+      if (firstMeta) {
+        const payload = firstMeta.payload as any;
+        const reallyChecked =
+          payload.checkMethod === 'GRAPH_API' || payload.checkMethod === 'SERPER_SEARCH';
+        const noAdsAnywhere =
+          (payload.adsCount ?? 0) === 0 &&
+          payload.hasGoogleAds !== true &&
+          payload.hasTikTokAds !== true;
+
+        if (reallyChecked && noAdsAnywhere) {
+          evaluated.push({
+            type: 'SEM_ANUNCIOS_DETECTADOS',
+            axis: 'DOR',
+            value: { checkMethod: payload.checkMethod },
+            evidence: {
+              adsCount: payload.adsCount ?? 0,
+              adsLibraryUrl: payload.adsLibraryUrl,
+              checkMethod: payload.checkMethod,
+            },
+            source: 'META_ADS_LIBRARY',
+            observedAt: firstMeta.observedAt,
+          });
+        }
+      }
+
       if (firstMeta && secondMeta) {
         const latestPayload = firstMeta.payload as any;
         const prevPayload = secondMeta.payload as any;
@@ -118,6 +151,35 @@ export class SignalService {
             evidence: { prevCount, currCount },
             source: 'META_ADS_LIBRARY',
             observedAt: firstMeta.observedAt,
+          });
+        }
+      }
+
+      // 2b. Ausência VERIFICADA de Instagram — destrava o perfil de social
+      // media. Só conta quando a descoberta foi por busca indexada: um scrape
+      // do Google que falhou por rede parece "não existe", e afirmar isso faria
+      // o prestador abordar dizendo "vocês não têm Instagram" para quem tem.
+      const igObs = await latestObservations(canonicalId, 'SERPER_INSTAGRAM', 1);
+      const firstIg = igObs[0];
+      if (firstIg) {
+        const payload = firstIg.payload as any;
+        if (payload.discoveryMethod === 'SERPER' && payload.found === false) {
+          evaluated.push({
+            type: 'SEM_INSTAGRAM',
+            axis: 'DOR',
+            value: { discoveryMethod: payload.discoveryMethod },
+            evidence: { found: false, discoveryMethod: payload.discoveryMethod },
+            source: 'SERPER_INSTAGRAM',
+            observedAt: firstIg.observedAt,
+          });
+        } else if (payload.found === true && payload.handle) {
+          evaluated.push({
+            type: 'INSTAGRAM_ATIVO',
+            axis: 'ALCANCE',
+            value: { handle: payload.handle, followers: payload.followers },
+            evidence: { handle: payload.handle, posts: payload.posts },
+            source: 'SERPER_INSTAGRAM',
+            observedAt: firstIg.observedAt,
           });
         }
       }

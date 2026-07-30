@@ -463,6 +463,17 @@ enum SignalType {
   WHATSAPP_COMERCIAL
   DM_ABERTO
   RECLAMACAO_EM_REVIEW
+
+  // ─── Ausência VERIFICADA ────────────────────────────────────────────
+  // Não confundir com ausência de sinal. Estes só são emitidos quando a
+  // verificação de fato aconteceu e não encontrou nada — nunca por dado
+  // faltando. Ver signal.service.ts.
+  //
+  // Existem porque os perfis de tráfego pago e social media ficavam sem
+  // nenhum lead: o produto só sabia dizer quem TEM anúncio, nunca quem
+  // comprovadamente não tem, que é justamente o alvo de quem vende mídia.
+  SEM_ANUNCIOS_DETECTADOS
+  SEM_INSTAGRAM
 }
 
 // Derivado do diff entre observações consecutivas. É o ativo real do

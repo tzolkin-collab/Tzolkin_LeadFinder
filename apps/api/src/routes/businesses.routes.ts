@@ -117,7 +117,10 @@ router.get('/matched', async (req, res, next) => {
       .map((e) => ({
         businessId: e.business.id,
         name: e.business.name,
-        needs: e.match.unmatched.map((u) => u.needsSubcategorySlug),
+        // Dedup: duas regras diferentes podem apontar o mesmo serviço (ex.
+        // "tem site e não anuncia" + "audiência orgânica sem anúncio" → ambas
+        // trafego-pago). Aqui interessa o serviço, não quantas regras bateram.
+        needs: [...new Set(e.match.unmatched.map((u) => u.needsSubcategorySlug))],
       }));
 
     res.json({

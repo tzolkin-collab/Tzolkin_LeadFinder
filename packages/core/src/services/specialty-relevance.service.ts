@@ -47,19 +47,28 @@ const RELEVANCE: Record<ProviderSpecialty, SpecialtyRelevance> = {
   },
 
   TRAFEGO_PAGO: {
-    primary: ['COMECOU_A_ANUNCIAR', 'AUMENTOU_CRIATIVOS', 'PAROU_DE_ANUNCIAR'],
+    // SEM_ANUNCIOS_DETECTADOS é primário e não secundário: quem vende mídia
+    // quer principalmente quem AINDA NÃO anuncia. Antes deste sinal existir,
+    // este perfil só via quem já anunciava — e ficava com zero lead numa base
+    // majoritariamente de não-anunciantes.
+    primary: [
+      'SEM_ANUNCIOS_DETECTADOS',
+      'COMECOU_A_ANUNCIAR',
+      'AUMENTOU_CRIATIVOS',
+      'PAROU_DE_ANUNCIAR',
+    ],
     // "anuncia sem landing page" é a combinação mais forte deste perfil —
     // SEM_SITE aqui não é a oferta, é o agravante que justifica a abordagem.
-    secondary: ['SEM_SITE', 'SO_LINKTREE'],
+    secondary: ['SEM_SITE', 'SO_LINKTREE', 'INSTAGRAM_ATIVO'],
     poorlyCovered: false,
   },
 
   SOCIAL_MEDIA: {
-    primary: ['INSTAGRAM_ATIVO'],
+    primary: ['SEM_INSTAGRAM', 'INSTAGRAM_ATIVO'],
     secondary: ['SO_LINKTREE', 'DM_ABERTO', 'SALTO_DE_REVIEWS'],
     poorlyCovered: true,
     coverageGap:
-      'Só sabemos se o Instagram existe, não se está bem cuidado. Faltam sinais de frequência de post, queda de engajamento e qualidade de conteúdo.',
+      'Sabemos se o Instagram existe ou não, mas não se está bem cuidado. Faltam sinais de frequência de post, queda de engajamento e qualidade de conteúdo — o perfil abandonado há meses é indistinguível do ativo.',
   },
 
   DESIGN_BRANDING: {

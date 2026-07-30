@@ -93,6 +93,55 @@ export const NEED_RULES: NeedRule[] = [
       'Parou de anunciar e não tem site — provável que a verba não tenha retornado, porque não havia onde converter.',
   },
 
+  // ── Canal pago inexplorado (ausência verificada) ──────────────────────
+  // Estas regras só disparam com SEM_ANUNCIOS_DETECTADOS, que exige checagem
+  // real (ver signal.service.ts). Sem elas, quem vende tráfego pago não
+  // recebia lead nenhum: o produto só sabia apontar quem já anunciava.
+  {
+    id: 'tem-site-e-nao-anuncia',
+    needsSubcategorySlug: 'trafego-pago',
+    mechanism: 'INVESTIMENTO_COM_LACUNA',
+    requires: ['SEM_ANUNCIOS_DETECTADOS'],
+    // Ter site é o que separa "pode começar a anunciar amanhã" de "não tem
+    // onde mandar o tráfego" — aí o caso é de landing page primeiro.
+    absent: ['SEM_SITE', 'SITE_FORA_DO_AR', 'SO_LINKTREE'],
+    thesis:
+      'Tem site e não aparece em nenhuma biblioteca de anúncios — a estrutura para receber tráfego existe e está sem uso.',
+  },
+  {
+    id: 'audiencia-organica-sem-anuncio',
+    needsSubcategorySlug: 'trafego-pago',
+    mechanism: 'AUSENCIA',
+    requires: ['SEM_ANUNCIOS_DETECTADOS', 'INSTAGRAM_ATIVO'],
+    thesis:
+      'Mantém o Instagram ativo e não anuncia — cresce só por alcance orgânico, sem canal pago.',
+  },
+  {
+    id: 'sem-anuncio-e-sem-site',
+    needsSubcategorySlug: 'site-institucional',
+    mechanism: 'AUSENCIA',
+    requires: ['SEM_ANUNCIOS_DETECTADOS', 'SEM_SITE'],
+    thesis:
+      'Não tem site e não anuncia — nenhuma aquisição ativa, toda a demanda vem de indicação ou passagem.',
+  },
+
+  // ── Sem presença social (ausência verificada) ─────────────────────────
+  {
+    id: 'sem-instagram-nenhum',
+    needsSubcategorySlug: 'social-media',
+    mechanism: 'AUSENCIA',
+    requires: ['SEM_INSTAGRAM'],
+    thesis: 'Não encontramos perfil no Instagram — nenhuma presença social para o negócio.',
+  },
+  {
+    id: 'anuncia-sem-presenca-social',
+    needsSubcategorySlug: 'social-media',
+    mechanism: 'INVESTIMENTO_COM_LACUNA',
+    requires: ['COMECOU_A_ANUNCIAR', 'SEM_INSTAGRAM'],
+    thesis:
+      'Paga por anúncio sem ter perfil social — o clique chega numa marca sem nada para checar antes de comprar.',
+  },
+
   // ── Saturação ──────────────────────────────────────────────────────────
   {
     id: 'volume-de-avaliacoes-no-whatsapp',

@@ -3,6 +3,7 @@ import { prisma, Prisma } from '@tzolkin/database';
 import { ReviewPipeline, type Business, AdsAuditTool, MetaAdsTool, SerperClient } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { createRateLimitMiddleware } from '../middlewares/rate-limit.middleware.js';
+import { recordEnrichmentObservations } from '../services/record-enrichment-observations.js';
 import { env } from '../config/env.js';
 
 const router: Router = Router();
@@ -159,6 +160,12 @@ router.post(['/review/:id', '/search/review/:id'], reviewRateLimit, async (req, 
         ...reportData,
       },
     });
+
+    // Alimenta a base canônica com o que foi observado. Só faz sentido se o
+    // negócio já está vinculado ao canônico (a busca faz esse vínculo).
+    if (business.canonicalId) {
+      await recordEnrichmentObservations(business.canonicalId, tenantId, enrichmentResult);
+    }
 
     const updated = await prisma.business.findUnique({
       where: { id: business.id },
@@ -336,6 +343,10 @@ router.post('/review-all', reviewAllRateLimit, async (req, res, next) => {
             status: 'REVIEWED',
           },
         });
+
+        if (biz.canonicalId) {
+          await recordEnrichmentObservations(biz.canonicalId, tenantId, result);
+        }
 
         batchResults.push({ id: biz.id, name: biz.name, score: result.aiReview.suitabilityScore, success: true });
       } catch (err) {

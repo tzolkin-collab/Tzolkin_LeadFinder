@@ -35,6 +35,18 @@ export const InstagramProfileSchema = z.object({
   profilePicUrl: z.string().nullable(),
   website: z.string().nullable(),
   extraLinks: z.array(LinktreeItemSchema).nullable(),
+  /**
+   * COMO a busca foi feita. Existe porque "não achei" só vale como fato quando
+   * se sabe o quanto a procura era confiável:
+   *   SERPER   — busca indexada; ausência aqui é evidência razoável
+   *   SCRAPING — raspagem do Google; falha de rede parece "não existe"
+   *   DIRECT   — handle já era conhecido, não houve busca
+   *
+   * O sinal SEM_INSTAGRAM só é emitido para SERPER. Sem esta distinção, um
+   * scrape que falhou viraria "esse negócio não tem Instagram", e o prestador
+   * abordaria dizendo isso para alguém que tem.
+   */
+  discoveryMethod: z.enum(['SERPER', 'SCRAPING', 'DIRECT']).nullable(),
 });
 
 export type InstagramProfile = z.infer<typeof InstagramProfileSchema>;
@@ -71,15 +83,22 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
       const validated = this.inputSchema.parse(input);
       let profile: InstagramProfile | null = null;
 
+      // Rastreado explicitamente: é o que permite distinguir "procurei e não
+      // achei" de "a raspagem falhou". Ver InstagramProfileSchema.
+      let discoveryMethod: InstagramProfile['discoveryMethod'] = null;
+
       if (validated.directHandle) {
+        discoveryMethod = 'DIRECT';
         const scraped = await this.scrapeProfile(validated.directHandle);
         profile = {
           handle: validated.directHandle,
           url: `https://www.instagram.com/${validated.directHandle}/`,
           ...scraped,
           extraLinks: scraped.website ? await this.scrapeLandingPageLinks(scraped.website) : null,
+          discoveryMethod,
         };
       } else if (this.serperClient.isConfigured) {
+        discoveryMethod = 'SERPER';
         const handle = await this.serperClient.searchInstagramHandle(
           validated.businessName,
           validated.location,
@@ -94,10 +113,17 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
             url: `https://www.instagram.com/${handle}/`,
             ...scraped,
             extraLinks,
+            discoveryMethod,
           };
         }
+        // handle nulo aqui é o caso valioso: busca indexada rodou e não achou.
       } else {
-        profile = await this.findProfileWithScraping(validated.businessName, validated.location);
+        discoveryMethod = 'SCRAPING';
+        const found = await this.findProfileWithScraping(
+          validated.businessName,
+          validated.location,
+        );
+        profile = found ? { ...found, discoveryMethod } : null;
       }
 
       if (!profile) {
@@ -110,6 +136,7 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
           profilePicUrl: null,
           website: null,
           extraLinks: null,
+          discoveryMethod,
         };
       }
 
@@ -142,10 +169,11 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
 
 
 
+  // Devolve sem `discoveryMethod` — quem chama já sabe que veio por raspagem.
   private async findProfileWithScraping(
     businessName: string,
     location?: string,
-  ): Promise<InstagramProfile | null> {
+  ): Promise<Omit<InstagramProfile, 'discoveryMethod'> | null> {
     const query = `${businessName} ${location ?? ''} instagram`.trim();
     const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 
@@ -194,7 +222,11 @@ export class InstagramTool implements Tool<InstagramInput, InstagramProfile> {
     };
   }
 
-  private async scrapeProfile(handle: string): Promise<Omit<InstagramProfile, 'handle' | 'url' | 'extraLinks'>> {
+  // `discoveryMethod` fica fora: quem decide o método é `execute`, que sabe por
+  // qual caminho chegou até aqui — a raspagem do perfil em si não sabe.
+  private async scrapeProfile(
+    handle: string,
+  ): Promise<Omit<InstagramProfile, 'handle' | 'url' | 'extraLinks' | 'discoveryMethod'>> {
     try {
       const response = await fetch(`https://www.instagram.com/${handle}/`, {
         headers: {
