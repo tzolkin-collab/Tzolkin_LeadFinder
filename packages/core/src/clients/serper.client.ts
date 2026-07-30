@@ -101,6 +101,7 @@ export class SerperClient {
           }
         }
       });
+      if (handles.length > 0) break;
     }
 
     if (handles.length === 0) {
