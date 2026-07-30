@@ -11,10 +11,14 @@ import {
 
 // ─── Helpers de simulação ─────────────────────────────────────────────────
 
+/** Categoria padrão dos testes — o "nicho pedido" quando não importa qual. */
+const CAT = 'MARKETING_DIGITAL' as const;
+
 let idSeq = 0;
 function sub(partial: Partial<ExistingSubcategory> & { slug: string }): ExistingSubcategory {
   return {
     id: `sub-${++idSeq}`,
+    category: CAT,
     label: partial.slug,
     aliases: [],
     status: 'ACTIVE',
@@ -29,11 +33,17 @@ function sub(partial: Partial<ExistingSubcategory> & { slug: string }): Existing
  * Aplica a decisão a um estado em memória — replica o que o resolver faz no
  * banco. Sem isto não é possível simular sequência e provar convergência.
  */
-function applyAction(state: ExistingSubcategory[], action: TaxonomyAction, tenantId: string): void {
+function applyAction(
+  state: ExistingSubcategory[],
+  action: TaxonomyAction,
+  tenantId: string,
+  targetCategory: DecideInput['targetCategory'] = CAT,
+): void {
   switch (action.kind) {
     case 'CREATE_PENDING':
       state.push(
         sub({
+          category: targetCategory,
           slug: action.slug,
           label: action.label,
           status: 'PENDING',
@@ -74,10 +84,17 @@ function propose(
   rawLabel: string,
   tenantId: string,
   tenantProposalsInWindow = 0,
+  targetCategory: DecideInput['targetCategory'] = CAT,
 ): TaxonomyAction {
-  const input: DecideInput = { rawLabel, tenantId, existing: state, tenantProposalsInWindow };
+  const input: DecideInput = {
+    rawLabel,
+    tenantId,
+    targetCategory,
+    existing: state,
+    tenantProposalsInWindow,
+  };
   const action = decideTaxonomyAction(input);
-  applyAction(state, action, tenantId);
+  applyAction(state, action, tenantId, targetCategory);
   return action;
 }
 
@@ -287,6 +304,96 @@ describe('decideTaxonomyAction — guardrails', () => {
   });
 });
 
+// ─── Detecção entre nichos ────────────────────────────────────────────────
+
+describe('decideTaxonomyAction — serviço que existe em outro nicho', () => {
+  it('não duplica: aponta o nicho certo em vez de criar linha', () => {
+    // Antes desta correção o decisor só olhava o nicho pedido, tentava criar
+    // "identidade-visual" em MARKETING_DIGITAL e batia na constraint
+    // `slug @unique`, que é global — erro de banco, não duplicata silenciosa.
+    const state = [
+      sub({ category: 'DESIGN', slug: 'identidade-visual', label: 'Identidade visual' }),
+    ];
+
+    const action = propose(state, 'Identidade Visual', 't1', 0, 'MARKETING_DIGITAL');
+
+    expect(action).toEqual({
+      kind: 'EXISTS_IN_OTHER_CATEGORY',
+      subcategoryId: state[0]!.id,
+      category: 'DESIGN',
+      label: 'Identidade visual',
+      matchedBy: 'SLUG',
+    });
+    expect(state).toHaveLength(1); // nada criado
+  });
+
+  it('detecta por alias em outro nicho', () => {
+    const state = [
+      sub({
+        category: 'DESIGN',
+        slug: 'identidade-visual',
+        label: 'Identidade visual',
+        aliases: ['branding'],
+      }),
+    ];
+    const action = propose(state, 'Branding', 't1', 0, 'CONSULTORIA');
+    expect(action.kind).toBe('EXISTS_IN_OTHER_CATEGORY');
+    if (action.kind === 'EXISTS_IN_OTHER_CATEGORY') {
+      expect(action.category).toBe('DESIGN');
+      expect(action.matchedBy).toBe('ALIAS');
+    }
+    expect(state).toHaveLength(1);
+  });
+
+  it('detecta por similaridade em outro nicho', () => {
+    const state = [sub({ category: 'DESIGN', slug: 'ui-ux', label: 'UI/UX' })];
+    const action = propose(state, 'ui ux', 't1', 0, 'DESENVOLVIMENTO');
+    expect(action.kind).toBe('EXISTS_IN_OTHER_CATEGORY');
+    if (action.kind === 'EXISTS_IN_OTHER_CATEGORY') {
+      expect(action.category).toBe('DESIGN');
+    }
+    expect(state).toHaveLength(1);
+  });
+
+  it('o nicho pedido tem prioridade sobre outro nicho', () => {
+    // Termos parecidos nos dois lugares: quem está no nicho pedido ganha.
+    const state = [
+      sub({ category: 'DESIGN', slug: 'design-de-anuncio', label: 'Design de anúncio' }),
+      sub({ category: CAT, slug: 'design-de-anuncios', label: 'Design de anúncios' }),
+    ];
+    const action = propose(state, 'design de anuncios', 't1', 0, CAT);
+    expect(action.kind).toBe('LINKED_EXACT');
+    if (action.kind === 'LINKED_EXACT') {
+      expect(action.subcategoryId).toBe(state[1]!.id);
+    }
+  });
+
+  it('tetos contam só o nicho pedido, não a tabela inteira', () => {
+    const state: ExistingSubcategory[] = [];
+    // Enche DESIGN até o teto de PENDING.
+    for (let i = 0; i < TAXONOMY_LIMITS.MAX_PENDING_PER_CATEGORY; i++) {
+      state.push(sub({ category: 'DESIGN', slug: `design-pendente-${i}`, status: 'PENDING' }));
+    }
+    // MARKETING_DIGITAL continua livre.
+    const action = propose(state, 'termo novo de marketing', 't1', 0, CAT);
+    expect(action.kind).toBe('CREATE_PENDING');
+  });
+
+  it('mesmo termo em nichos diferentes nunca gera dois slugs iguais', () => {
+    const state: ExistingSubcategory[] = [];
+    const categorias = ['MARKETING_DIGITAL', 'DESIGN', 'DESENVOLVIMENTO', 'CONSULTORIA'] as const;
+
+    // A mesma profissão declarada em 4 nichos diferentes, por 4 tenants.
+    for (const [i, cat] of categorias.entries()) {
+      propose(state, 'consultoria de performance', `t${i}`, 0, cat);
+    }
+
+    const slugs = state.map((s) => s.slug);
+    expect(new Set(slugs).size).toBe(slugs.length); // nenhum slug repetido
+    expect(state).toHaveLength(1); // e só uma linha existe
+  });
+});
+
 // ─── A prova: ataque de volume ────────────────────────────────────────────
 
 describe('convergência sob ataque', () => {
@@ -344,10 +451,19 @@ describe('convergência sob ataque', () => {
     const maxActive = CATEGORIES * TAXONOMY_LIMITS.MAX_ACTIVE_PER_CATEGORY;
     const maxPending = CATEGORIES * TAXONOMY_LIMITS.MAX_PENDING_PER_CATEGORY;
 
-    expect(maxActive).toBe(120);
+    // Histórico deste número, porque ele já foi mexido uma vez de propósito:
+    //   24/categoria (120 total) — primeira versão, focada só em contenção
+    //   40/categoria (200 total) — a meta passou a ser COBERTURA ("todas as
+    //     profissões cadastradas"), e 24 dava pouca folga. Este teste quebrou
+    //     na mudança, que é exatamente o serviço dele.
+    expect(maxActive).toBe(200);
     expect(maxPending).toBe(250);
-    // Se alguém afrouxar um teto sem pensar, este teste quebra e força a
-    // decisão a ser explícita.
+
+    // Dois invariantes que não devem cair sem decisão explícita:
+    // 1. o total continua finito e pequeno
     expect(maxActive + maxPending).toBeLessThanOrEqual(500);
+    // 2. a lista ACTIVE continua caibendo num prompt (ver listTaxonomyForAI —
+    //    ~5 tokens por item, então 200 itens ≈ 1k tokens)
+    expect(maxActive).toBeLessThanOrEqual(400);
   });
 });

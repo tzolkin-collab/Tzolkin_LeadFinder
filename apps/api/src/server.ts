@@ -9,6 +9,7 @@ import searchRoutes from './routes/search.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import businessesRoutes from './routes/businesses.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+import taxonomyRoutes from './routes/taxonomy.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import path from 'path';
 
@@ -34,6 +35,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/search', searchRoutes);
 app.use('/api/v1/businesses', businessesRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/taxonomy', taxonomyRoutes);
 app.use('/api/v1', reviewRoutes);
 
 // Legacy Route Aliases (for backwards compatibility with existing frontend builds)
@@ -41,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/businesses', businessesRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/taxonomy', taxonomyRoutes);
 app.use('/api', reviewRoutes);
 
 // Global Error Handler

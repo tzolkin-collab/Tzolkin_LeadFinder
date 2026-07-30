@@ -24,8 +24,20 @@ import type { ServiceCategory, TaxonomyStatus, ProviderSpecialty } from '@prisma
  */
 
 export const TAXONOMY_LIMITS = {
-  /** Teto duro de subcategorias utilizáveis por categoria. */
-  MAX_ACTIVE_PER_CATEGORY: 24,
+  /**
+   * Teto duro de subcategorias utilizáveis por categoria.
+   *
+   * Subiu de 24 para 40 por decisão de produto: a meta declarada é COBERTURA
+   * ("em algum momento todas as profissões vão ter sido cadastradas
+   * corretamente"), não só contenção. 24 dava pouca folga — só
+   * DESENVOLVIMENTO já tem site, landing page, loja, sistema, app, PWA, API,
+   * manutenção, performance, migração, headless, marketplace, portal, intranet…
+   *
+   * Continua finito e continua caindo em prompt: 5 × 40 = 200 itens, ~1k
+   * tokens. É justamente o teto que torna a lista consultável pela IA viável
+   * (ver listTaxonomyForAI). Acompanhar folga por `taxonomyHealth()`.
+   */
+  MAX_ACTIVE_PER_CATEGORY: 40,
   /** Teto da quarentena — sem isto, PENDING seria a lista infinita. */
   MAX_PENDING_PER_CATEGORY: 50,
   /** Propostas que criam linha, por tenant, por janela. */
@@ -131,6 +143,8 @@ export function similarity(a: string, b: string): number {
 
 export interface ExistingSubcategory {
   id: string;
+  /** Necessário para detecção entre nichos — ver EXISTS_IN_OTHER_CATEGORY. */
+  category: ServiceCategory;
   slug: string;
   label: string;
   aliases: string[];
@@ -148,14 +162,30 @@ export type RejectReason =
   | 'INVALID_LABEL';
 
 export type TaxonomyAction =
-  /** Slug idêntico a uma ACTIVE. */
+  /** Slug idêntico a uma ACTIVE no nicho pedido. */
   | { kind: 'LINKED_EXACT'; subcategoryId: string }
-  /** Já registrado como alias de uma ACTIVE. */
+  /** Já registrado como alias de uma ACTIVE no nicho pedido. */
   | { kind: 'LINKED_ALIAS'; subcategoryId: string }
   /** Parecido o bastante: entra como alias, sem criar linha. */
   | { kind: 'ABSORB_AS_ALIAS'; subcategoryId: string; alias: string }
   /** Apontava para uma que foi absorvida — segue o ponteiro. */
   | { kind: 'FOLLOW_MERGE'; subcategoryId: string }
+  /**
+   * O serviço existe, mas em OUTRO nicho. Não cria nada: quem chamou deve
+   * perguntar "isso é <label>, dentro de <categoria>. Quer adicionar esse
+   * nicho ao seu perfil?".
+   *
+   * Sem isto o resolver tentava criar linha nova e batia na constraint
+   * `slug @unique` (que é global, não por categoria) — erro de banco, não
+   * duplicata silenciosa.
+   */
+  | {
+      kind: 'EXISTS_IN_OTHER_CATEGORY';
+      subcategoryId: string;
+      category: ServiceCategory;
+      label: string;
+      matchedBy: 'SLUG' | 'ALIAS' | 'SIMILARITY';
+    }
   /** Já em quarentena: soma confirmação (ou nada, se o tenant já contou). */
   | { kind: 'CONFIRM_PENDING'; subcategoryId: string; countsAsNewConfirmation: boolean }
   /** Cruzou o limiar de confirmações e há vaga em ACTIVE. */
@@ -167,7 +197,14 @@ export type TaxonomyAction =
 export interface DecideInput {
   rawLabel: string;
   tenantId: string;
-  /** Subcategorias da MESMA categoria — o escopo de comparação. */
+  /** Nicho em que o usuário está declarando o serviço. */
+  targetCategory: ServiceCategory;
+  /**
+   * Subcategorias de TODAS as categorias. A varredura tem que ser global
+   * porque `slug` é `@unique` no banco inteiro, não por categoria — comparar
+   * só dentro do nicho pedido levava a tentar criar slug já existente e
+   * estourar constraint.
+   */
   existing: ExistingSubcategory[];
   /** Propostas que criaram linha, deste tenant, na janela. */
   tenantProposalsInWindow: number;
@@ -180,12 +217,17 @@ export interface DecideInput {
  *
  * A ORDEM importa e é deliberada:
  *  1. label inválido morre antes de qualquer coisa
- *  2. match exato resolve o caso comum sem varredura
+ *  2. match exato de slug (em QUALQUER nicho) — resolve o caso comum e evita
+ *     colisão de constraint. Se o nicho não é o pedido, devolve
+ *     EXISTS_IN_OTHER_CATEGORY em vez de criar.
  *  3. REJECTED antes de tudo o mais — é a garantia de convergência
- *  4. absorção por similaridade vem ANTES do rate limit: absorver duplicata
- *     é bom e não cria linha, então não deve ser penalizado por quota
- *  5. rate limit e teto de PENDING só barram o que criaria linha
- *  6. teto de ACTIVE é checado na PROMOÇÃO, não na criação — por isso ACTIVE
+ *  4. alias e similaridade DENTRO do nicho pedido
+ *  5. alias e similaridade em OUTRO nicho → EXISTS_IN_OTHER_CATEGORY
+ *  6. absorção vem ANTES do rate limit: absorver duplicata é bom e não cria
+ *     linha, então não deve ser penalizado por quota
+ *  7. rate limit e teto de PENDING só barram o que criaria linha, e os tetos
+ *     contam só o nicho pedido
+ *  8. teto de ACTIVE é checado na PROMOÇÃO, não na criação — por isso ACTIVE
  *     não pode passar do teto nem em corrida
  */
 export function decideTaxonomyAction(input: DecideInput): TaxonomyAction {
@@ -201,7 +243,10 @@ export function decideTaxonomyAction(input: DecideInput): TaxonomyAction {
   const slug = normalizeSlug(label);
   if (!slug) return { kind: 'REJECT', reason: 'INVALID_LABEL' };
 
-  // 2/3. Match exato de slug.
+  const inTarget = input.existing.filter((e) => e.category === input.targetCategory);
+  const inOthers = input.existing.filter((e) => e.category !== input.targetCategory);
+
+  // 2/3. Match exato de slug — global, porque o slug é único global.
   const exact = input.existing.find((e) => e.slug === slug);
   if (exact) {
     if (exact.status === 'REJECTED') {
@@ -212,6 +257,19 @@ export function decideTaxonomyAction(input: DecideInput): TaxonomyAction {
         ? { kind: 'FOLLOW_MERGE', subcategoryId: exact.mergedIntoId }
         : { kind: 'REJECT', reason: 'ALREADY_REJECTED' };
     }
+
+    // Existe, mas noutro nicho: quem chamou tem que perguntar se o usuário
+    // quer adicionar aquele nicho ao perfil. Nunca duplicar.
+    if (exact.category !== input.targetCategory) {
+      return {
+        kind: 'EXISTS_IN_OTHER_CATEGORY',
+        subcategoryId: exact.id,
+        category: exact.category,
+        label: exact.label,
+        matchedBy: 'SLUG',
+      };
+    }
+
     if (exact.status === 'ACTIVE') {
       return { kind: 'LINKED_EXACT', subcategoryId: exact.id };
     }
@@ -223,44 +281,78 @@ export function decideTaxonomyAction(input: DecideInput): TaxonomyAction {
     }
 
     const nextCount = exact.confirmations + 1;
-    const activeCount = input.existing.filter((e) => e.status === 'ACTIVE').length;
+    const activeInTarget = inTarget.filter((e) => e.status === 'ACTIVE').length;
     if (
       nextCount >= TAXONOMY_LIMITS.PROMOTION_CONFIRMATIONS &&
-      activeCount < TAXONOMY_LIMITS.MAX_ACTIVE_PER_CATEGORY
+      activeInTarget < TAXONOMY_LIMITS.MAX_ACTIVE_PER_CATEGORY
     ) {
       return { kind: 'PROMOTE', subcategoryId: exact.id };
     }
     return { kind: 'CONFIRM_PENDING', subcategoryId: exact.id, countsAsNewConfirmation: true };
   }
 
-  // 4a. Já é alias conhecido de uma ACTIVE?
-  const byAlias = input.existing.find(
+  // 4a. Alias conhecido dentro do nicho pedido.
+  const aliasInTarget = inTarget.find(
     (e) => e.status === 'ACTIVE' && e.aliases.some((a) => normalizeSlug(a) === slug),
   );
-  if (byAlias) return { kind: 'LINKED_ALIAS', subcategoryId: byAlias.id };
+  if (aliasInTarget) return { kind: 'LINKED_ALIAS', subcategoryId: aliasInTarget.id };
 
-  // 4b. Parecido o bastante com uma ACTIVE → absorve como alias.
-  let best: { id: string; score: number } | null = null;
-  for (const e of input.existing) {
-    if (e.status !== 'ACTIVE') continue;
-    const score = Math.max(similarity(slug, e.slug), similarity(label, e.label));
-    if (!best || score > best.score) best = { id: e.id, score };
-  }
-  if (best && best.score >= TAXONOMY_LIMITS.ABSORB_SIMILARITY) {
-    return { kind: 'ABSORB_AS_ALIAS', subcategoryId: best.id, alias: label };
+  // 4b. Similaridade dentro do nicho pedido → absorve como alias.
+  const bestInTarget = bestMatch(inTarget, slug, label);
+  if (bestInTarget && bestInTarget.score >= TAXONOMY_LIMITS.ABSORB_SIMILARITY) {
+    return { kind: 'ABSORB_AS_ALIAS', subcategoryId: bestInTarget.entry.id, alias: label };
   }
 
-  // 5. Daqui pra baixo criaria linha — só agora as quotas valem.
+  // 5. Não achou no nicho pedido — mas existe em outro? Perguntar, não criar.
+  const aliasElsewhere = inOthers.find(
+    (e) => e.status === 'ACTIVE' && e.aliases.some((a) => normalizeSlug(a) === slug),
+  );
+  if (aliasElsewhere) {
+    return {
+      kind: 'EXISTS_IN_OTHER_CATEGORY',
+      subcategoryId: aliasElsewhere.id,
+      category: aliasElsewhere.category,
+      label: aliasElsewhere.label,
+      matchedBy: 'ALIAS',
+    };
+  }
+
+  const bestElsewhere = bestMatch(inOthers, slug, label);
+  if (bestElsewhere && bestElsewhere.score >= TAXONOMY_LIMITS.ABSORB_SIMILARITY) {
+    return {
+      kind: 'EXISTS_IN_OTHER_CATEGORY',
+      subcategoryId: bestElsewhere.entry.id,
+      category: bestElsewhere.entry.category,
+      label: bestElsewhere.entry.label,
+      matchedBy: 'SIMILARITY',
+    };
+  }
+
+  // 6/7. Daqui pra baixo criaria linha — só agora as quotas valem.
   if (input.tenantProposalsInWindow >= TAXONOMY_LIMITS.MAX_PROPOSALS_PER_TENANT_PER_WINDOW) {
     return { kind: 'REJECT', reason: 'TENANT_RATE_LIMIT' };
   }
 
-  const pendingCount = input.existing.filter((e) => e.status === 'PENDING').length;
-  if (pendingCount >= TAXONOMY_LIMITS.MAX_PENDING_PER_CATEGORY) {
+  const pendingInTarget = inTarget.filter((e) => e.status === 'PENDING').length;
+  if (pendingInTarget >= TAXONOMY_LIMITS.MAX_PENDING_PER_CATEGORY) {
     return { kind: 'REJECT', reason: 'PENDING_CAP_REACHED' };
   }
 
   return { kind: 'CREATE_PENDING', slug, label };
+}
+
+function bestMatch(
+  pool: ExistingSubcategory[],
+  slug: string,
+  label: string,
+): { entry: ExistingSubcategory; score: number } | null {
+  let best: { entry: ExistingSubcategory; score: number } | null = null;
+  for (const e of pool) {
+    if (e.status !== 'ACTIVE') continue;
+    const score = Math.max(similarity(slug, e.slug), similarity(label, e.label));
+    if (!best || score > best.score) best = { entry: e, score };
+  }
+  return best;
 }
 
 // ─── Resolver com persistência ────────────────────────────────────────────
@@ -277,6 +369,17 @@ export interface ResolveSubcategoryResult {
   subcategoryId: string | null;
   /** true só quando o termo pode ser usado agora (ACTIVE). */
   usable: boolean;
+  /**
+   * Preenchido só em EXISTS_IN_OTHER_CATEGORY. É o pedido que quem chamou deve
+   * fazer ao usuário: "isso é <label>, do nicho <category>. Adicionar esse
+   * nicho ao seu perfil?".
+   */
+  suggestCategory?: {
+    category: ServiceCategory;
+    subcategoryId: string;
+    label: string;
+    matchedBy: 'SLUG' | 'ALIAS' | 'SIMILARITY';
+  };
 }
 
 /**
@@ -289,10 +392,14 @@ export interface ResolveSubcategoryResult {
 export async function resolveServiceSubcategory(
   input: ResolveSubcategoryInput,
 ): Promise<ResolveSubcategoryResult> {
+  // Varredura GLOBAL, não por categoria: `slug` é @unique no banco inteiro, e
+  // sem ver os outros nichos o resolver tentava criar slug já existente.
+  // A tabela é limitada por construção (ver TAXONOMY_LIMITS), então carregar
+  // tudo é barato — algumas centenas de linhas no pior caso.
   const existing = await prisma.serviceSubcategory.findMany({
-    where: { category: input.category },
     select: {
       id: true,
+      category: true,
       slug: true,
       label: true,
       aliases: true,
@@ -313,6 +420,7 @@ export async function resolveServiceSubcategory(
   const action = decideTaxonomyAction({
     rawLabel: input.rawLabel,
     tenantId: input.tenantId,
+    targetCategory: input.category,
     existing,
     tenantProposalsInWindow,
   });
@@ -322,6 +430,21 @@ export async function resolveServiceSubcategory(
     case 'LINKED_ALIAS':
     case 'FOLLOW_MERGE':
       return { action, subcategoryId: action.subcategoryId, usable: true };
+
+    case 'EXISTS_IN_OTHER_CATEGORY':
+      // Não escreve nada. O serviço existe e é utilizável — só está noutro
+      // nicho, e o usuário precisa aceitar adicionar esse nicho ao perfil.
+      return {
+        action,
+        subcategoryId: action.subcategoryId,
+        usable: false,
+        suggestCategory: {
+          category: action.category,
+          subcategoryId: action.subcategoryId,
+          label: action.label,
+          matchedBy: action.matchedBy,
+        },
+      };
 
     case 'ABSORB_AS_ALIAS':
       await prisma.serviceSubcategory.update({
@@ -372,6 +495,76 @@ export async function resolveServiceSubcategory(
     case 'REJECT':
       return { action, subcategoryId: null, usable: false };
   }
+}
+
+// ─── Lista consultável pela IA ────────────────────────────────────────────
+
+export interface TaxonomyForAI {
+  categories: Array<{
+    category: ServiceCategory;
+    subcategories: Array<{ id: string; label: string; aliases: string[] }>;
+  }>;
+  /** Total de itens — para o chamador saber o custo em token antes de mandar. */
+  itemCount: number;
+}
+
+/**
+ * Catálogo completo em forma consultável, para a IA escolher em vez de inventar.
+ *
+ * É o que resolve o buraco que a similaridade por trigrama não fecha: "mídia
+ * paga" tem 0,17 de similaridade com "tráfego pago" e nunca seria absorvido por
+ * string, mas um modelo lendo a lista acerta na hora.
+ *
+ * O teto por categoria é o que torna isto possível — a lista inteira é limitada
+ * por construção (≤ 200 itens), então cabe em prompt sem paginação, sem RAG e
+ * sem custo variável.
+ *
+ * ⚠️ A IA NUNCA escreve na taxonomia direto. Ela lê esta lista e devolve ou um
+ * `id` existente, ou um termo novo que passa por `resolveServiceSubcategory`
+ * como qualquer outra fonte — indo para quarentena e exigindo confirmação
+ * independente. Mesmo princípio de "regra decide, LLM só redige".
+ */
+export async function listTaxonomyForAI(): Promise<TaxonomyForAI> {
+  const rows = await prisma.serviceSubcategory.findMany({
+    where: { status: 'ACTIVE' },
+    select: { id: true, category: true, label: true, aliases: true },
+    orderBy: [{ category: 'asc' }, { label: 'asc' }],
+  });
+
+  const grouped = new Map<ServiceCategory, TaxonomyForAI['categories'][number]['subcategories']>();
+  for (const r of rows) {
+    const list = grouped.get(r.category) ?? [];
+    list.push({ id: r.id, label: r.label, aliases: r.aliases });
+    grouped.set(r.category, list);
+  }
+
+  return {
+    categories: [...grouped.entries()].map(([category, subcategories]) => ({
+      category,
+      subcategories,
+    })),
+    itemCount: rows.length,
+  };
+}
+
+/**
+ * A mesma lista em texto compacto, pronta para prompt.
+ *
+ * Formato deliberadamente enxuto — um item por linha, aliases entre parênteses
+ * — porque o modelo só precisa reconhecer, não navegar estrutura.
+ */
+export function formatTaxonomyForPrompt(taxonomy: TaxonomyForAI): string {
+  return taxonomy.categories
+    .map(({ category, subcategories }) => {
+      const items = subcategories
+        .map((s) => {
+          const alias = s.aliases.length > 0 ? ` (${s.aliases.slice(0, 4).join(', ')})` : '';
+          return `  - ${s.label}${alias} [${s.id}]`;
+        })
+        .join('\n');
+      return `${category}:\n${items}`;
+    })
+    .join('\n\n');
 }
 
 /** Subcategorias utilizáveis — o que a interface pode oferecer como escolha. */
@@ -565,6 +758,102 @@ export async function seedServiceTaxonomy(): Promise<{ created: number; existing
   }
 
   return { created, existing };
+}
+
+// ─── Perfil de serviço do tenant (multi-nicho, multi-profissão) ───────────
+
+export interface TenantServiceProfile {
+  /** Profissões declaradas, com o nicho de cada uma. */
+  services: Array<{
+    subcategoryId: string;
+    category: ServiceCategory;
+    label: string;
+    providerSpecialty: ProviderSpecialty | null;
+  }>;
+  /** Nichos distintos que o tenant atende. */
+  categories: ServiceCategory[];
+  /** Especialidades DERIVADAS — entrada do mapa de relevância. */
+  specialties: ProviderSpecialty[];
+  /**
+   * Profissões declaradas cuja subcategoria não tem `providerSpecialty`
+   * mapeado. O produto precisa dizer que não sabe o que mostrar para elas em
+   * vez de escolher sinal no chute.
+   */
+  unmappedLabels: string[];
+}
+
+/**
+ * Lê o perfil de serviço do tenant e deriva as especialidades.
+ *
+ * A relação é a fonte de verdade porque carrega nicho + profissão juntos.
+ * `Tenant.specialties` é só cache para leitura rápida — quem precisa da
+ * verdade chama aqui.
+ */
+export async function tenantServiceProfile(tenantId: string): Promise<TenantServiceProfile> {
+  const rows = await prisma.tenantService.findMany({
+    where: { tenantId },
+    select: {
+      subcategory: {
+        select: { id: true, category: true, label: true, providerSpecialty: true },
+      },
+    },
+  });
+
+  const services = rows.map((r) => ({
+    subcategoryId: r.subcategory.id,
+    category: r.subcategory.category,
+    label: r.subcategory.label,
+    providerSpecialty: r.subcategory.providerSpecialty,
+  }));
+
+  const categories = [...new Set(services.map((s) => s.category))];
+  const specialties = [
+    ...new Set(
+      services
+        .map((s) => s.providerSpecialty)
+        .filter((s): s is ProviderSpecialty => s !== null),
+    ),
+  ];
+  const unmappedLabels = services.filter((s) => s.providerSpecialty === null).map((s) => s.label);
+
+  return { services, categories, specialties, unmappedLabels };
+}
+
+/**
+ * Define o conjunto de profissões do tenant e recalcula o cache de
+ * especialidade numa transação — sem janela em que os dois discordem.
+ *
+ * Só aceita subcategoria ACTIVE: escolher algo em quarentena colocaria no
+ * perfil um termo que ainda não passou por confirmação independente.
+ */
+export async function setTenantServices(
+  tenantId: string,
+  subcategoryIds: string[],
+): Promise<TenantServiceProfile> {
+  const valid = await prisma.serviceSubcategory.findMany({
+    where: { id: { in: subcategoryIds }, status: 'ACTIVE' },
+    select: { id: true, providerSpecialty: true },
+  });
+
+  const validIds = valid.map((v) => v.id);
+  const derivedSpecialties = [
+    ...new Set(
+      valid.map((v) => v.providerSpecialty).filter((s): s is ProviderSpecialty => s !== null),
+    ),
+  ];
+
+  await prisma.$transaction([
+    prisma.tenantService.deleteMany({ where: { tenantId } }),
+    ...validIds.map((subcategoryId) =>
+      prisma.tenantService.create({ data: { tenantId, subcategoryId } }),
+    ),
+    prisma.tenant.update({
+      where: { id: tenantId },
+      data: { specialties: derivedSpecialties },
+    }),
+  ]);
+
+  return tenantServiceProfile(tenantId);
 }
 
 /** Diagnóstico de saúde da taxonomia — quanto de cada teto já foi usado. */

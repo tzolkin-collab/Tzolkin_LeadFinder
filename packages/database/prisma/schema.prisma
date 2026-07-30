@@ -167,12 +167,39 @@ model ServiceSubcategory {
   mergedInto   ServiceSubcategory?  @relation("SubcategoryMerge", fields: [mergedIntoId], references: [id])
   absorbed     ServiceSubcategory[] @relation("SubcategoryMerge")
 
+  tenants TenantService[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([category, status])
   @@index([status, confirmations])
   @@map("service_subcategories")
+}
+
+// O que este tenant presta, na granularidade de profissão-dentro-do-nicho.
+//
+// Relação e não array de enum porque "todos podem prestar mais de um serviço e
+// atender a mais de um nicho": o mesmo prestador pode ter landing page
+// (DESENVOLVIMENTO) e tráfego pago (MARKETING_DIGITAL) ao mesmo tempo, e a
+// categoria vem da própria subcategoria — sem risco de o par ficar
+// inconsistente.
+//
+// `Tenant.specialties` deixa de ser fonte de verdade: a especialidade é
+// DERIVADA daqui via `ServiceSubcategory.providerSpecialty`. Ver
+// `tenantServiceProfile()`.
+model TenantService {
+  id            String             @id @default(cuid())
+  tenantId      String
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subcategoryId String
+  subcategory   ServiceSubcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, subcategoryId])
+  @@index([tenantId])
+  @@map("tenant_services")
 }
 
 model Tenant {
@@ -183,8 +210,15 @@ model Tenant {
   status TenantStatus @default(ACTIVE)
 
   // 👤 PERFIL DO PRESTADOR (O QUE EU FAÇO — dirige toda a relevância)
+  //
+  // ⚠️ `specialties` é CACHE DERIVADO de `services` (via
+  // ServiceSubcategory.providerSpecialty). A fonte de verdade é a relação —
+  // ela carrega nicho + profissão, que é a granularidade que o produto pede.
+  // Não escrever aqui direto: usar `setTenantServices()`, que recalcula.
   specialties    ProviderSpecialty[]
-  specialtyOther String? // preenchido quando specialties inclui OUTRO
+  specialtyOther String? // texto livre quando a profissão ainda não tem subcategoria
+
+  services TenantService[]
 
   // 🎯 ICP (Perfil de Cliente Ideal - QUEM É O CLIENTE)
   icpNiche         String? // Segmento/Nicho Alvo (ex: "Clínicas Médicas e Odontológicas")

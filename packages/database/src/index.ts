@@ -66,6 +66,10 @@ export {
 export {
   resolveServiceSubcategory,
   listActiveSubcategories,
+  listTaxonomyForAI,
+  formatTaxonomyForPrompt,
+  tenantServiceProfile,
+  setTenantServices,
   seedServiceTaxonomy,
   taxonomyHealth,
   decideTaxonomyAction,
@@ -78,4 +82,6 @@ export {
   type RejectReason,
   type ExistingSubcategory,
   type DecideInput,
+  type TaxonomyForAI,
+  type TenantServiceProfile,
 } from './services/service-taxonomy.service.js';

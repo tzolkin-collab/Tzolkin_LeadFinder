@@ -134,21 +134,12 @@ router.get('/general', async (req, res, next) => {
   }
 });
 
-const ProviderSpecialtyEnum = z.enum([
-  'DESENVOLVIMENTO_WEB',
-  'TRAFEGO_PAGO',
-  'SOCIAL_MEDIA',
-  'DESIGN_BRANDING',
-  'AUTOMACAO_IA',
-  'SEO_CONTEUDO',
-  'CONSULTORIA_ESTRATEGIA',
-  'OUTRO',
-]);
-
 const GeneralUpdateSchema = z.object({
   name: z.string().min(2).optional(),
-  // O que o usuário FAZ — dirige a relevância de todo o resto do produto.
-  specialties: z.array(ProviderSpecialtyEnum).optional(),
+  // ⚠️ `specialties` NÃO é aceito aqui de propósito. Virou cache derivado das
+  // subcategorias do tenant (ver TenantService) e só `setTenantServices()`
+  // escreve, via PUT /api/taxonomy/profile. Aceitar aqui reabriria o segundo
+  // caminho de escrita e o cache voltaria a divergir da relação.
   specialtyOther: z.string().optional(),
   icpNiche: z.string().optional(),
   icpRegion: z.string().optional(),
@@ -169,7 +160,6 @@ router.patch('/general', async (req, res, next) => {
       where: { id: tenantId },
       data: {
         ...(input.name ? { name: input.name } : {}),
-        ...(input.specialties !== undefined ? { specialties: input.specialties } : {}),
         ...(input.specialtyOther !== undefined ? { specialtyOther: input.specialtyOther } : {}),
         ...(input.icpNiche !== undefined ? { icpNiche: input.icpNiche } : {}),
         ...(input.icpRegion !== undefined ? { icpRegion: input.icpRegion } : {}),

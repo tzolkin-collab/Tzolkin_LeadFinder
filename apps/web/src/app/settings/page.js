@@ -22,22 +22,7 @@ import {
   CrossIcon,
   SparklesIcon
 } from '../../components/brand/UIIcons.js';
-
-/**
- * Espelha o enum ProviderSpecialty do schema e SPECIALTY_LABELS de
- * @tzolkin/core. apps/web é JS puro e não importa do core, então a duplicação
- * é deliberada — se o enum mudar, mudar aqui também.
- */
-const SPECIALTY_OPTIONS = [
-  { value: 'DESENVOLVIMENTO_WEB', label: 'Sites e landing pages' },
-  { value: 'TRAFEGO_PAGO', label: 'Tráfego pago' },
-  { value: 'SOCIAL_MEDIA', label: 'Social media' },
-  { value: 'DESIGN_BRANDING', label: 'Design e identidade visual' },
-  { value: 'AUTOMACAO_IA', label: 'Automação e IA' },
-  { value: 'SEO_CONTEUDO', label: 'SEO e conteúdo' },
-  { value: 'CONSULTORIA_ESTRATEGIA', label: 'Consultoria e estratégia' },
-  { value: 'OUTRO', label: 'Outro' },
-];
+import { ServiceProfilePicker } from '../../components/settings/ServiceProfilePicker.js';
 import {
   GooglePlacesIcon,
   InstagramIcon,
@@ -111,8 +96,6 @@ export default function SettingsPage() {
   // General (ICP, Proposta de Valor & AI Model) Form State
   const [general, setGeneral] = useState({
     name: '',
-    specialties: [],
-    specialtyOther: '',
     icpNiche: '',
     icpRegion: '',
     icpDecisionMaker: '',
@@ -177,8 +160,6 @@ async function safeFetch(url, options) {
         profile: { name: profileData.name || '', email: profileData.email || '' },
         general: {
           name: generalData.name || '',
-          specialties: Array.isArray(generalData.specialties) ? generalData.specialties : [],
-          specialtyOther: generalData.specialtyOther || '',
           icpNiche: generalData.icpNiche || '',
           icpRegion: generalData.icpRegion || '',
           icpDecisionMaker: generalData.icpDecisionMaker || '',
@@ -197,7 +178,7 @@ async function safeFetch(url, options) {
       console.error('Failed to load settings:', err);
       return {
         profile: { name: '', email: '' },
-        general: { name: '', specialties: [], specialtyOther: '', icpNiche: '', icpRegion: '', icpDecisionMaker: '', icpPainPoints: '', valuePropHeadline: '', valuePropServices: '', valuePropDifferentials: '', selectedAiModel: 'gpt-4o-mini', subscriptionPlan: 'starter' },
+        general: { name: '', icpNiche: '', icpRegion: '', icpDecisionMaker: '', icpPainPoints: '', valuePropHeadline: '', valuePropServices: '', valuePropDifferentials: '', selectedAiModel: 'gpt-4o-mini', subscriptionPlan: 'starter' },
         plans: null,
         costs: null,
         users: [],
@@ -269,8 +250,10 @@ async function safeFetch(url, options) {
         headers: authHeaders(),
         body: JSON.stringify({
           name: general.name,
-          specialties: general.specialties,
-          specialtyOther: general.specialtyOther,
+          // specialties NÃO vai aqui de propósito: é cache derivado das
+          // subcategorias e só o ServiceProfilePicker escreve (via
+          // PUT /api/taxonomy/profile). Mandar daqui sobrescreveria o cache
+          // com o valor carregado quando a página abriu.
           icpNiche: general.icpNiche,
           icpRegion: general.icpRegion,
           icpDecisionMaker: general.icpDecisionMaker,
@@ -624,56 +607,12 @@ async function safeFetch(url, options) {
                     <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                       <SparklesIcon size={20} color="var(--tzolkin-offwhite)" /> O que você faz?
                     </h3>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                      Escolha tudo que se aplica. É isso que define quais sinais de negócio
-                      aparecem pra você — quem vende site precisa saber quem não tem site;
-                      quem faz tráfego precisa saber quem já anuncia.
-                    </p>
 
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                      {SPECIALTY_OPTIONS.map(({ value, label }) => {
-                        const selected = general.specialties.includes(value);
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            className="chip-toggle"
-                            aria-pressed={selected}
-                            onClick={() =>
-                              setGeneral({
-                                ...general,
-                                specialties: selected
-                                  ? general.specialties.filter((s) => s !== value)
-                                  : [...general.specialties, value],
-                              })
-                            }
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {general.specialties.includes('OUTRO') && (
-                      <div style={{ marginBottom: 16 }}>
-                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                          Descreva sua atuação
-                        </label>
-                        <input
-                          className="input"
-                          value={general.specialtyOther}
-                          onChange={e => setGeneral({ ...general, specialtyOther: e.target.value })}
-                          placeholder="Ex: produção de vídeo para redes sociais"
-                        />
-                      </div>
-                    )}
-
-                    {general.specialties.length === 0 && (
-                      <p style={{ fontSize: 12, color: 'var(--warning)', margin: 0 }}>
-                        Sem isso o feed mostra sinal genérico — o produto não sabe o que é
-                        relevante pra você.
-                      </p>
-                    )}
+                    {/* Escolha em dois níveis (nicho → profissão), multi nos dois.
+                        Salva por conta própria em PUT /api/taxonomy/profile — as
+                        especialidades passam a ser DERIVADAS das subcategorias,
+                        então este bloco não escreve em `general`. */}
+                    <ServiceProfilePicker />
                   </div>
 
                   {/* Card 1: ICP (Perfil de Cliente Ideal - QUEM) */}
