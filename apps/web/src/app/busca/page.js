@@ -30,6 +30,9 @@ const CompanyAvatar = ({ company }) => {
   );
 };
 
+import cnaeData from '../../../public/cnae.json';
+import locationsData from '../../../public/locations.json';
+
 export default function BuscaPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('total');
@@ -66,6 +69,12 @@ export default function BuscaPage() {
       console.error("Erro ao salvar lead:", err);
     }
   };
+
+  // Dicionários carregados diretamente do bundle
+  const [cnaeList, setCnaeList] = useState(cnaeData);
+  const [locationsDict, setLocationsDict] = useState(locationsData);
+  const [selectedState, setSelectedState] = useState('');
+  const [cnaeSearch, setCnaeSearch] = useState('');
 
   // Hook para buscar dados da API quando os filtros mudam
   useEffect(() => {
@@ -241,9 +250,42 @@ export default function BuscaPage() {
                       )}
 
                       {item.label === "Localização" && (
-                        <div className="busca-mock-options">
-                          <input type="text" placeholder="Pesquisar estado ou cidade..." className="busca-mock-input" style={{marginBottom: '8px'}} />
-                          {renderMockCheckboxes("Localização", ["São Paulo (Estado)", "São Paulo (Cidade)", "Minas Gerais", "Belo Horizonte", "Rio de Janeiro"])}
+                        <div className="busca-mock-options" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <select 
+                            className="busca-mock-input" 
+                            style={{ cursor: 'pointer', backgroundColor: '#1a1a1a', color: '#fff', border: '1px solid #333' }}
+                            value={selectedState}
+                            onChange={(e) => setSelectedState(e.target.value)}
+                          >
+                            <option value="">Selecione o Estado (UF)</option>
+                            {Object.keys(locationsDict).sort().map(uf => (
+                              <option key={uf} value={uf}>{uf} - {locationsDict[uf].nome}</option>
+                            ))}
+                          </select>
+
+                          {selectedState && (
+                            <select 
+                              className="busca-mock-input"
+                              style={{ cursor: 'pointer', backgroundColor: '#1a1a1a', color: '#fff', border: '1px solid #333' }}
+                              onChange={(e) => {
+                                if(e.target.value) {
+                                  toggleFilter("Localização", e.target.value);
+                                }
+                              }}
+                            >
+                              <option value="">Selecione a Cidade</option>
+                              {locationsDict[selectedState].cidades.map(cidade => (
+                                <option key={cidade} value={cidade}>{cidade}</option>
+                              ))}
+                            </select>
+                          )}
+                          
+                          {/* Renderiza as cidades que foram ativadas como checkboxes marcados para feedback visual */}
+                          {activeFilters.filter(f => f.category === "Localização").length > 0 && (
+                            <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #333'}}>
+                              {renderMockCheckboxes("Localização", activeFilters.filter(f => f.category === "Localização").map(f => f.value))}
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -290,7 +332,42 @@ export default function BuscaPage() {
                         </div>
                       )}
 
-                      {item.content === "MockInput" && !["Tecnologias", "Localização", "Setor & Palavras-chave"].includes(item.label) && (
+                      {item.label === "CNAE" && (
+                        <div className="busca-mock-options" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <input 
+                            type="text" 
+                            placeholder="Buscar código ou descrição CNAE..." 
+                            className="busca-mock-input" 
+                            value={cnaeSearch}
+                            onChange={(e) => setCnaeSearch(e.target.value)}
+                          />
+                          
+                          <div className="busca-cnae-results" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #333', borderRadius: '4px', background: '#1a1a1a' }}>
+                            {cnaeList.filter(c => 
+                              !cnaeSearch || c.id.includes(cnaeSearch) || c.descricao.toLowerCase().includes(cnaeSearch.toLowerCase())
+                            ).slice(0, 100).map(cnae => (
+                              <div 
+                                key={cnae.id} 
+                                style={{ padding: '8px', borderBottom: '1px solid #333', cursor: 'pointer', fontSize: '12px' }}
+                                onClick={() => {
+                                  toggleFilter("CNAE", `${cnae.id} - ${cnae.descricao}`);
+                                  setCnaeSearch('');
+                                }}
+                              >
+                                <strong>{cnae.id}</strong> - {cnae.descricao}
+                              </div>
+                            ))}
+                          </div>
+
+                          {activeFilters.filter(f => f.category === "CNAE").length > 0 && (
+                            <div style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #333'}}>
+                              {renderMockCheckboxes("CNAE", activeFilters.filter(f => f.category === "CNAE").map(f => f.value))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {item.content === "MockInput" && !["Tecnologias", "Localização", "Setor & Palavras-chave", "CNAE"].includes(item.label) && (
                         <div className="busca-mock-input-wrap">
                           <input type="text" placeholder={`Buscar ${item.label.toLowerCase()}...`} className="busca-mock-input" />
                           <button className="busca-mock-btn">Adicionar</button>
