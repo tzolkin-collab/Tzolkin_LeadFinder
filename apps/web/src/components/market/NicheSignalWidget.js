@@ -29,6 +29,11 @@ const SIGNAL_LABELS = {
   RECLAMACAO_EM_REVIEW: 'reclamação em avaliação',
 };
 
+function formatSignalLabel(type) {
+  if (SIGNAL_LABELS[type]) return SIGNAL_LABELS[type];
+  return type.toLowerCase().replace(/_/g, ' ');
+}
+
 /**
  * Sinal por nicho, filtrado pela especialidade do usuário.
  *
@@ -148,7 +153,7 @@ function CategoryRow({ bucket, isTop }) {
 
       <span style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.3 }}>
         {topSignals.length > 0
-          ? topSignals.map(([type, count]) => `${SIGNAL_LABELS[type] || type} (${count})`).join(' · ')
+          ? topSignals.map(([type, count]) => `${formatSignalLabel(type)} (${count})`).join(' · ')
           : 'sem sinal relevante nesta categoria'}
       </span>
     </div>

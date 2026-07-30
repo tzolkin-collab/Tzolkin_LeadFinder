@@ -1,5 +1,6 @@
 import { prisma } from '../index.js';
-import type { ReportStatus, SignalType } from '@prisma/client';
+import type { ReportStatus } from '@prisma/client';
+export type SignalType = string;
 
 export interface ListTenantBusinessesInput {
   search?: string | undefined;
@@ -96,6 +97,8 @@ export interface AggregateNicheSignalInput {
    * cair num default arbitrário.
    */
   signalTypes: SignalType[];
+  /** Sinais estáticos a excluir (se não estiverem em signalTypes). Permite vazamento de sinais dinâmicos. */
+  excludeStaticTypes?: SignalType[];
   topN?: number;
 }
 
@@ -128,10 +131,17 @@ export async function aggregateNicheSignal(
     .map((b) => b.canonicalId)
     .filter((id): id is string => id !== null);
 
+  const exclude = input.excludeStaticTypes 
+    ? input.excludeStaticTypes.filter(s => !input.signalTypes.includes(s))
+    : [];
+
   const signals =
     canonicalIds.length > 0
       ? await prisma.signal.findMany({
-          where: { canonicalId: { in: canonicalIds }, type: { in: input.signalTypes } },
+          where: { 
+            canonicalId: { in: canonicalIds }, 
+            ...(exclude.length > 0 ? { type: { notIn: exclude } } : {})
+          },
           select: { canonicalId: true, type: true },
         })
       : [];

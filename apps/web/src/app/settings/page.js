@@ -22,6 +22,7 @@ import {
   CrossIcon,
   SparklesIcon
 } from '../../components/brand/UIIcons.js';
+import { TagInput } from '../../components/ui/TagInput.js';
 import { ServiceProfilePicker } from '../../components/settings/ServiceProfilePicker.js';
 import {
   GooglePlacesIcon,
@@ -627,25 +628,23 @@ async function safeFetch(url, options) {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                       <div>
                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                          Nicho / Segmento Alvo
+                          Nicho / Segmento Alvo (Ex: Dentistas, Advocacia)
                         </label>
-                        <input
-                          className="input"
-                          value={general.icpNiche}
-                          onChange={e => setGeneral({ ...general, icpNiche: e.target.value })}
-                          placeholder="Ex: Clínicas Médicas, Dentistas, Escritórios de Advocacia"
+                        <TagInput
+                          tags={general.icpNiche ? general.icpNiche.split(',').map(s => s.trim()).filter(Boolean) : []}
+                          onChange={(tags) => setGeneral({ ...general, icpNiche: tags.join(', ') })}
+                          placeholder="Adicionar nicho..."
                         />
                       </div>
 
                       <div>
                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-                          Região / Porte Alvo
+                          Região / Localização (Ex: SP, Contagem)
                         </label>
-                        <input
-                          className="input"
-                          value={general.icpRegion}
-                          onChange={e => setGeneral({ ...general, icpRegion: e.target.value })}
-                          placeholder="Ex: Capitais e regiões metropolitanas com 3 a 15 funcionários"
+                        <TagInput
+                          tags={general.icpRegion ? general.icpRegion.split(',').map(s => s.trim()).filter(Boolean) : []}
+                          onChange={(tags) => setGeneral({ ...general, icpRegion: tags.join(', ') })}
+                          placeholder="Adicionar região..."
                         />
                       </div>
                     </div>

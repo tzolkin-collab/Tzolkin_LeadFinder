@@ -110,6 +110,12 @@ const RELEVANCE: Record<ProviderSpecialty, SpecialtyRelevance> = {
   },
 };
 
+export const ALL_STATIC_SIGNALS = Array.from(
+  new Set(
+    Object.values(RELEVANCE).flatMap((r) => [...r.primary, ...r.secondary])
+  )
+);
+
 /** Rótulos de interface. Fonte única — a UI nunca escreve isso à mão. */
 export const SPECIALTY_LABELS: Record<ProviderSpecialty, string> = {
   DESENVOLVIMENTO_WEB: 'Sites e landing pages',
@@ -185,5 +191,7 @@ export function isSignalRelevant(
   specialties: ProviderSpecialty[],
 ): boolean {
   if (specialties.length === 0) return true; // sem perfil, não filtra nada
+  // Sinais dinâmicos (não estáticos) são relevantes por default
+  if (!ALL_STATIC_SIGNALS.includes(signalType)) return true;
   return combineRelevance(specialties).all.includes(signalType);
 }

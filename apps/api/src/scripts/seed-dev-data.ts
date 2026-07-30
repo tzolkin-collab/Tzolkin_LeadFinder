@@ -412,7 +412,7 @@ async function seedBusiness(tenantId: string, def: SeedBusinessDef) {
   // canonicalId+type+source+observedAt) — sem isto, rodar o seed 2x duplica
   // sinais. É uma lacuna real do motor, não só do seed; ver nota no relatório.
   await prisma.signal.deleteMany({ where: { canonicalId: canonical.id } });
-  const signals = await new SignalService().evaluateSignals(canonical.id);
+  const signals = await new SignalService(process.env.OPENAI_API_KEY).evaluateSignals(canonical.id);
   const diagnosis = await new DiagnosticService().generateDiagnosis(canonical.id);
 
   return { business, canonical, signals, diagnosis };

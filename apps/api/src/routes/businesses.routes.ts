@@ -13,10 +13,11 @@ import {
   OutboundPatternIntelligenceService,
   combineRelevance,
   matchNeedsToProvider,
+  ALL_STATIC_SIGNALS,
 } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
-const signalService = new SignalService();
+const signalService = new SignalService(process.env.OPENAI_API_KEY);
 const diagnosticService = new DiagnosticService();
 const outboundIntelligenceService = new OutboundPatternIntelligenceService();
 
@@ -152,7 +153,10 @@ router.get('/niche-signal', async (req, res, next) => {
     const specialties = tenant?.specialties ?? [];
     const relevance = combineRelevance(specialties);
 
-    const result = await aggregateNicheSignal(tenantId, { signalTypes: relevance.all });
+    const result = await aggregateNicheSignal(tenantId, { 
+      signalTypes: relevance.all,
+      excludeStaticTypes: ALL_STATIC_SIGNALS,
+    });
 
     res.json({
       ...result,

@@ -29,6 +29,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export * from '@prisma/client';
+export type SignalType = string;
 
 // ─── Base master canônica ─────────────────────────────────────────────
 // Só dado comercial público observado entra aqui. Análise calibrada no ICP do

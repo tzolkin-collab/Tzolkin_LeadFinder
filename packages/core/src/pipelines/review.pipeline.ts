@@ -6,6 +6,7 @@ import { ScraperTool } from '../tools/scraper.tool.js';
 import { DecisionMakerTool, type DecisionMakerOutput } from '../tools/decision-maker.tool.js';
 import { CnpjTool, type CnpjData } from '../tools/cnpj.tool.js';
 import { AdsAuditTool, type AdsAuditOutput } from '../tools/ads-audit.tool.js';
+import { WebsiteAuditTool, type WebsiteAuditOutput } from '../tools/website-audit.tool.js';
 import { SerperClient } from '../clients/serper.client.js';
 import {
   ApifyClient,
@@ -24,6 +25,7 @@ export interface ReviewPipelineConfig {
   apifyApiToken?: string | undefined;
   openAiApiKey?: string | undefined;
   scrapingBeeApiKey?: string | undefined;
+  pageSpeedApiKey?: string | undefined;
   redisUrl?: string | undefined;
   cacheTtlSeconds?: number | undefined;
   modelName?: string | undefined;
@@ -52,6 +54,7 @@ export interface ReviewPipelineResult {
   decisionMaker: DecisionMakerOutput;
   cnpj: CnpjData | null;
   adsAudit: AdsAuditOutput | null;
+  websiteAudit: WebsiteAuditOutput | null;
   aiReview: AiReviewOutput;
   tiktokUrl?: string | null;
   linkedinUrl?: string | null;
@@ -83,6 +86,7 @@ export class ReviewPipeline {
   private readonly decisionMakerTool: DecisionMakerTool;
   private readonly cnpjTool: CnpjTool;
   private readonly adsAuditTool: AdsAuditTool;
+  private readonly websiteAuditTool: WebsiteAuditTool;
   private readonly aiReviewTool: AiReviewTool;
   private readonly scraperTool: ScraperTool;
   private readonly targetIcp: string;
@@ -96,6 +100,7 @@ export class ReviewPipeline {
     const apifyToken = config?.apifyApiToken;
     const openAiKey = config?.openAiApiKey;
     const scrapingBeeApiKey = config?.scrapingBeeApiKey;
+    const pageSpeedApiKey = config?.pageSpeedApiKey;
     const modelName = config?.modelName;
     const targetIcp = config?.targetIcp;
 
@@ -112,6 +117,7 @@ export class ReviewPipeline {
     this.decisionMakerTool = new DecisionMakerTool(this.serperClient);
     this.cnpjTool = new CnpjTool(this.serperClient, cacheService);
     this.adsAuditTool = new AdsAuditTool(openAiKey, modelName);
+    this.websiteAuditTool = new WebsiteAuditTool(pageSpeedApiKey);
     this.aiReviewTool = new AiReviewTool(openAiKey, modelName);
     this.scraperTool = new ScraperTool(scrapingBeeApiKey);
     this.targetIcp = targetIcp ?? '';
@@ -190,6 +196,15 @@ export class ReviewPipeline {
     if (instagram.handle) {
       const igScrape = await this.scraperTool.scrapeInstagramProfile(instagram.handle);
       instagramScreenshotUrl = igScrape.screenshotUrl;
+    }
+
+    // Step 2.5: Website Performance and Security Audit
+    let websiteAudit: WebsiteAuditOutput | null = null;
+    if (updatedBusiness.websiteUrl && isRealSite) {
+      const auditResult = await this.websiteAuditTool.execute({ websiteUrl: updatedBusiness.websiteUrl });
+      if (auditResult.success && auditResult.data) {
+        websiteAudit = auditResult.data;
+      }
     }
 
     // Step 3: Discover and validate CNPJ via Brasil API (free website extraction → Serper fallback)
@@ -378,6 +393,7 @@ export class ReviewPipeline {
       decisionMaker,
       cnpj,
       adsAudit,
+      websiteAudit,
       aiReview,
       tiktokUrl,
       linkedinUrl,

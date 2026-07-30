@@ -76,3 +76,11 @@ export {
   type AiQueryPlannerInput,
   type AiQueryPlannerOutput,
 } from './ai-query-planner.tool.js';
+
+export {
+  WebsiteAuditTool,
+  WebsiteAuditInputSchema,
+  WebsiteAuditOutputSchema,
+  type WebsiteAuditInput,
+  type WebsiteAuditOutput,
+} from './website-audit.tool.js';

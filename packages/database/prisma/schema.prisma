@@ -401,6 +401,7 @@ model CanonicalBusiness {
   signals       Signal[]
   fields        CanonicalField[]
   tenantRecords Business[]
+  lists         LeadListEntry[]
 
   @@index([city, category])
   @@index([lastObservedAt])
@@ -448,33 +449,8 @@ enum SignalAxis {
   ALCANCE
 }
 
-enum SignalType {
-  SEM_SITE
-  SITE_FORA_DO_AR
-  SO_LINKTREE
-  PUBLICOU_SITE
-  COMECOU_A_ANUNCIAR
-  PAROU_DE_ANUNCIAR
-  AUMENTOU_CRIATIVOS
-  SALTO_DE_REVIEWS
-  CNPJ_RECENTE
-  NOVA_UNIDADE
-  INSTAGRAM_ATIVO
-  WHATSAPP_COMERCIAL
-  DM_ABERTO
-  RECLAMACAO_EM_REVIEW
-
-  // ─── Ausência VERIFICADA ────────────────────────────────────────────
-  // Não confundir com ausência de sinal. Estes só são emitidos quando a
-  // verificação de fato aconteceu e não encontrou nada — nunca por dado
-  // faltando. Ver signal.service.ts.
-  //
-  // Existem porque os perfis de tráfego pago e social media ficavam sem
-  // nenhum lead: o produto só sabia dizer quem TEM anúncio, nunca quem
-  // comprovadamente não tem, que é justamente o alvo de quem vende mídia.
-  SEM_ANUNCIOS_DETECTADOS
-  SEM_INSTAGRAM
-}
+// Os tipos de sinais agora são Strings geradas dinamicamente pela IA.
+// Mantemos algumas documentadas por convenção, mas não engessadas.
 
 // Derivado do diff entre observações consecutivas. É o ativo real do
 // produto e a fonte do feed.
@@ -483,7 +459,7 @@ model Signal {
   canonicalId String
   canonical   CanonicalBusiness @relation(fields: [canonicalId], references: [id], onDelete: Cascade)
 
-  type     SignalType
+  type     String
   axis     SignalAxis
   value    Json?
   evidence Json?
@@ -618,4 +594,52 @@ model OutboundPatternIntelligence {
   @@unique([niche, gatekeeperStrategy, painPoint, objectionStrategy])
   @@index([niche, responseRate])
   @@map("outbound_pattern_intelligence")
+}
+
+// ─── DICIONÁRIO DE TAXONOMIA E TRADUÇÃO (AUTO-DISCOVERY) ────────────
+
+// Dicionário global para traduzir "handlers" crus de APIs para idiomas locais
+model TaxonomyDictionary {
+  id        String   @id @default(cuid())
+  domain    String   // Ex: "GOOGLE_PLACES_CATEGORY", "TECHNOLOGY", "SIGNAL_TYPE"
+  handler   String   // Ex: "autoparts_store", "facebook_pixel"
+  
+  // JSONB com as traduções. Ex: { "pt-BR": "Loja de Autopeças", "es-ES": "Tienda de Repuestos" }
+  translations Json   
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([domain, handler])
+  @@index([domain])
+  @@map("taxonomy_dictionaries")
+}
+
+// ─── LEAD LISTS (SAVED LEADS BY TENANTS) ────────────
+
+model LeadList {
+  id        String   @id @default(cuid())
+  name      String
+  tenantId  String?  // Opcional para listas default/globais se houver, mas atrelado ao tenant.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads     LeadListEntry[]
+
+  @@index([tenantId])
+  @@map("lead_lists")
+}
+
+model LeadListEntry {
+  id         String   @id @default(cuid())
+  listId     String
+  businessId String
+  createdAt  DateTime @default(now())
+
+  list       LeadList          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  business   CanonicalBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, businessId])
+  @@index([listId])
+  @@map("lead_list_entries")
 }

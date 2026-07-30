@@ -35,6 +35,7 @@ export {
   combineRelevance,
   isSignalRelevant,
   SPECIALTY_LABELS,
+  ALL_STATIC_SIGNALS,
   type RelevanceWeight,
   type SpecialtyRelevance,
   type CombinedRelevance,

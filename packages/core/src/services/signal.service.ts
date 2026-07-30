@@ -6,6 +6,7 @@ import {
   type SignalType,
 } from '@tzolkin/database';
 import { CoreLogger } from '../utils/logger.js';
+import { z } from 'zod';
 
 export interface EvaluatedSignal {
   type: SignalType;
@@ -16,11 +17,26 @@ export interface EvaluatedSignal {
   observedAt: Date;
 }
 
+const DynamicSignalsSchema = z.object({
+  signals: z.array(z.object({
+    type: z.string().describe('O código identificador do sinal em MAIUSCULO_COM_UNDERLINE (ex: SITE_LENTO, RECLAMACAO_PROCON)'),
+    axis: z.enum(['DOR', 'DINHEIRO', 'MOMENTO', 'ALCANCE']).describe('O eixo estratégico ao qual esse sinal pertence'),
+    value: z.record(z.unknown()).optional().describe('Um objeto com o valor ou métrica principal extraída (ex: { diff: 5 })'),
+    evidence: z.record(z.unknown()).optional().describe('Um objeto justificando o porquê este sinal foi criado'),
+  }))
+});
+
 export class SignalService {
   private readonly logger = new CoreLogger('SignalService');
+  private readonly openAiApiKey: string | undefined;
+
+  constructor(openAiApiKey?: string | undefined) {
+    this.openAiApiKey = openAiApiKey;
+  }
 
   /**
    * Avalia diffs entre observações recentes da base canônica e grava sinais.
+   * Utiliza regras determinísticas para sinais core, e IA para descobrir novos sinais dinâmicos.
    */
   async evaluateSignals(canonicalId: string): Promise<EvaluatedSignal[]> {
     const evaluated: EvaluatedSignal[] = [];
@@ -86,14 +102,6 @@ export class SignalService {
       const firstMeta = metaObs[0];
       const secondMeta = metaObs[1];
 
-      // 2a. Ausência VERIFICADA de anúncio — basta UMA observação, porque não é
-      // diff: é o fato "procuramos e não achou". Destrava o perfil de tráfego
-      // pago, que só tinha sinal para quem JÁ anuncia.
-      //
-      // ⚠️ Só vale se a checagem aconteceu de verdade. `FALLBACK_LINK` quer
-      // dizer que devolvemos um link sem consultar nada — e nem chega a virar
-      // observação (ver record-enrichment-observations), mas a guarda fica aqui
-      // também porque este serviço não controla quem escreveu o payload.
       if (firstMeta) {
         const payload = firstMeta.payload as any;
         const reallyChecked =
@@ -155,10 +163,6 @@ export class SignalService {
         }
       }
 
-      // 2b. Ausência VERIFICADA de Instagram — destrava o perfil de social
-      // media. Só conta quando a descoberta foi por busca indexada: um scrape
-      // do Google que falhou por rede parece "não existe", e afirmar isso faria
-      // o prestador abordar dizendo "vocês não têm Instagram" para quem tem.
       const igObs = await latestObservations(canonicalId, 'SERPER_INSTAGRAM', 1);
       const firstIg = igObs[0];
       if (firstIg) {
@@ -184,7 +188,6 @@ export class SignalService {
         }
       }
 
-      // 3. Diffs do Brasil API (CNPJ Recente)
       const cnpjObs = await latestObservations(canonicalId, 'BRASIL_API', 1);
       const firstCnpj = cnpjObs[0];
       if (firstCnpj) {
@@ -205,6 +208,20 @@ export class SignalService {
         }
       }
 
+      // 4. SINAIS DINÂMICOS IA E AUDITORIA DE SITE (PageSpeed/SSL)
+      // Capturamos a última auditoria se ela existir (normalmente registrada via WebsiteAuditTool).
+      // Se não for uma observação padrão ainda, podemos processá-la se o payload hash disser.
+      // Aqui usamos o LLM para cruzar dados e inferir "SITE_LENTO", "SSL_INVALIDO" ou criar novos.
+      if (this.openAiApiKey) {
+        const dynamicSignals = await this.discoverDynamicSignals(canonicalId);
+        for (const ds of dynamicSignals) {
+          // Evita adicionar sinal que o determinístico já pegou (ex: se o LLM alucinar SEM_SITE)
+          if (!evaluated.some(e => e.type === ds.type)) {
+            evaluated.push(ds);
+          }
+        }
+      }
+
       // Persistir sinais no banco
       for (const sig of evaluated) {
         await prisma.signal.create({
@@ -220,10 +237,82 @@ export class SignalService {
         });
       }
 
-      this.logger.info(`Aavaliados ${evaluated.length} sinais para o negócio canônico ${canonicalId}`);
+      this.logger.info(`Avaliados ${evaluated.length} sinais para o negócio canônico ${canonicalId}`);
       return evaluated;
     } catch (err) {
       this.logger.error(`Erro ao avaliar sinais para ${canonicalId}:`, err);
+      return [];
+    }
+  }
+
+  /**
+   * Consulta as últimas observações e pede ao LLM para descobrir oportunidades não mapeadas.
+   */
+  private async discoverDynamicSignals(canonicalId: string): Promise<EvaluatedSignal[]> {
+    try {
+      // Coletamos uma amostragem das últimas observações (Google, Meta, WebsiteAudit se tivermos persistido)
+      const recentObs = await prisma.observation.findMany({
+        where: { canonicalId },
+        orderBy: { observedAt: 'desc' },
+        take: 5,
+      });
+
+      if (recentObs.length === 0) return [];
+
+      const prompt = `Analise os seguintes snapshots (observações) extraídos recentemente de um negócio (Lead):
+${JSON.stringify(recentObs.map(o => ({ source: o.source, payload: o.payload })), null, 2)}
+
+Sua missão como Inteligência Comercial é identificar mudanças, dores (DOR), oportunidades de orçamento (DINHEIRO), momentos estratégicos (MOMENTO) ou nível de presença (ALCANCE).
+Em particular, preste atenção em métricas de performance de site, segurança SSL (ex: expiresAt, valid: false), engajamento de redes, etc.
+
+Não repita sinais básicos já cobertos por regras determinísticas (ex: SEM_SITE, PUBLICOU_SITE, COMECOU_A_ANUNCIAR, CNPJ_RECENTE).
+Se você encontrar que a performance do site (performanceScore) é muito baixa (< 50), emita um sinal "SITE_LENTO".
+Se o SSL está expirado ou prestes a expirar, emita "SSL_INVALIDO" ou "SSL_EXPIRANDO".
+Se encontrar algo super diferente, INVENTE um novo sinal em MAIUSCULO_COM_UNDERLINE (ex: CATALOGO_PRODUTOS_NOVO, PIXEL_NAO_INSTALADO).
+
+Retorne em formato JSON estritamente seguindo o schema solicitado.`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.openAiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'Você é o cérebro de detecção de Sinais (Gatilhos de Vendas) da Tzolkin.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!response.ok) return [];
+
+      const data = await response.json();
+      const rawJson = data.choices?.[0]?.message?.content;
+      if (!rawJson) return [];
+
+      const parsed = JSON.parse(rawJson);
+      const validated = DynamicSignalsSchema.parse(parsed);
+
+      return validated.signals.map(s => {
+        const sig: EvaluatedSignal = {
+          type: s.type,
+          axis: s.axis as SignalAxis,
+          source: recentObs[0]?.source ?? 'WEBSITE_PROBE',
+          observedAt: recentObs[0]?.observedAt ?? new Date(),
+        };
+        if (s.value !== undefined) sig.value = s.value;
+        if (s.evidence !== undefined) sig.evidence = s.evidence;
+        return sig;
+      });
+    } catch (err) {
+      this.logger.warn(`Falha na IA ao descobrir sinais dinâmicos para ${canonicalId}`, { error: String(err) });
       return [];
     }
   }
