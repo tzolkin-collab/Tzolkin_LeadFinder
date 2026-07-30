@@ -1,11 +1,18 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma, listTenantBusinesses, aggregateNicheSignal } from '@tzolkin/database';
+import type { SignalType } from '@tzolkin/database';
+import {
+  prisma,
+  listTenantBusinesses,
+  aggregateNicheSignal,
+  tenantServiceProfile,
+} from '@tzolkin/database';
 import {
   SignalService,
   DiagnosticService,
   OutboundPatternIntelligenceService,
   combineRelevance,
+  matchNeedsToProvider,
 } from '@tzolkin/core';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
@@ -32,6 +39,94 @@ router.get('/', async (req, res, next) => {
     const result = await listTenantBusinesses(tenantId, { search, status, page, limit });
 
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/businesses/matched
+// Os negócios que precisam do que ESTE prestador vende, com a cadeia de
+// evidência de cada encaixe.
+//
+// É o fecho da corrente: perfil (nicho + profissão) → sinal relevante →
+// necessidade inferida por regra → encaixe com a oferta. Nada aqui é
+// adjetivo de venda: cada linha carrega os sinais que a sustentam.
+router.get('/matched', async (req, res, next) => {
+  try {
+    const tenantId = req.user!.tenantId;
+
+    const profile = await tenantServiceProfile(tenantId);
+    const sells = profile.services.map((s) => s.slug);
+
+    const businesses = await prisma.business.findMany({
+      where: { tenantId, canonicalId: { not: null } },
+      select: { id: true, name: true, category: true, canonicalId: true },
+    });
+
+    const canonicalIds = businesses
+      .map((b) => b.canonicalId)
+      .filter((id): id is string => id !== null);
+
+    const signals =
+      canonicalIds.length > 0
+        ? await prisma.signal.findMany({
+            where: { canonicalId: { in: canonicalIds } },
+            select: { canonicalId: true, type: true, observedAt: true },
+            orderBy: { observedAt: 'desc' },
+          })
+        : [];
+
+    const signalsByCanonical = new Map<string, SignalType[]>();
+    for (const s of signals) {
+      const list = signalsByCanonical.get(s.canonicalId) ?? [];
+      if (!list.includes(s.type)) list.push(s.type);
+      signalsByCanonical.set(s.canonicalId, list);
+    }
+
+    const evaluated = businesses.map((b) => {
+      const businessSignals = b.canonicalId
+        ? (signalsByCanonical.get(b.canonicalId) ?? [])
+        : [];
+      const match = matchNeedsToProvider({
+        signals: businessSignals,
+        providerSubcategorySlugs: sells,
+      });
+      return { business: b, signals: businessSignals, match };
+    });
+
+    // Só entra na lista quem tem encaixe de verdade. Quem precisa de outra
+    // coisa vai para um balde separado — dizer isso é mais útil que esconder.
+    const matched = evaluated
+      .filter((e) => e.match.matched.length > 0)
+      .sort((a, b) => {
+        const w = { INVESTIMENTO_COM_LACUNA: 3, SATURACAO: 2, AUSENCIA: 1 } as const;
+        const aw = a.match.strongestMechanism ? w[a.match.strongestMechanism] : 0;
+        const bw = b.match.strongestMechanism ? w[b.match.strongestMechanism] : 0;
+        return bw - aw || b.match.matched.length - a.match.matched.length;
+      })
+      .map((e) => ({
+        businessId: e.business.id,
+        name: e.business.name,
+        category: e.business.category,
+        strongestMechanism: e.match.strongestMechanism,
+        needs: e.match.matched,
+      }));
+
+    const needsOtherService = evaluated
+      .filter((e) => e.match.needsOtherService)
+      .map((e) => ({
+        businessId: e.business.id,
+        name: e.business.name,
+        needs: e.match.unmatched.map((u) => u.needsSubcategorySlug),
+      }));
+
+    res.json({
+      profileConfigured: sells.length > 0,
+      sells,
+      matched,
+      needsOtherService,
+      totalEvaluated: evaluated.length,
+    });
   } catch (error) {
     next(error);
   }

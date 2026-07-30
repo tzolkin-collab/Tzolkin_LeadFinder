@@ -39,6 +39,16 @@ export {
   type SpecialtyRelevance,
   type CombinedRelevance,
 } from './services/specialty-relevance.service.js';
+export {
+  inferNeeds,
+  matchNeedsToProvider,
+  NEED_RULES,
+  type NeedMechanism,
+  type NeedRule,
+  type InferredNeed,
+  type MatchInput,
+  type MatchResult,
+} from './services/need-inference.service.js';
 export { SignalService, type EvaluatedSignal } from './services/signal.service.js';
 export { DiagnosticService, type CommercialDiagnosis } from './services/diagnostic.service.js';
 export {

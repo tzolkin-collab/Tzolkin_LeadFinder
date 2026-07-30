@@ -767,6 +767,8 @@ export interface TenantServiceProfile {
   services: Array<{
     subcategoryId: string;
     category: ServiceCategory;
+    /** Chave usada pelo motor de matching (need-inference, em core). */
+    slug: string;
     label: string;
     providerSpecialty: ProviderSpecialty | null;
   }>;
@@ -794,7 +796,7 @@ export async function tenantServiceProfile(tenantId: string): Promise<TenantServ
     where: { tenantId },
     select: {
       subcategory: {
-        select: { id: true, category: true, label: true, providerSpecialty: true },
+        select: { id: true, category: true, slug: true, label: true, providerSpecialty: true },
       },
     },
   });
@@ -802,6 +804,7 @@ export async function tenantServiceProfile(tenantId: string): Promise<TenantServ
   const services = rows.map((r) => ({
     subcategoryId: r.subcategory.id,
     category: r.subcategory.category,
+    slug: r.subcategory.slug,
     label: r.subcategory.label,
     providerSpecialty: r.subcategory.providerSpecialty,
   }));
