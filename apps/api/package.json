@@ -10,6 +10,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "seed:dev": "tsx src/scripts/seed-dev-data.ts",
+    "taxonomy:stress": "tsx src/scripts/taxonomy-stress.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

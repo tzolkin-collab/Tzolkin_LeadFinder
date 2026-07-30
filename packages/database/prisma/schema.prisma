@@ -109,6 +109,72 @@ enum ProviderSpecialty {
   OUTRO // ver specialtyOther
 }
 
+// ─── TAXONOMIA DE SERVIÇO (CATEGORIA FIXA + SUBCATEGORIA CONTROLADA) ──
+//
+// Categoria é enum de propósito: poucos valores, estável, muda só por decisão
+// humana com migration. Subcategoria é TABELA porque o mercado inventa serviço
+// toda semana ("automação de IA para inbound" não existia dois anos atrás) e
+// enum não cresce sem deploy.
+//
+// ⚠️ Tabela que cresce é onde nasce explosão de categoria. Todo o controle está
+// em `service-taxonomy.service.ts` — nada escreve aqui direto. Os limites são
+// numéricos e provados em teste: teto de ACTIVE por categoria, teto de PENDING,
+// rate limit por tenant e limiar de confirmação para promover.
+
+enum ServiceCategory {
+  MARKETING_DIGITAL
+  DESENVOLVIMENTO
+  DESIGN
+  AUTOMACAO_IA
+  CONSULTORIA
+}
+
+enum TaxonomyStatus {
+  PENDING // proposta em quarentena — NÃO aparece como opção escolhível
+  ACTIVE // canônica, utilizável
+  MERGED // absorvida por outra; seguir mergedIntoId
+  REJECTED // revisada e recusada. Existe para que re-propor o mesmo termo seja
+  // no-op em vez de criar linha nova — é o que faz a contagem convergir.
+}
+
+model ServiceSubcategory {
+  id       String          @id @default(cuid())
+  category ServiceCategory
+
+  slug  String @unique // normalizado, sem acento: "trafego-pago"
+  label String // exibição: "Tráfego pago"
+
+  // Sinônimos absorvidos ("midia paga", "gestao de trafego", "google ads").
+  // A taxonomia cresce em ALIAS (barato) em vez de em linha (caro).
+  aliases String[]
+
+  status TaxonomyStatus @default(PENDING)
+
+  // Ponte para o mapa de relevância (packages/core/specialty-relevance).
+  // null = subcategoria nova sem relevância mapeada; o produto diz isso em vez
+  // de inventar sinal relevante.
+  providerSpecialty ProviderSpecialty?
+
+  // Fontes independentes que propuseram — mesma lógica de
+  // CanonicalField.confirmations. Ao cruzar o limiar, promove para ACTIVE.
+  confirmations Int @default(1)
+
+  // Dedup de confirmação: o mesmo tenant propondo 3x não vale 3 confirmações.
+  // ⚠️ Interno, como observerCount — NUNCA chega à interface.
+  proposedByTenantIds String[]
+
+  mergedIntoId String?
+  mergedInto   ServiceSubcategory?  @relation("SubcategoryMerge", fields: [mergedIntoId], references: [id])
+  absorbed     ServiceSubcategory[] @relation("SubcategoryMerge")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([status, confirmations])
+  @@map("service_subcategories")
+}
+
 model Tenant {
   id     String       @id @default(cuid())
   slug   String       @unique

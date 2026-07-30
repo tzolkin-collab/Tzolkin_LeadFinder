@@ -63,3 +63,19 @@ export {
   type NicheSignalResult,
   type AggregateNicheSignalInput,
 } from './services/tenant-business.service.js';
+export {
+  resolveServiceSubcategory,
+  listActiveSubcategories,
+  seedServiceTaxonomy,
+  taxonomyHealth,
+  decideTaxonomyAction,
+  normalizeSlug,
+  similarity,
+  TAXONOMY_LIMITS,
+  type ResolveSubcategoryInput,
+  type ResolveSubcategoryResult,
+  type TaxonomyAction,
+  type RejectReason,
+  type ExistingSubcategory,
+  type DecideInput,
+} from './services/service-taxonomy.service.js';
