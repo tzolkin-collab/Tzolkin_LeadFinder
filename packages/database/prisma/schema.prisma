@@ -417,6 +417,9 @@ enum ObservationSource {
   WEBSITE_PROBE
   LINKTREE_RESOLVE
   APIFY
+  GOOGLE_SEARCH_JOBS
+  GOOGLE_SEARCH_NEWS
+  BRASIL_API_CNPJ
 }
 
 // Append-only. Nunca UPDATE. Se o payloadHash repetir, descarta sem
